@@ -1,0 +1,458 @@
+<!--~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  ~ Copyright © 2020-2021    The BENED Developers.                            ~
+  ~                                                                           ~
+  ~ See the AUTHORS.txt, DEVELOPER-AGREEMENT.txt and LICENSE.txt files at     ~
+  ~ the top-level directory of this distribution for the individual copyright ~
+  ~ holder information and the developer policies on copyright and licensing. ~
+  ~                                                                           ~
+  ~ Unless otherwise agreed in a custom licensing agreement, no part of the   ~
+  ~ BENED software, including this file, may be copied, modified, propagated, ~
+  ~ or distributed except according to the terms contained in the LICENSE.txt ~
+  ~ file.                                                                     ~
+  ~                                                                           ~
+  ~ Removal or modification of this copyright notice is prohibited.           ~
+  ~                                                                           ~
+  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~-->
+
+<div id="dashboard_page" class="page" style="display:block">
+  <div class="d-header d-flex align-items-center justify-content-between">
+    <h1 data-i18n="dashboard">Dashboard</h1>
+</div>
+<div class="dashboard-info">
+    <div class="row">
+        <div class="col-lg-3">
+            <div class="item balance">
+                <h3 data-i18n="balance">Balance</h3>
+                <div class="amount" id="account_balance_sidebar"></div>
+                <ul>
+                    <li><a href="#" data-toggle="modal" data-target="#send_money_modal">
+                        <svg width="19" height="19" viewBox="0 0 17 17" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M11.8848 0.602295C9.40754 0.602295 7.3992 2.61063 7.3992 5.08792C7.3992 7.56521 9.40754 9.57355 11.8848 9.57355C14.3621 9.57355 16.3705 7.56521 16.3705 5.08792C16.3705 2.61063 14.3621 0.602295 11.8848 0.602295ZM2.70968 2.23343C1.24981 2.23343 0.059082 3.42416 0.059082 4.88403V14.2631C0.059082 15.7229 1.24981 16.9137 2.70968 16.9137H12.0887C13.5486 16.9137 14.7393 15.7229 14.7393 14.2631V10.3891H14.1276H13.516H9.81325C9.65103 10.3891 9.49546 10.4536 9.38075 10.5683C9.26604 10.683 9.20159 10.8386 9.20157 11.0008C9.20157 11.656 8.96556 12.0772 8.62574 12.3771C8.28591 12.677 7.81754 12.8358 7.3992 12.8358C6.98086 12.8358 6.51249 12.677 6.17266 12.3771C5.83284 12.0772 5.59682 11.656 5.59682 11.0008C5.59681 10.8386 5.53236 10.683 5.41765 10.5683C5.30294 10.4536 5.14737 10.3891 4.98515 10.3891H1.28243V4.88403C1.28243 4.09701 1.92266 3.45678 2.70968 3.45678H6.84089C6.97953 3.02046 7.17524 2.61267 7.41991 2.23343H2.70968ZM11.8848 2.23343C11.9892 2.23343 12.0936 2.27338 12.1731 2.3529L14.2121 4.39182C14.3715 4.55127 14.3715 4.80901 14.2121 4.96845C14.0526 5.1279 13.7949 5.1279 13.6354 4.96845L12.2926 3.62563V7.94241C12.2926 8.16751 12.1103 8.3502 11.8848 8.3502C11.6593 8.3502 11.477 8.16751 11.477 7.94241V3.62563L10.1342 4.96845C9.97478 5.1279 9.71703 5.1279 9.55759 4.96845C9.39814 4.80901 9.39814 4.55127 9.55759 4.39182L11.5965 2.3529C11.676 2.27338 11.7804 2.23343 11.8848 2.23343ZM1.28243 11.6125H4.5017C4.63672 12.2957 4.91457 12.8984 5.36346 13.2946C5.94778 13.8102 6.68675 14.0592 7.3992 14.0592C8.11165 14.0592 8.85062 13.8102 9.43493 13.2946C9.88383 12.8984 10.1617 12.2957 10.2967 11.6125H13.516V14.2631C13.516 15.0501 12.8757 15.6903 12.0887 15.6903H2.70968C1.92266 15.6903 1.28243 15.0501 1.28243 14.2631V11.6125Z" fill="black"/>
+                        </svg>
+                        <span data-i18n="send_cointech">Send BND</span>
+                    </a></li>
+                    <li><a href="#" onclick="NRS.logout()">
+                        <svg width="19" height="14" viewBox="0 0 19 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M2.85816 0.549805C1.57749 0.549805 0.525635 1.60166 0.525635 2.88233V9.24376C0.525635 10.5244 1.57749 11.5763 2.85816 11.5763H13.8846C15.1653 11.5763 16.2172 10.5244 16.2172 9.24376V2.88233C16.2172 1.60166 15.1653 0.549805 13.8846 0.549805H2.85816ZM2.85816 1.82209H13.8846C14.4776 1.82209 14.9449 2.28935 14.9449 2.88233V3.51847H1.79792V2.88233C1.79792 2.28935 2.26518 1.82209 2.85816 1.82209ZM17.0654 2.68271V9.24376C17.0654 10.9995 15.6404 12.4245 13.8846 12.4245H3.08263C3.57458 13.1879 4.43156 13.6968 5.40273 13.6968H13.8846C16.3402 13.6968 18.3377 11.6993 18.3377 9.24376V5.00281C18.3377 4.03163 17.8287 3.17466 17.0654 2.68271ZM1.79792 4.79076H14.9449V9.24376C14.9449 9.83675 14.4776 10.304 13.8846 10.304H2.85816C2.26518 10.304 1.79792 9.83675 1.79792 9.24376V4.79076ZM10.916 7.75943C10.8317 7.75824 10.748 7.77381 10.6698 7.80525C10.5915 7.83668 10.5203 7.88335 10.4603 7.94254C10.4003 8.00173 10.3526 8.07226 10.3201 8.15003C10.2875 8.2278 10.2708 8.31127 10.2708 8.39557C10.2708 8.47988 10.2875 8.56334 10.3201 8.64112C10.3526 8.71889 10.4003 8.78942 10.4603 8.84861C10.5203 8.9078 10.5915 8.95447 10.6698 8.9859C10.748 9.01733 10.8317 9.03291 10.916 9.03172H13.0365C13.1208 9.03291 13.2044 9.01733 13.2827 8.9859C13.3609 8.95447 13.4321 8.9078 13.4921 8.84861C13.5522 8.78942 13.5998 8.71889 13.6324 8.64112C13.6649 8.56334 13.6817 8.47988 13.6817 8.39557C13.6817 8.31127 13.6649 8.2278 13.6324 8.15003C13.5998 8.07226 13.5522 8.00173 13.4921 7.94254C13.4321 7.88335 13.3609 7.83668 13.2827 7.80525C13.2044 7.77381 13.1208 7.75824 13.0365 7.75943H10.916Z" fill="black"/>
+                        </svg>                                            
+                        <span data-i18n="change_wallet">Change wallet</span>
+                    </a></li>
+                    <li><a href="#" data-toggle="modal" data-target="#account_details_modal">
+                        <svg width="19" height="20" viewBox="0 0 17 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M8.39909 0.865479C3.90208 0.865479 0.243408 4.52415 0.243408 9.02116C0.243408 13.5182 3.90208 17.1768 8.39909 17.1768C12.8961 17.1768 16.5548 13.5182 16.5548 9.02116C16.5548 4.52415 12.8961 0.865479 8.39909 0.865479ZM8.39909 2.08883C12.235 2.08883 15.3314 5.1853 15.3314 9.02116C15.3314 12.857 12.235 15.9535 8.39909 15.9535C4.56322 15.9535 1.46676 12.857 1.46676 9.02116C1.46676 5.1853 4.56322 2.08883 8.39909 2.08883ZM8.39909 4.94332C8.18279 4.94332 7.97535 5.02925 7.8224 5.1822C7.66945 5.33514 7.58353 5.54259 7.58353 5.75889C7.58353 5.97519 7.66945 6.18263 7.8224 6.33558C7.97535 6.48853 8.18279 6.57446 8.39909 6.57446C8.6154 6.57446 8.82284 6.48853 8.97579 6.33558C9.12874 6.18263 9.21466 5.97519 9.21466 5.75889C9.21466 5.54259 9.12874 5.33514 8.97579 5.1822C8.82284 5.02925 8.6154 4.94332 8.39909 4.94332ZM8.38954 7.78905C8.22745 7.79158 8.07299 7.85835 7.9601 7.97468C7.8472 8.09101 7.78509 8.2474 7.78742 8.40949V12.8951C7.78627 12.9762 7.80125 13.0566 7.83147 13.1319C7.8617 13.2071 7.90657 13.2755 7.96348 13.3333C8.0204 13.391 8.08821 13.4368 8.163 13.4681C8.23778 13.4994 8.31803 13.5155 8.39909 13.5155C8.48016 13.5155 8.56041 13.4994 8.63519 13.4681C8.70997 13.4368 8.77779 13.391 8.83471 13.3333C8.89162 13.2755 8.93649 13.2071 8.96672 13.1319C8.99694 13.0566 9.01192 12.9762 9.01077 12.8951V8.40949C9.01194 8.32762 8.99667 8.24635 8.96586 8.17049C8.93504 8.09463 8.88931 8.02573 8.83138 7.96787C8.77345 7.91001 8.70449 7.86437 8.62859 7.83366C8.5527 7.80294 8.4714 7.78777 8.38954 7.78905Z" fill="black"/>
+                        </svg>                                            
+                        <span data-i18n="account_details">Account details</span>
+                    </a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="col-lg-3">
+            <div class="item affilated">
+                <h3 data-i18n="affilated_volume">Affilated Volume</h3>
+                <div class="amount" id="affilated_volume_count">0</div>
+                <ul>
+                    <li class="partners"><svg width="19" height="19" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M7.48673 9.17697C10.5039 9.17697 12.299 10.0171 13.1788 11.4676C13.3254 11.7094 13.403 11.9868 13.403 12.2695C13.403 13.1235 12.7107 13.8158 11.8567 13.8158H3.11678C2.83401 13.8158 2.55665 13.7383 2.31487 13.5916C1.58469 13.1487 1.35179 12.1978 1.79468 11.4676L1.22959 11.1249L1.79468 11.4676C2.67448 10.0171 4.46959 9.17697 7.48673 9.17697ZM7.48673 1.00376C9.07271 1.00376 10.3584 2.28945 10.3584 3.87543C10.3584 5.4614 9.07271 6.74709 7.48673 6.74709C5.90076 6.74709 4.61507 5.4614 4.61507 3.87543C4.61507 2.28945 5.90076 1.00376 7.48673 1.00376Z" stroke="black" stroke-width="1.32539"/>
+                        </svg>
+                        <i data-i18n="partners">Partners</i>
+                        <span id="dashboard-partners-count">not avaliable</span>
+                    </li>
+                    <li><a href="#" class="goto-page" data-page="hierarchy">
+                        <svg width="19" height="19" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M7.10065 0.229736C6.14054 0.229736 5.34969 1.02059 5.34969 1.9807V4.31532C5.34969 5.27543 6.14054 6.06628 7.10065 6.06628H7.68431V7.6227H4.96058C4.00047 7.6227 3.20962 8.41355 3.20962 9.37366V9.95732H2.62596C1.66585 9.95732 0.875 10.7482 0.875 11.7083V14.0429C0.875 15.003 1.66585 15.7939 2.62596 15.7939H4.96058C5.9207 15.7939 6.71155 15.003 6.71155 14.0429V11.7083C6.71155 10.7482 5.9207 9.95732 4.96058 9.95732H4.37693V9.37366C4.37693 9.04429 4.63121 8.79001 4.96058 8.79001H11.5753C11.9047 8.79001 12.159 9.04429 12.159 9.37366V9.95732H11.5753C10.6152 9.95732 9.82437 10.7482 9.82437 11.7083V14.0429C9.82437 15.003 10.6152 15.7939 11.5753 15.7939H13.91C14.8701 15.7939 15.6609 15.003 15.6609 14.0429V11.7083C15.6609 10.7482 14.8701 9.95732 13.91 9.95732H13.3263V9.37366C13.3263 8.41355 12.5354 7.6227 11.5753 7.6227H8.85161V6.06628H9.43527C10.3954 6.06628 11.1862 5.27543 11.1862 4.31532V1.9807C11.1862 1.02059 10.3954 0.229736 9.43527 0.229736H7.10065ZM7.10065 1.39705H9.43527C9.76465 1.39705 10.0189 1.65133 10.0189 1.9807V4.31532C10.0189 4.6447 9.76465 4.89897 9.43527 4.89897H7.10065C6.77128 4.89897 6.517 4.6447 6.517 4.31532V1.9807C6.517 1.65133 6.77128 1.39705 7.10065 1.39705ZM2.62596 11.1246H4.96058C5.28996 11.1246 5.54424 11.3789 5.54424 11.7083V14.0429C5.54424 14.3723 5.28996 14.6266 4.96058 14.6266H2.62596C2.29659 14.6266 2.04231 14.3723 2.04231 14.0429V11.7083C2.04231 11.3789 2.29659 11.1246 2.62596 11.1246ZM11.5753 11.1246H13.91C14.2393 11.1246 14.4936 11.3789 14.4936 11.7083V14.0429C14.4936 14.3723 14.2393 14.6266 13.91 14.6266H11.5753C11.246 14.6266 10.9917 14.3723 10.9917 14.0429V11.7083C10.9917 11.3789 11.246 11.1246 11.5753 11.1246Z" fill="black"/>
+                        </svg>                                            
+                        <i data-i18n="network">Network</i>
+                    </a></li>
+                    <li><a href="#" class="goto-page" data-page="contacts">
+                        <svg width="19" height="18" viewBox="0 0 18 17" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M4.0697 0.846436C3.26776 0.846436 2.58455 1.16983 2.14613 1.66305C1.70771 2.15627 1.50355 2.78882 1.50355 3.41259C1.50355 4.03636 1.70771 4.66891 2.14613 5.16213C2.58455 5.65535 3.26776 5.97958 4.0697 5.97958C4.87165 5.97958 5.55485 5.65535 5.99327 5.16213C6.43169 4.66891 6.63586 4.03636 6.63586 3.41259C6.63586 2.78882 6.43169 2.15627 5.99327 1.66305C5.55485 1.16983 4.87165 0.846436 4.0697 0.846436ZM13.0659 0.846436C12.2639 0.846436 11.5807 1.16983 11.1423 1.66305C10.7039 2.15627 10.4997 2.78882 10.4997 3.41259C10.4997 4.03636 10.7039 4.66891 11.1423 5.16213C11.5807 5.65535 12.2639 5.97958 13.0659 5.97958C13.8678 5.97958 14.551 5.65535 14.9895 5.16213C15.4279 4.66891 15.632 4.03636 15.632 3.41259C15.632 2.78882 15.4279 2.15627 14.9895 1.66305C14.551 1.16983 13.8678 0.846436 13.0659 0.846436ZM4.0697 2.1316C4.55035 2.1316 4.82986 2.28908 5.03274 2.51732C5.23562 2.74556 5.35069 3.07441 5.35069 3.41259C5.35069 3.75077 5.23562 4.08045 5.03274 4.30869C4.82986 4.53694 4.55035 4.69441 4.0697 4.69441C3.58905 4.69441 3.30954 4.53694 3.10666 4.30869C2.90378 4.08045 2.78872 3.75077 2.78872 3.41259C2.78872 3.07441 2.90378 2.74556 3.10666 2.51732C3.30954 2.28908 3.58905 2.1316 4.0697 2.1316ZM13.0659 2.1316C13.5465 2.1316 13.826 2.28908 14.0289 2.51732C14.2318 2.74556 14.3469 3.07441 14.3469 3.41259C14.3469 3.75077 14.2318 4.08045 14.0289 4.30869C13.826 4.53694 13.5465 4.69441 13.0659 4.69441C12.5852 4.69441 12.3057 4.53694 12.1028 4.30869C11.9 4.08045 11.7849 3.75077 11.7849 3.41259C11.7849 3.07441 11.9 2.74556 12.1028 2.51732C12.3057 2.28908 12.5852 2.1316 13.0659 2.1316ZM1.40398 6.83636C0.639979 6.83636 0 7.46483 0 8.23197V8.32652C0 8.9422 0.24796 9.54138 0.70701 9.97147C1.30026 10.5276 2.38164 11.1278 4.0697 11.1278C5.75776 11.1278 6.83927 10.5278 7.43239 9.97231C7.89166 9.54201 8.1394 8.9422 8.1394 8.32652V8.23197C8.1394 7.46483 7.49943 6.83636 6.73542 6.83636H1.40398ZM10.4002 6.83636C9.63616 6.83636 8.99618 7.46483 8.99618 8.23197V8.32568C8.99618 8.94136 9.24393 9.54117 9.70319 9.97147C10.2964 10.5276 11.3778 11.1278 13.0659 11.1278C14.7539 11.1278 15.8355 10.5278 16.4286 9.97231C16.8878 9.54201 17.1356 8.9422 17.1356 8.32652V8.23197C17.1356 7.46483 16.4956 6.83636 15.7316 6.83636H10.4002ZM1.40398 8.12153H6.73542C6.81278 8.12153 6.85424 8.16719 6.85424 8.23197V8.32652C6.85424 8.59932 6.7466 8.85378 6.55386 9.03437C6.17454 9.38963 5.46519 9.84262 4.0697 9.84262C2.67422 9.84262 1.96474 9.38984 1.58554 9.03437C1.39258 8.85358 1.28517 8.59932 1.28517 8.32652V8.23197C1.28517 8.16719 1.32662 8.12153 1.40398 8.12153ZM10.4002 8.12153H15.7316C15.809 8.12153 15.8504 8.16719 15.8504 8.23197V8.32652C15.8504 8.59932 15.7428 8.85378 15.55 9.03437C15.1707 9.38963 14.4614 9.84262 13.0659 9.84262C11.6704 9.84262 10.9609 9.38984 10.5817 9.03437C10.389 8.85378 10.2814 8.59849 10.2814 8.32568V8.23197C10.2814 8.16719 10.3228 8.12153 10.4002 8.12153ZM14.3444 11.9779C14.2165 11.9779 14.0915 12.0161 13.9855 12.0875C13.8794 12.159 13.7971 12.2605 13.749 12.379C13.7009 12.4975 13.6893 12.6276 13.7156 12.7528C13.7419 12.8779 13.805 12.9924 13.8967 13.0815L14.5134 13.6981H10.4955C10.4104 13.6969 10.3259 13.7127 10.2468 13.7444C10.1678 13.7762 10.0959 13.8233 10.0353 13.8831C9.97462 13.9429 9.92647 14.0141 9.8936 14.0927C9.86074 14.1712 9.84381 14.2556 9.84381 14.3407C9.84381 14.4259 9.86074 14.5102 9.8936 14.5887C9.92647 14.6673 9.97462 14.7385 10.0353 14.7983C10.0959 14.8581 10.1678 14.9053 10.2468 14.937C10.3259 14.9688 10.4104 14.9845 10.4955 14.9833H14.5134L13.8967 15.5999C13.8351 15.6592 13.7858 15.7301 13.7519 15.8086C13.718 15.887 13.7001 15.9715 13.6992 16.057C13.6983 16.1425 13.7145 16.2273 13.7468 16.3064C13.7792 16.3856 13.8269 16.4575 13.8874 16.5179C13.9478 16.5784 14.0198 16.6262 14.0989 16.6585C14.1781 16.6908 14.2629 16.707 14.3483 16.7061C14.4338 16.7053 14.5183 16.6873 14.5968 16.6534C14.6752 16.6195 14.7462 16.5703 14.8054 16.5086L16.5189 14.795C16.6394 14.6745 16.7071 14.5111 16.7071 14.3407C16.7071 14.1703 16.6394 14.0069 16.5189 13.8864L14.8054 12.1728C14.7455 12.1111 14.6738 12.0621 14.5946 12.0286C14.5154 11.9951 14.4303 11.9779 14.3444 11.9779ZM2.77198 11.9787C2.6051 11.9836 2.44666 12.0532 2.33021 12.1728L0.616647 13.8864C0.496184 14.0069 0.428513 14.1703 0.428513 14.3407C0.428513 14.5111 0.496184 14.6745 0.616647 14.795L2.33021 16.5086C2.38942 16.5703 2.46034 16.6195 2.53882 16.6534C2.61729 16.6873 2.70175 16.7053 2.78724 16.7061C2.87273 16.707 2.95753 16.6908 3.03668 16.6585C3.11583 16.6262 3.18774 16.5784 3.24819 16.5179C3.30865 16.4575 3.35643 16.3856 3.38874 16.3064C3.42106 16.2273 3.43726 16.1425 3.43639 16.057C3.43552 15.9715 3.4176 15.887 3.38368 15.8086C3.34977 15.7301 3.30053 15.6592 3.23886 15.5999L2.62221 14.9833H6.64004C6.72519 14.9845 6.80973 14.9688 6.88875 14.937C6.96777 14.9053 7.03968 14.8581 7.10033 14.7983C7.16097 14.7385 7.20912 14.6673 7.24199 14.5887C7.27485 14.5102 7.29178 14.4259 7.29178 14.3407C7.29178 14.2556 7.27485 14.1712 7.24199 14.0927C7.20912 14.0141 7.16097 13.9429 7.10033 13.8831C7.03968 13.8233 6.96777 13.7762 6.88875 13.7444C6.80973 13.7127 6.72519 13.6969 6.64004 13.6981H2.62221L3.23886 13.0815C3.33156 12.9912 3.39485 12.875 3.42044 12.7482C3.44603 12.6213 3.43273 12.4897 3.38228 12.3705C3.33183 12.2514 3.24658 12.1502 3.13769 12.0803C3.02879 12.0104 2.90133 11.975 2.77198 11.9787Z" fill="black"/>
+                        </svg>                                            
+                        <i data-i18n="contacts">Contacts</i>
+                    </a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="col-lg-3">
+            <div class="item mining">
+                <h3 data-i18n="mining">Mining</h3>
+                <div class="amount" id="account_softMG"></div>
+                <ul>
+                    <li class="soft-mining"><i data-i18n="soft_mining">Soft mining</i><span data-page="peers" id="connected_indicator"><span></span></span></li>
+                    <li id="forging_indicator"><i data-i18n="hard_mining">Hard mining</i><span></span></li>
+                    <li><i data-i18n="mining_rate">Mining rate</i><span class="rate" id="account_multiplier">0.00%</span></li>
+                </ul>
+            </div>
+        </div>
+        <div class="col-lg-3">
+            <div class="item blocks">
+                <h3 data-i18n="blocks">Blocks</h3>
+                <div class="amount" id="dashboard-amount-blocks">00.000000</div>
+                <ul>
+                    <li><span class="small" data-i18n="last_block">Last</span>
+                        <span class="date" id="dashboard-blocks-lastdate">00.00.0000 | 0:00:00</span>
+                    </a></li>
+                    <li><span class="small" data-i18n="height">Height</span>
+                        <span class="height" id="dashboard-blocks-lastheight">0000000000</span>
+                    </a></li>
+                    <li><a href="#" class="goto-page" data-page="blocks">                                         
+                        <svg width="15" height="15" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M7.49992 0.275146C6.97387 0.275147 6.44817 0.398186 5.96704 0.644531C5.96658 0.644761 5.96612 0.644992 5.96566 0.645223L1.82703 2.77576C1.17948 3.10925 0.770752 3.7792 0.770752 4.50785V10.2174C0.770752 10.9458 1.17902 11.6156 1.82703 11.9488L5.96566 14.08C5.96589 14.0803 5.96612 14.0805 5.96635 14.0807C6.92861 14.5734 8.07054 14.5734 9.0328 14.0807C9.03326 14.0805 9.03372 14.0803 9.03418 14.08L13.1728 11.9488C13.8204 11.6153 14.2284 10.9458 14.2284 10.2174V4.50785C14.2284 3.7796 13.8205 3.10978 13.1728 2.77645H13.1721L9.03418 0.645223C9.03395 0.644992 9.03372 0.644762 9.03349 0.644531C8.55237 0.398185 8.02597 0.275146 7.49992 0.275146ZM7.49992 1.33765C7.85964 1.33765 8.21972 1.42208 8.54928 1.59082L12.6858 3.72066C12.6861 3.72089 12.6863 3.72112 12.6865 3.72135C12.982 3.87331 13.1659 4.1752 13.1659 4.50785V10.2174C13.1659 10.5501 12.9818 10.8522 12.6858 11.0046L8.54858 13.1344C7.88993 13.4717 7.11077 13.4719 6.45194 13.1351L6.45056 13.1344L2.31331 11.0046C2.31331 11.0044 2.31331 11.0041 2.31331 11.0039C2.0178 10.8519 1.83325 10.5501 1.83325 10.2174V4.50785C1.83325 4.17471 2.01736 3.87308 2.31331 3.72066L6.45125 1.59082C6.78081 1.42208 7.1402 1.33765 7.49992 1.33765ZM3.06246 3.99459C2.9433 3.99561 2.82795 4.03665 2.73493 4.11113C2.64191 4.1856 2.57663 4.28919 2.54957 4.40523C2.52252 4.52128 2.53526 4.64306 2.58575 4.75099C2.63623 4.85893 2.72154 4.94676 2.82796 5.00037L5.95597 6.62594C6.27695 6.79263 6.62054 6.88318 6.96867 6.93929V12.1439C6.96767 12.2143 6.98068 12.2842 7.00693 12.3495C7.03318 12.4148 7.07215 12.4743 7.12158 12.5244C7.17101 12.5745 7.22991 12.6144 7.29486 12.6415C7.35981 12.6687 7.42951 12.6827 7.49992 12.6827C7.57032 12.6827 7.64002 12.6687 7.70497 12.6415C7.76992 12.6144 7.82882 12.5745 7.87825 12.5244C7.92768 12.4743 7.96666 12.4148 7.99291 12.3495C8.01916 12.2842 8.03216 12.2143 8.03117 12.1439V6.93929C8.3793 6.88318 8.72219 6.79263 9.04317 6.62594C9.0434 6.62594 9.04363 6.62594 9.04386 6.62594L12.1719 5.00106C12.2338 4.9689 12.2888 4.92486 12.3338 4.87144C12.3787 4.81802 12.4127 4.75628 12.4337 4.68973C12.4548 4.62319 12.4626 4.55314 12.4566 4.4836C12.4506 4.41406 12.4309 4.34638 12.3988 4.28442C12.3666 4.22247 12.3226 4.16746 12.2691 4.12253C12.2157 4.0776 12.154 4.04363 12.0874 4.02256C12.0209 4.00149 11.9508 3.99374 11.8813 3.99974C11.8118 4.00574 11.7441 4.02538 11.6821 4.05754L8.55343 5.68311C8.22508 5.8535 7.86661 5.9377 7.50822 5.93905C7.502 5.93871 7.49577 5.93848 7.48954 5.93835C7.13165 5.93665 6.77356 5.85337 6.44572 5.68311L3.31771 4.05823C3.23931 4.01595 3.15153 3.99407 3.06246 3.99459ZM10.1562 8.07096C10.0153 8.07096 9.88015 8.12693 9.78052 8.22656C9.68089 8.32619 9.62492 8.46132 9.62492 8.60221C9.62492 8.74311 9.68089 8.87823 9.78052 8.97786C9.88015 9.07749 10.0153 9.13346 10.1562 9.13346C10.2971 9.13346 10.4322 9.07749 10.5318 8.97786C10.6314 8.87823 10.6874 8.74311 10.6874 8.60221C10.6874 8.46132 10.6314 8.32619 10.5318 8.22656C10.4322 8.12693 10.2971 8.07096 10.1562 8.07096ZM11.2187 9.48763C11.0778 9.48763 10.9426 9.5436 10.843 9.64323C10.7434 9.74286 10.6874 9.87798 10.6874 10.0189C10.6874 10.1598 10.7434 10.2949 10.843 10.3945C10.9426 10.4942 11.0778 10.5501 11.2187 10.5501C11.3596 10.5501 11.4947 10.4942 11.5943 10.3945C11.6939 10.2949 11.7499 10.1598 11.7499 10.0189C11.7499 9.87798 11.6939 9.74286 11.5943 9.64323C11.4947 9.5436 11.3596 9.48763 11.2187 9.48763ZM9.44783 9.8418C9.30694 9.8418 9.17181 9.89777 9.07218 9.9974C8.97256 10.097 8.91658 10.2322 8.91658 10.373C8.91658 10.5139 8.97256 10.6491 9.07218 10.7487C9.17181 10.8483 9.30694 10.9043 9.44783 10.9043C9.58873 10.9043 9.72386 10.8483 9.82349 10.7487C9.92311 10.6491 9.97908 10.5139 9.97908 10.373C9.97908 10.2322 9.92311 10.097 9.82349 9.9974C9.72386 9.89777 9.58873 9.8418 9.44783 9.8418Z" fill="#FA6800"/>
+                        </svg>                                            
+                        <i data-i18n="explorer">Explorer</i>
+                    </a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="network-stats">
+    <h2 data-i18n="network_stats">Network Stats</h2>
+    <div class="row">
+        <div class="col-lg-3">
+            <div class="item">
+                <h3 data-i18n="amount">Amount</h3>
+                <div class="count" id="network-stats-amount"><span>00.000000</span></div>
+                <div class="description" data-i18n="avg_amount_per_block">Avg. amount per block</div>
+            </div>
+        </div>
+        <div class="col-lg-3">
+            <div class="item">
+                <h3 data-i18n="fee">Fee</h3>
+                <div class="count" id="network-stats-fee">0.000000</div>
+                <div class="description" data-i18n="avg_fee_per_block">Avg. fee per block</div>
+            </div>
+        </div>
+        <div class="col-lg-3">
+            <div class="item">
+                <h3>TRXS</h3>
+                <div class="count" id="network-stats-perhour">0trx</div>
+                <div class="description" data-i18n="transactions_per_hour">Transactions per hour</div>
+            </div>
+        </div>
+        <div class="col-lg-3">
+            <div class="item">
+                <h3 data-i18n="time">Time</h3>
+                <div class="count" id="network-stats-gentime">0s</div>
+                <div class="description" data-i18n="block_generation_time">Block Generation Time</div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="activity" id="transactions_items_dashboard">
+    <div class="filter d-flex align-items-center justify-content-between">
+        <h2 data-i18n="activity">Activity</h2>
+        <div class="tabs">
+            <ul class="d-flex align-items-center justify-content-end">
+                <li><a href="javascript:void(0);" class="active" id="transactions-tab" data-i18n="transactions">Transactions</a></li>
+                <li><a href="javascript:void(0);" id="messages-tab" data-i18n="blocks">Blocks</a></li>
+                <li><a href="#" class="view-all goto-page" data-page="transactions" data-i18n="view_all">View all</a></li>
+            </ul>
+        </div>
+    </div>
+    <div class="items messages">
+        <div class="item">
+            <div class="blocks d-flex justify-content-between align-items-center">
+                <div class="height"><a href="#">0000000</a></div>
+                <div class="date">00.00.0000 00:00:00</div>
+                <div class="amount">0</div>
+                <div class="fee">0</div>
+                <div class="tx">0</div>
+                <div class="generator"><a href="#">You</a></div>
+            </div>
+        </div>
+        <div class="item">
+            <div class="blocks d-flex justify-content-between align-items-center">
+                <div class="height"><a href="#">0000000</a></div>
+                <div class="date">00.00.0000 00:00:00</div>
+                <div class="amount">0</div>
+                <div class="fee">0</div>
+                <div class="tx">0</div>
+                <div class="generator"><a href="#">You</a></div>
+            </div>
+        </div>
+        <div class="item">
+            <div class="blocks d-flex justify-content-between align-items-center">
+                <div class="height"><a href="#">0000000</a></div>
+                <div class="date">00.00.0000 00:00:00</div>
+                <div class="amount">0</div>
+                <div class="fee">0</div>
+                <div class="tx">0</div>
+                <div class="generator"><a href="#">You</a></div>
+            </div>
+        </div>
+        <div class="item">
+            <div class="blocks d-flex justify-content-between align-items-center">
+                <div class="height"><a href="#">0000000</a></div>
+                <div class="date">00.00.0000 00:00:00</div>
+                <div class="amount">0</div>
+                <div class="fee">0</div>
+                <div class="tx">0</div>
+                <div class="generator"><a href="#">You</a></div>
+            </div>
+        </div>
+        <div class="item">
+            <div class="blocks d-flex justify-content-between align-items-center">
+                <div class="height"><a href="#">0000000</a></div>
+                <div class="date">00.00.0000 00:00:00</div>
+                <div class="amount">0</div>
+                <div class="fee">0</div>
+                <div class="tx">0</div>
+                <div class="generator"><a href="#">You</a></div>
+            </div>
+        </div>
+        <div class="item">
+            <div class="blocks d-flex justify-content-between align-items-center">
+                <div class="height"><a href="#">0000000</a></div>
+                <div class="date">00.00.0000 00:00:00</div>
+                <div class="amount">0</div>
+                <div class="fee">0</div>
+                <div class="tx">0</div>
+                <div class="generator"><a href="#">You</a></div>
+            </div>
+        </div>
+    </div>
+    <div class="items transactions open">
+        <div class="item">
+            <div class="info d-flex justify-content-between align-items-center">
+                    <div class="left d-flex justify-content-between align-items-center">
+                        <div class="date">00.00.0000 00:00:00</div>
+                        <div class="transaction-status payment"></div>
+                        <div class="status red">- 00.00</div>
+                    </div>
+                    <div class="right d-flex justify-content-between align-items-center">
+                        <div class="who">You</div>
+                        <div class="direction from"></div>
+                        <div class="wallet">BND-AAAA-AAAA-AAAA-AAAAL</div>
+                        <button class="arrow down"></button>
+                    </div>
+            </div>
+            <div class="value">
+                <div class="wrapper d-flex justify-content-between align-items-start">
+                    <div class="left">
+                        <div class="from d-flex justify-content-between align-items-start">
+                            <div class="title">From</div>
+                            <div class="wallet">BND-AAAA-AAAA-AAAA-AAAAL</div>
+                            <button class="copy-clipboard"></button>
+                        </div>
+                        <div class="to d-flex justify-content-between align-items-start">
+                            <div class="title">To</div>
+                            <div class="wallet">BND-AAAA-AAAA-AAAA-AAAAG</div>
+                            <button class="copy-clipboard"></button>
+                        </div>
+                        <div class="bottom d-flex justify-content-between">
+                            <div class="type"><span class="title">Type</span> <span>Payments</span></div>
+                            <div class="type"><span class="title">Fee</span> <span>0000 BND</span></div>
+                        </div>
+                    </div>
+                    <div class="right">
+                        <div class="height d-flex align-items-start justify-content-between">Height <span>0001000</span></div>
+                        <div class="confirmations d-flex align-items-start justify-content-between">Confirmations <span>00010</span> <button class="refresh"></button></div>
+                        <div class="id d-flex align-items-start justify-content-between">ID <span>000000100000010000001</span> <button class="copy-clipboard"></button></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="item">
+            <div class="info d-flex justify-content-between align-items-center">
+                    <div class="left d-flex justify-content-between align-items-center">
+                        <div class="date">00.00.0021 00:00:00</div>
+                        <div class="transaction-status mining"></div>
+                        <div class="status green">+ 0000.00</div>
+                    </div>
+                    <div class="right d-flex justify-content-between align-items-center">
+                        <div class="who">You</div>
+                        <div class="direction to"></div>
+                        <div class="wallet">BND-TKZX-VNP8-YP2G-CXS3L</div>
+                        <button class="arrow down"></button>
+                    </div>
+            </div>
+            <div class="value">
+                <div class="wrapper d-flex justify-content-between align-items-start">
+                    <div class="left">
+                        <div class="from d-flex justify-content-between align-items-start">
+                            <div class="title">From</div>
+                            <div class="wallet">BND-TKZX-VNP8-YP2G-CXS3L</div>
+                            <button class="copy-clipboard"></button>
+                        </div>
+                        <div class="to d-flex justify-content-between align-items-start">
+                            <div class="title">To</div>
+                            <div class="wallet">BND-ZZ3X-XXP9-H52W-3XD6G</div>
+                            <button class="copy-clipboard"></button>
+                        </div>
+                        <div class="bottom d-flex justify-content-between">
+                            <div class="type"><span class="title">Type</span> <span>Payments</span></div>
+                            <div class="type"><span class="title">Fee</span> <span>10 BND</span></div>
+                        </div>
+                    </div>
+                    <div class="right">
+                        <div class="height d-flex align-items-start justify-content-between">Height <span>1181162</span></div>
+                        <div class="confirmations d-flex align-items-start justify-content-between">Confirmations <span>254</span> <button class="refresh"></button></div>
+                        <div class="id d-flex align-items-start justify-content-between">ID <span>16241675948697941884</span> <button class="copy-clipboard"></button></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="item">
+            <div class="info d-flex justify-content-between align-items-center">
+                    <div class="left d-flex justify-content-between align-items-center">
+                        <div class="date">24.06.2021 23:57:25</div>
+                        <div class="transaction-status mining"></div>
+                        <div class="status blue">+ 17590.55</div>
+                    </div>
+                    <div class="right d-flex justify-content-between align-items-center">
+                        <div class="who">You</div>
+                        <div class="direction from"></div>
+                        <div class="wallet">BND-TKZX-VNP8-YP2G-CXS3L</div>
+                        <button class="arrow down"></button>
+                    </div>
+            </div>
+            <div class="value">
+                <div class="wrapper d-flex justify-content-between align-items-start">
+                    <div class="left">
+                        <div class="from d-flex justify-content-between align-items-start">
+                            <div class="title">From</div>
+                            <div class="wallet">BND-TKZX-VNP8-YP2G-CXS3L</div>
+                            <button class="copy-clipboard"></button>
+                        </div>
+                        <div class="to d-flex justify-content-between align-items-start">
+                            <div class="title">To</div>
+                            <div class="wallet">BND-ZZ3X-XXP9-H52W-3XD6G</div>
+                            <button class="copy-clipboard"></button>
+                        </div>
+                        <div class="bottom d-flex justify-content-between">
+                            <div class="type"><span class="title">Type</span> <span>Payments</span></div>
+                            <div class="type"><span class="title">Fee</span> <span>10 BND</span></div>
+                        </div>
+                    </div>
+                    <div class="right">
+                        <div class="height d-flex align-items-start justify-content-between">Height <span>1181162</span></div>
+                        <div class="confirmations d-flex align-items-start justify-content-between">Confirmations <span>254</span> <button class="refresh"></button></div>
+                        <div class="id d-flex align-items-start justify-content-between">ID <span>16241675948697941884</span> <button class="copy-clipboard"></button></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="item">
+            <div class="info d-flex justify-content-between align-items-center">
+                    <div class="left d-flex justify-content-between align-items-center">
+                        <div class="date">24.06.2021 23:57:25</div>
+                        <div class="transaction-status payment"></div>
+                        <div class="status red">- 17590.55</div>
+                    </div>
+                    <div class="right d-flex justify-content-between align-items-center">
+                        <div class="who">You</div>
+                        <div class="direction from"></div>
+                        <div class="wallet">BND-TKZX-VNP8-YP2G-CXS3L</div>
+                        <button class="arrow down"></button>
+                    </div>
+            </div>
+            <div class="value">
+                <div class="wrapper d-flex justify-content-between align-items-start">
+                    <div class="left">
+                        <div class="from d-flex justify-content-between align-items-start">
+                            <div class="title">From</div>
+                            <div class="wallet">BND-TKZX-VNP8-YP2G-CXS3L</div>
+                            <button class="copy-clipboard"></button>
+                        </div>
+                        <div class="to d-flex justify-content-between align-items-start">
+                            <div class="title">To</div>
+                            <div class="wallet">BND-ZZ3X-XXP9-H52W-3XD6G</div>
+                            <button class="copy-clipboard"></button>
+                        </div>
+                        <div class="bottom d-flex justify-content-between">
+                            <div class="type"><span class="title">Type</span> <span>Payments</span></div>
+                            <div class="type"><span class="title">Fee</span> <span>10 BND</span></div>
+                        </div>
+                    </div>
+                    <div class="right">
+                        <div class="height d-flex align-items-start justify-content-between">Height <span>1181162</span></div>
+                        <div class="confirmations d-flex align-items-start justify-content-between">Confirmations <span>254</span> <button class="refresh"></button></div>
+                        <div class="id d-flex align-items-start justify-content-between">ID <span>16241675948697941884</span> <button class="copy-clipboard"></button></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="item">
+            <div class="info d-flex justify-content-between align-items-center">
+                    <div class="left d-flex justify-content-between align-items-center">
+                        <div class="date">24.06.2021 23:57:25</div>
+                        <div class="transaction-status mining"></div>
+                        <div class="status green">+ 17590.55</div>
+                    </div>
+                    <div class="right d-flex justify-content-between align-items-center">
+                        <div class="who">You</div>
+                        <div class="direction to"></div>
+                        <div class="wallet">BND-TKZX-VNP8-YP2G-CXS3L</div>
+                        <button class="arrow down"></button>
+                    </div>
+            </div>
+            <div class="value">
+                <div class="wrapper d-flex justify-content-between align-items-start">
+                    <div class="left">
+                        <div class="from d-flex justify-content-between align-items-start">
+                            <div class="title">From</div>
+                            <div class="wallet">BND-TKZX-VNP8-YP2G-CXS3L</div>
+                            <button class="copy-clipboard"></button>
+                        </div>
+                        <div class="to d-flex justify-content-between align-items-start">
+                            <div class="title">To</div>
+                            <div class="wallet">BND-ZZ3X-XXP9-H52W-3XD6G</div>
+                            <button class="copy-clipboard"></button>
+                        </div>
+                        <div class="bottom d-flex justify-content-between">
+                            <div class="type"><span class="title">Type</span> <span>Payments</span></div>
+                            <div class="type"><span class="title">Fee</span> <span>10 BND</span></div>
+                        </div>
+                    </div>
+                    <div class="right">
+                        <div class="height d-flex align-items-start justify-content-between">Height <span>1181162</span></div>
+                        <div class="confirmations d-flex align-items-start justify-content-between">Confirmations <span>254</span> <button class="refresh"></button></div>
+                        <div class="id d-flex align-items-start justify-content-between">ID <span>16241675948697941884</span> <button class="copy-clipboard"></button></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="item">
+            <div class="info d-flex justify-content-between align-items-center">
+                    <div class="left d-flex justify-content-between align-items-center">
+                        <div class="date">24.06.2021 23:57:25</div>
+                        <div class="transaction-status mining"></div>
+                        <div class="status blue">+ 17590.55</div>
+                    </div>
+                    <div class="right d-flex justify-content-between align-items-center">
+                        <div class="who">You</div>
+                        <div class="direction from"></div>
+                        <div class="wallet">BND-TKZX-VNP8-YP2G-CXS3L</div>
+                        <button class="arrow down"></button>
+                    </div>
+            </div>
+            <div class="value">
+                <div class="wrapper d-flex justify-content-between align-items-start">
+                    <div class="left">
+                        <div class="from d-flex justify-content-between align-items-start">
+                            <div class="title">From</div>
+                            <div class="wallet">BND-TKZX-VNP8-YP2G-CXS3L</div>
+                            <button class="copy-clipboard"></button>
+                        </div>
+                        <div class="to d-flex justify-content-between align-items-start">
+                            <div class="title">To</div>
+                            <div class="wallet">BND-ZZ3X-XXP9-H52W-3XD6G</div>
+                            <button class="copy-clipboard"></button>
+                        </div>
+                        <div class="bottom d-flex justify-content-between">
+                            <div class="type"><span class="title">Type</span> <span>Payments</span></div>
+                            <div class="type"><span class="title">Fee</span> <span>10 BND</span></div>
+                        </div>
+                    </div>
+                    <div class="right">
+                        <div class="height d-flex align-items-start justify-content-between">Height <span>1181162</span></div>
+                        <div class="confirmations d-flex align-items-start justify-content-between">Confirmations <span>254</span> <button class="refresh"></button></div>
+                        <div class="id d-flex align-items-start justify-content-between">ID <span>16241675948697941884</span> <button class="copy-clipboard"></button></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+

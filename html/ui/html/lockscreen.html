@@ -1,0 +1,121 @@
+<!--~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  ~ Copyright © 2020-2021    The BENED Developers.                               ~
+  ~                                                                           ~
+  ~ See the AUTHORS.txt, DEVELOPER-AGREEMENT.txt and LICENSE.txt files at     ~
+  ~ the top-level directory of this distribution for the individual copyright ~
+  ~ holder information and the developer policies on copyright and licensing. ~
+  ~                                                                           ~
+  ~ Unless otherwise agreed in a custom licensing agreement, no part of the   ~
+  ~ BENED software, including this file, may be copied, modified, propagated, ~
+  ~ or distributed except according to the terms contained in the LICENSE.txt ~
+  ~ file.                                                                     ~
+  ~                                                                           ~
+  ~ Removal or modification of this copyright notice is prohibited.           ~
+  ~                                                                           ~
+  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~-->
+
+  <div id="lockscreen">
+    <div id="old_browser_warning" style="display:none;margin-left:auto;margin-right:auto;margin-top:200px;background:white;color:black;padding:20px;width:300px;" data-i18n="old_browser_warning">You are using an old browser which this application does not support.</div>
+
+    <div class="bened-intro d-flex justify-content-center">
+        <div class="items d-flex flex-column align-items-center">
+            <div class="logo">
+                <img src="img/bened-intro-2.png" alt="Bened" class="img-fluid">
+            </div>
+            <div class="enter">
+                <div class="access">
+                    <div class="wallet-choice" id="login_account_container">
+                        <h3 data-i18n="select_account_to_login">Select an account to login with</h3>
+                        <div class="form d-flex align-items-center">
+                            <button class="account loginButtons" type="button" id="loginButtons" data-toggle="button" data-login-type="password" aria-pressed="false">
+                                <input type="hidden" name="loginType" id="passwordLogin" value="password" autocomplete="off" />
+                            </button>
+                            <div class="select-account-value" data-i18n="select_account">Select an account</div>
+                            <div class="variants">
+                                <ul class="dropdown-menu" role="menu" aria-labelledby="dropdownMenu1" id="login_account">
+                                </ul>
+                            </div>
+                            <button class="connect" id="dropdownMenu1" data-toggle="dropdown"></button>
+                        </div>
+                    </div>
+                    <div class="wallet" id="login_account_container_other">
+                        <div class="form d-flex align-items-center">
+                            <button class="account loginButtons" type="button" id="loginButtons" data-toggle="button" data-login-type="password" aria-pressed="false">
+                                <input type="hidden" name="loginType" id="passwordLogin" value="password" autocomplete="off" />
+                            </button>
+                            <input type="text" placeholder="BENED-XXXX-XXXX-XXXXX" id="login_account_other" name="login_account_other">
+                            <button class="connect" onclick="NRS.login(0,$('#login_account_other').val())"></button>
+                        </div>
+                    </div>
+                    <div class="passphrase">
+                        <div class="form d-flex align-items-center">
+                            <!-- <button class="password"></button> -->
+                            <button class="password loginButtons" type="button" id="loginButtons" data-toggle="button" data-login-type="account" aria-pressed="false">
+                                <input type="hidden" name="loginType" id="accountLogin" value="account" autocomplete="off" />
+                            </button>
+                            <input type="password" placeholder="Your passphrase" id="login_password" name="login_password">
+                            <button class="hide-pass" onclick="showPasswordText();"></button>
+                            <button class="connect" onclick="NRS.login(1,$('#login_password').val())"></button>
+                        </div>
+                    </div>
+                    <div class="remember d-flex align-items-center justify-content-end">
+                        <div class="box" id="remember_password_container" style="display: none;">
+                            <input type="checkbox" name="remember_password" id="remember_password" value="1">
+                            <label for="remember_password" data-i18n="remember_passphrase_during_session">Remember passphrase during session</label>
+                        </div>
+                        <div class="box" id="remember_account_container">
+                            <input type="checkbox" name="remember_account" id="remember_account" value="1">
+                            <label for="remember_account" data-i18n="remember_account">Remember Account</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="bottom">
+                <button type="button" data-toggle="modal" data-target="#createWalletModal" data-i18n="no_account_q_create_account"></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal -->
+    <div class="modal fade" id="createWalletModal" tabindex="-1" aria-labelledby="createWalletModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+            <div class="title">
+                <h5 class="modal-title" id="createWalletModalLabel" data-i18n="sign_up">Sign Up</h5>
+                <div class="sub-title" data-i18n="create_new_account">Create new account</div>
+            </div>
+            <button type="button" class="btn-close" data-dismiss="modal" aria-label="Close">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <g opacity="0.75">
+                    <path d="M1 1L15 15" stroke="black" stroke-width="1.85022" stroke-linecap="round"/>
+                    <path d="M15 1L1 15" stroke="black" stroke-width="1.85022" stroke-linecap="round"/>
+                    </g>
+                </svg>
+            </button>
+            </div>
+            <div class="modal-body">
+            <h2 data-i18n="generated_passphrase">Generated passphrase:</h2>
+            <div class="generated-pass" id="generated-passphrase-field" data-phrase="">
+                <div class="pass-value"></div>
+                <button class="btn-copy" type="button"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M2.66659 0.833374C1.65367 0.833374 0.833252 1.65379 0.833252 2.66671V15.5H2.66659V2.66671H15.4999V0.833374H2.66659ZM6.33325 4.50004C5.32034 4.50004 4.49992 5.32046 4.49992 6.33337V17.3334C4.49992 18.3463 5.32034 19.1667 6.33325 19.1667H17.3333C18.3462 19.1667 19.1666 18.3463 19.1666 17.3334V6.33337C19.1666 5.32046 18.3462 4.50004 17.3333 4.50004H6.33325ZM6.33325 6.33337H17.3333V17.3334H6.33325V6.33337Z" fill="black"/></svg></button>
+            </div>
+            <div class="note" data-i18n="passphrase_note">
+                Copy your passphrase now in a safe place. If you lose your private key, you will foverever lose access to your wallet
+            </div>
+            </div>
+            <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-dismiss="modal" data-i18n="close">Close</button>
+            <button type="button" class="btn btn-green" data-dismiss="modal" id="passphrase-sign-up" data-i18n="sign_up">Sign Up</button>
+            </div>
+        </div>
+        </div>
+    </div>
+
+
+
+    <!-- this dummy checkbox corrects rendering problem of checkboxes when using desktop application on Linux -->
+    <div id="dummyCheckbox" style="display: none;">
+        <input type="checkbox" disabled>
+    </div>
+</div>

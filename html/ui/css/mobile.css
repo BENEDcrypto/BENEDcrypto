@@ -1,0 +1,684 @@
+@media (min-width:992px) and (max-width:1350px) {
+    .bened-main .left-panel {
+        -ms-flex: 0 0 23%;
+        flex: 0 0 23%;
+        max-width: 23%;
+    }
+    .bened-main .dashboard {
+        -ms-flex: 0 0 77%;
+        flex: 0 0 77%;
+        max-width: 77%;
+    }
+    .bened-main .left-panel .card .address a {
+        font-size: 12px;
+    }
+    .bened-main .left-panel .card .address {
+        padding: 11px 5px 11px 5px;
+    }
+    .bened-main .dashboard .dashboard-info .item ul li {
+        height: 40px;
+        font-size: 11px;
+        line-height: 30px;
+    }
+    .bened-main .dashboard .dashboard-info .item ul li a {
+        font-size: 12px;
+    }
+    .bened-main .dashboard .dashboard-info .item.affilated ul li.partners span {
+        font-size: 12px;
+    }
+    .bened-main .dashboard .dashboard-info .item ul li svg {
+        margin: 0px 10px 0px 0px;
+    }
+    .bened-main .dashboard .dashboard-info .item.mining ul li .rate {
+        font-size: 12px;
+    }
+    .bened-main .dashboard .activity .items .item .info .left {
+        width: 45%;
+    }
+    .bened-main .dashboard .activity .items .item .info .right {
+        width: 60%;
+    }
+    .bened-main .dashboard .activity .items .item .value .left, 
+    .bened-main .dashboard .activity .items .item .value .right {
+        width: 45%;
+    }
+    .bened-main .dashboard .dashboard-info .item.balance ul li:first-child a span {
+        font-size: 11px;
+        padding: 0px 4px 0px;
+    }
+}
+@media (min-width:768px) and (max-width:991px) {
+    .bened-main .left-panel {
+        -ms-flex: 0 0 29%;
+        flex: 0 0 29%;
+        max-width: 29%;
+    }
+    .bened-main .dashboard {
+        -ms-flex: 0 0 71%;
+        flex: 0 0 71%;
+        max-width: 71%;
+    }
+    .bened-main .left-panel .set-account-info a:after {
+        width: 6px;
+        height: 12px;
+        right: 9px;
+        top: 6px;
+    }
+    .bened-main .left-panel .progress-bar {
+        font-size: 12px;
+    }
+    .bened-main .left-panel .card .address a {
+        font-size: 11px;
+    }
+    .bened-main .left-panel .card .address {
+        padding: 11px 5px 11px 5px;
+    }
+    .bened-main .left-panel .menu li a {
+        font-size: 14px;
+    }
+    .bened-main .left-panel .menu li a {
+        padding: 10px 14px 10px;
+    }
+    .bened-main .left-panel .menu li a svg {
+        margin: 0px 14px 0px 0px;
+        width: 19px;
+    }
+    .bened-main .left-panel .menu li.active a:after {
+        width: 7px;
+        height: 13px;
+    }
+    .bened-main .left-panel .menu li a:after {
+        width: 7px;
+        height: 13px;
+    }
+    .bened-main .left-panel .copy-block button {
+        padding: 5px 5px;
+    }
+    .bened-main .left-panel .search-address input {
+        font-size: 14px;
+    }
+    .bened-main .dashboard .dashboard-info .item ul li .small {
+        font-size: 14px;
+    }
+    .bened-main .dashboard .dashboard-info .item {
+        margin-bottom: 15px;
+    }
+    .bened-main .dashboard .dashboard-info .col-lg-3 {
+        width: 50%;
+    }
+    .bened-main .dashboard .network-stats .item {
+        margin-bottom: 15px;
+    }
+    .bened-main .dashboard .network-stats .col-lg-3 {
+        width: 50%;
+    }
+    .bened-main .dashboard .activity .items .item .info .left {
+        width: 48%;
+        align-items: start!important;
+    }
+    .bened-main .dashboard .activity .items .item .info .right {
+        width: 60%;
+        align-items: start!important;
+    }
+    .bened-main .dashboard .activity .items .item .info .direction.from {
+        margin: 0px 20px;
+    }
+    .bened-main .dashboard .activity .items .item .info .who, .bened-main .dashboard .activity .items .item .info .who a {
+        font-size: 12px;
+    }
+    .bened-main .dashboard .activity .items .item .info .left {
+        -ms-flex-pack: justify!important;
+        justify-content: start!important;
+    }
+    .bened-main .dashboard .activity .items .item .info .transaction-status {
+        margin: 0px 15px;
+    }
+    .bened-main .dashboard .activity .items .item .value .left, .bened-main .dashboard .activity .items .item .value .right {
+        width: 47%;
+        align-items: start!important;
+    }
+    .bened-main .dashboard .activity .items .item .info .date {
+        font-size: 12px;
+        max-width: 70px;
+    }
+    .bened-main .dashboard .activity .items .item .info .status {
+        font-size: 12px;
+    }
+    .bened-main .dashboard .activity .items .item .info .wallet {
+        font-size: 12px;
+    }
+    .bened-main .dashboard .activity .items .item .info .who {
+        font-size: 12px;
+    }
+    .bened-main .dashboard .activity .items .item .info .direction {
+        margin: 0px 15px;
+    }
+    .bened-main .dashboard .activity .items .item .info .arrow {
+        margin: 0px 5px 0px 5px;
+    }
+    .bened-main .dashboard .activity .items .item .info .arrow.down:before {
+        width: 15px;
+        height: 9px;
+    }
+    .bened-main .dashboard .activity .items .item .info {
+        align-items: start!important;
+    }
+    .bened-main .dashboard .activity .items .item .info .transaction-status.payment:before {
+        width: 19px;
+        height: 22px;
+    }
+    .bened-main .dashboard .activity .items .item .info .transaction-status.mining:before {
+        width: 19px;
+        height: 22px;
+    }
+    .bened-main .dashboard .activity .items .item .value .from .title, .bened-main .dashboard .activity .items .item .value .to .title, .bened-main .dashboard .activity .items .item .value .bottom .title {
+        width: 45px;
+        margin: 0px 10px 25px 0px;
+    }
+    .bened-main .dashboard .activity .items .item .value .type {
+        /* width: 45px; */
+        font-size: 12px;
+        margin: 0px 10px 0px 0px;
+    }
+    .bened-main .dashboard .activity .items .item .value .right>div {
+        margin: 0px 0px 25px;
+    }
+    .bened-main .dashboard .activity .items .item .value .from .wallet,
+    .bened-main .dashboard .activity .items .item .value .from .wallet a {
+        font-size: 12px;
+    }
+    .bened-main .dashboard .activity .items .item .value .to .wallet {
+        font-size: 12px;
+    }
+    .bened-main .dashboard .activity .items .item .value .type span.title {
+        font-size: 12px;
+    }
+    .bened-main .dashboard .activity .items .item .value .right .height span {
+        font-size: 12px;
+    }
+    .bened-main .dashboard .activity .items .item .value .right .confirmations span {
+        font-size: 12px;
+    }
+    .bened-main .dashboard .activity .items .item .value .right .id span {
+        font-size: 12px;
+    }
+    .bened-main .dashboard .activity .items .item .value .right .height, 
+    .bened-main .dashboard .activity .items .item .value .right .confirmations, 
+    .bened-main .dashboard .activity .items .item .value .id {
+        width: 180px;
+    } 
+    .bened-main .dashboard .activity .items .item .value .right .id .copy-clipboard {
+        position: absolute;
+        right: -22px;
+        top: 2px;
+        width: 11px;
+        height: 15px;
+    }
+    .bened-main .dashboard .activity .items .item .value .right .confirmations .refresh {
+        width: 11px;
+        height: 13px;
+        right: -21px;
+        top: 3px;
+    }
+}
+@media (max-width:767px) {
+    #blocks_page .content-header, #peers_page .content-header {
+        display: block;
+    }
+    #blocks_page .content-header >div, #peers_page .content-header > div {
+        margin: 0px 0px 10px 10px;
+    }
+    #transactions_page .nav>li {
+        width: 49%;
+        text-align: center;
+    }
+    #transactions_page .content {
+        padding: 0px;
+    }
+    .bened-main .dashboard #transactions_items {
+        padding: 0px 0px 0px;
+        overflow-x: scroll;
+        position: relative;
+    }
+    .bened-main .dashboard #transactions_page .activity .items {
+        position: relative;
+        width: 600px;
+    }
+    .bened-main {
+        height: 100%;
+    }
+    .bened-main .left-panel {
+        /* display: none; */
+        position: absolute!important;
+        top: 0;
+        height: 100%;
+        -ms-flex: 0 0 100%;
+        flex: 0 0 100%;
+        max-width: 100%;
+        left: 0;
+        z-index: 100;
+        box-shadow: none;
+    }
+    .bened-main .dashboard { 
+        padding: 10px 15px 15px 15px;
+        -ms-flex: 0 0 100%;
+        flex: 0 0 100%;
+        max-width: 100%;
+    }
+    .bened-main .dashboard .d-header {
+        padding: 13px 7px 15px 0px;
+    }
+    .bened-main .dashboard .dashboard-info {
+        padding: 0px 0px 15px;
+    }
+    .bened-main .dashboard .dashboard-info .col-lg-3 {
+        width: 50%;
+    }
+    .bened-main .dashboard .network-stats .item {
+        margin-bottom: 15px;
+    }
+    .bened-main .dashboard .dashboard-info .item {
+        margin-bottom: 15px;
+    }
+    .bened-main .dashboard .network-stats .col-lg-3 {
+        width: 50%;
+    }
+    .bened-main .dashboard .account .user {
+        display:none;
+    }
+    .bened-main .left-panel .copy-bar button {
+        background: #F3F3F3;
+        border: 0px;
+        padding: 6px 20px 5px 20px;
+        border-radius: 5px;
+        margin-right: 5px;
+        font-size: 14px;
+    }
+    .dash-top {
+        margin-top:40px;
+        transition: all 0.2s ease-in-out;
+    }
+    .bened-main .left-panel .bottom-bar {
+        position: fixed;
+        width: 100%;
+        bottom: 0;
+        z-index: 10;
+    }
+    .bened-main .left-panel .bottom-bar .dashboard {
+        padding:0px;
+        height: auto;
+        overflow-y: unset;
+        position: initial;
+        background: transparent;
+        display: block;
+    }
+    .bened-main .left-panel .menu .dashboard {
+        display: block;
+        position: initial;
+    }
+    .bened-main .left-panel {
+        border-right:0px;
+    }
+    .bened-main .dashboard .account .buttons {
+        margin-bottom: 15px;
+        margin-top: 10px;
+        order: -1;
+    }
+    .bened-main .dashboard .right,
+    .bened-main .dashboard .p-info .left,
+    .bened-main .dashboard .account .left {
+        padding: 0px 0px 0px 0px;
+    }
+    .bened-main .dashboard .row {
+        margin:0px;
+    }
+    .bened-main .dashboard .tabs {
+        width: 100%;
+    }
+    .bened-main .dashboard .tabs ul li:last-child a.active {
+        margin-left: -20px;
+        width: 110%;
+    }
+    .bened-main .dashboard .tabs ul li:first-child a {
+        border-top-left-radius: 10px;
+        border-bottom-left-radius: 10px;
+        border-right: 0px;
+        margin-right: 0px;
+    }
+    .bened-main .dashboard .tabs ul li:last-child a {
+        width: 0px;
+    }
+    .bened-main .dashboard .tabs ul li:first-child a.active {
+        margin-right: 0px;
+    }
+    .bened-main .dashboard .account .col-lg-6.right {
+        -ms-flex-order: 1;
+        order: 1;
+        flex-direction: column;
+        display: flex;
+    }
+    .bened-main .dashboard .account .col-lg-6.left {
+        -ms-flex-order: 2;
+        order: 2;
+    }
+    .bened-main .dashboard .p-info .last-block {
+        margin-bottom:10px;
+    }
+    .bened-main .left-panel .progress-bar {
+        font-size: 14px;
+        position: relative;
+        width: 100%;
+        bottom: auto;
+        margin-bottom: 15px;
+        margin-top: 10px;
+    }
+    .bened-main .dashboard .activity {
+        position: relative;
+        overflow-x: scroll;
+    }
+    .bened-main .dashboard .activity .items {
+        padding-bottom: 0px;
+        width: 600px;
+    }
+    .bened-main .left-panel .progress-bar.close {
+        display:none;
+    }
+    .bened-main .dashboard .activity .items .item .info .left {
+        width: 48%;
+        align-items: start!important;
+    }
+    .bened-main .dashboard .activity .items .item .value .from .wallet, .bened-main .dashboard .activity .items .item .value .from .wallet a {
+        font-size: 12px;
+    }
+    .bened-main .dashboard .activity .items .item .value .to .wallet, .bened-main .dashboard .activity .items .item .value .to .wallet a {
+        font-size: 12px;
+    }
+    .bened-main .dashboard .activity .items .item .info .right {
+        width: 62%;
+        align-items: start!important;
+    }
+    .bened-main .dashboard .activity .items .item .info .left {
+        -ms-flex-pack: justify!important;
+        justify-content: start!important;
+    }
+    .bened-main .dashboard .activity .items .item .info .transaction-status {
+        margin: 0px 15px;
+    }
+    .bened-main .dashboard .activity .items .item .value .left, .bened-main .dashboard .activity .items .item .value .right {
+        width: 47%;
+        align-items: start!important;
+    }
+    .bened-main .dashboard .activity .items .item .info .date {
+        font-size: 12px;
+        max-width: 70px;
+    }
+    .bened-main .dashboard .activity .items .item .info .status {
+        font-size: 12px;
+    }
+    .bened-main .dashboard .activity .items .item .info .wallet {
+        font-size: 12px;
+    }
+    .bened-main .dashboard .activity .items .item .info .who {
+        font-size: 12px;
+    }
+    .bened-main .dashboard .activity .items .item .info .direction {
+        margin: 0px 15px;
+    }
+    .bened-main .dashboard .activity .items .item .info .arrow {
+        margin: 0px 5px 0px 5px;
+    }
+    .bened-main .dashboard .activity .items .item .info .arrow.down:before {
+        width: 15px;
+        height: 9px;
+    }
+    .bened-main .dashboard .activity .items .item .info {
+        align-items: start!important;
+    }
+    .bened-main .dashboard .activity .items .item .info .transaction-status.payment:before {
+        width: 19px;
+        height: 22px;
+    }
+    .bened-main .dashboard .activity .items .item .info .transaction-status.mining:before {
+        width: 19px;
+        height: 22px;
+    }
+    .bened-main .dashboard .activity .items .item .value .from .title, .bened-main .dashboard .activity .items .item .value .to .title, .bened-main .dashboard .activity .items .item .value .bottom .title {
+        width: 45px;
+        margin: 0px 10px 25px 0px;
+    }
+    .bened-main .dashboard .activity .items .item .value .type {
+        width: 45px;
+        font-size: 12px;
+        margin: 0px 10px 0px 0px;
+    }
+    .bened-main .dashboard .activity .items .item .value .right>div {
+        margin: 0px 0px 25px;
+    }
+    .bened-main .dashboard .activity .items .item .value .from .wallet {
+        font-size: 12px;
+    }
+    .bened-main .dashboard .activity .items .item .value .to .wallet {
+        font-size: 12px;
+    }
+    .bened-main .dashboard .activity .items .item .value .type span.title {
+        font-size: 12px;
+    }
+    .bened-main .dashboard .activity .items .item .value .right .height span {
+        font-size: 12px;
+    }
+    .bened-main .dashboard .activity .items .item .value .right .confirmations span {
+        font-size: 12px;
+    }
+    .bened-main .dashboard .activity .items .item .value .right .id span {
+        font-size: 12px;
+    }
+    .bened-main .dashboard .activity .items .item .value .right .height, 
+    .bened-main .dashboard .activity .items .item .value .right .confirmations, 
+    .bened-main .dashboard .activity .items .item .value .id {
+        width: 180px;
+    } 
+    .bened-main .dashboard .activity .items .item .value .right .id .copy-clipboard {
+        position: absolute;
+        right: -22px;
+        top: 2px;
+        width: 11px;
+        height: 15px;
+    }
+    .bened-main .dashboard .activity .items .item .value .right .confirmations .refresh {
+        width: 11px;
+        height: 13px;
+        right: -21px;
+        top: 3px;
+    }
+    .bened-main .left-panel .copy-block>div {
+        width:30%;
+    }
+    .bened-main .left-panel .copy-block button {
+        font-size: 14px;
+        line-height: 18px;
+        padding: 5px 20px;
+        width: 100%;
+    }
+    .bened-main .left-panel .card .address a {
+        font-size: 16px;
+    }
+    .bened-intro .items .enter .access .wallet-choice .select-account-value {
+        width: 233px;
+    }
+    .bened-intro .items .enter .access .wallet-choice .variants {
+        top: 41px;
+        width: 267px;
+        left: 20px;
+    }
+    .bened-intro .items .enter .remember {
+        -ms-flex-wrap: wrap!important;
+        flex-wrap: wrap!important;
+        max-width: 303px;
+    }
+    .bened-intro .items .enter .access .form {
+        max-width: 303px;
+        margin: 0 auto;
+    }
+    .bened-intro .items .enter .access .passphrase .form button.hide-pass {
+        right: 48px;
+    }
+    .bened-intro .items .enter .remember .box,
+    .bened-intro .items .enter .remember .box:first-child {
+        margin-right: 5px;
+    }
+    .bened-intro .items .enter .access .passphrase .form input {
+        padding: 2px 37px 0px 10px;
+        font-size: 14px;
+    }
+    .bened-intro .items .enter .access .form input {
+        font-size: 15px;
+        line-height: 26px;
+        padding: 2px 20px 0px 20px;
+        width: 303px;
+    }
+    .sidebar, body.fixed .wrapper {
+        margin-top: 0px;
+    }
+    body {
+        overflow-y:unset;
+    }
+    .nav>li>a {
+        position: relative;
+        display: block;
+        padding: 10px 8px;
+    }
+    #burger-menu-control:before {
+        margin: 5px 0px -4px 0px;
+    }
+    .bened-main .left-panel .p-header {
+        padding: 13px 12px 14px 18px;
+        justify-content: start!important;
+        flex-wrap: wrap;
+    }
+    body header .navbar-nav-top {
+        right:0px;
+        top: 8px;
+    }
+    .bened-main .left-panel .p-header .logo {
+        width: 100%;
+    }
+    .bened-main .left-panel .p-header .logo img {
+        width: 85px;
+    }
+    #notification_menu:before {
+        margin: 2px 0px -0.7px 0px; 
+    }
+    #logout_button:before {
+        margin: 2px 0px -2px 0px;
+    }
+    .navbar-nav .open .dropdown-menu {
+        margin-top: 0px;
+    }
+    .navbar-nav .open .dropdown-menu {
+        width: auto;
+        box-shadow: 0px 8px 11px 5px rgba(0, 0, 0, 0.09);
+    }
+    .bened-main .left-panel .p-header .controls {
+        position: relative;
+        width: 100%;
+    }
+    .bened-main .left-panel .search-address {
+        padding: 0px 0px 15px;
+        position: inherit;
+        width: 100%;
+        display:block;
+        opacity:1;
+    }
+    .bened-main .left-panel .search-address .exit {
+        right: 14px;
+        top: 10px;
+        display: none;
+    }
+    .bened-main .left-panel .search {
+        display:none;
+    }
+    #search-button-topbar {
+        padding: 10px 3px;
+    }
+    body header .navbar-nav-top .burger-item {
+        display: inline-block;
+    }
+    .bened-main .left-panel .search-address input:focus, 
+    .bened-main .left-panel .search-address input:active,
+    .bened-main .left-panel .search-address input {
+        background: #F0F0F0 url(../img/icons/icon-magnifier.svg) no-repeat;
+        background-size: 18px;
+        background-position: 12px 46%;
+        width: 100%;
+        box-sizing: border-box;
+        padding: 8px 32px 8px 40px;
+        font-size: 14px;
+        border-radius: 3px!important;
+        border: 1px solid #DCDCDC;
+    }
+    #id_search {
+        margin-left: -5.6%;
+        padding-right: 4.7%;
+    }
+    .bened-main .dashboard .dashboard-info .item .amount {
+        font-size: 14px;
+    }
+    .bened-main .dashboard .dashboard-info .item ul li svg {
+        margin: 0px 10px 0px 0px;
+    }
+    .bened-main .left-panel .menu,
+    .bened-main .left-panel .set-account-info,
+    .bened-main .left-panel .card,
+    .bened-main .left-panel .copy-block,
+    .bened-main .left-panel .p-header,
+    .bened-main .left-panel .progress-bar {
+        background: #fafafa;
+    }
+    .content-header .contact-btn button:first-child {
+        margin: 0px 7px 10px 0px;
+    }
+    .content-header .contact-btn button, .content-header .contact-btn button:hover, .content-header .contact-btn button:focus, .content-header .contact-btn button:active {
+        margin: 0px 7px 10px;
+    }
+    #contacts_page .content {
+        padding:0px;
+    }
+    #contacts_page .contact-btn {
+        width:600px;
+        margin: 0px 0px 20px;
+    }
+    #contacts_page .data-container {
+        width:1000px
+    }
+    #account_softMG {
+        font-size: 14px;
+    }
+    .bened-main .dashboard .dashboard-info .item ul li i,
+    .bened-main .dashboard .dashboard-info .item ul li span {
+        line-height:normal;
+    }
+    .bened-intro .items .bottom {
+        font-size: 14px;
+        line-height: 17px;
+        text-align: center;
+    }
+    .navbar-nav>li.choice-language-top>.dropdown-menu {
+        max-width: 360px;
+        right: -175px;
+    }
+    .bened-main .dashboard .dashboard-info .item ul li {
+        padding: 11px 0px;
+        height:auto;
+    }
+    .bened-main .dashboard .dashboard-info .item.blocks ul li .small {
+        text-align: left;
+    }
+    .bened-main .dashboard .dashboard-info .item.blocks ul li span {
+        font-size: 12px;
+        text-align: right;
+    }
+    .bened-main .dashboard .dashboard-info .item.balance ul li:first-child a span {
+        font-size: 11px;
+        padding: 0px 4px 0px;
+    }
+}
