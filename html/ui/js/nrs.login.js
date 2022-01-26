@@ -49,7 +49,7 @@
 		$("#account_phrase_custom_panel, #account_phrase_generator_panel, #welcome_panel, #custom_passphrase_link").hide();
 		$("#account_phrase_custom_panel").find(":input:not(:button):not([type=submit])").val("");
 		$("#account_phrase_generator_panel").find(":input:not(:button):not([type=submit])").val("");
-        $("#login_account_other").mask("BENED-****-****-****-*****");
+        $("#login_account_other").mask("bened*****************");
 
 		$("#login_panel").show();
 		setTimeout(function() {
@@ -349,7 +349,7 @@
 						$(".hide_secret_phrase").show();
 					}
 					NRS.disablePluginsDuringSession = $("#disable_all_plugins").is(":checked");
-					$("#sidebar_account_id").html("BENED-<br/>"+String(NRS.accountRS).escapeHTML().substring(6));
+					$("#sidebar_account_id").html("bened<br/>"+String(NRS.accountRS).escapeHTML().substring(5));
 
 					/* Left Panel Copy Account Info Buttons */
 					$('.bened-main .left-panel .card .address a').html(String(NRS.accountRS).escapeHTML());

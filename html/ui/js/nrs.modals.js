@@ -112,7 +112,7 @@ var NRS = (function(NRS, $, undefined) {
 				$(this).unmask();
 				$(this).removeClass("noMask");
 			} else {
-				$(this).mask("BENED-****-****-****-*****");
+				$(this).mask("bened*****************");
 			}
 		});
 

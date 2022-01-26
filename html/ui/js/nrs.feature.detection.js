@@ -42,7 +42,7 @@ var NRS = (function (NRS) {
     NRS.DISCOVERY_PRIVATE = 3;
     NRS.DISCOVERY_UNAVAILABLE = 0;
     NRS.getDiscoveryState = function (callback) {
-      NRS.sendRequest("getParent", {"account":"BENED-5H5H-PRS4-UYTA-8GY83"}, function(response){
+      NRS.sendRequest("getParent", {"account":"bened5h5hprs4uyta8gy83"}, function(response){
         if (response.errorDescription) {
           if (NRS.compareStrings(response.errorDescription, 'Incorrect "adminPassword" (the specified password does not match local adminPassword)')
               || NRS.compareStrings(response.errorDescription, 'Administrator password not specified.')) {
@@ -53,7 +53,7 @@ var NRS = (function (NRS) {
             callback(NRS.DISCOVERY_PRIVATE);
             return;
           }
-          if (response.parentRS.lastIndexOf("BENED-", 0) === 0 || NRS.compareStrings(response.errorDescription, 'Incorrect "account"')) {
+          if (response.parentRS.lastIndexOf("bened", 0) === 0 || NRS.compareStrings(response.errorDescription, 'Incorrect "account"')) {
             allback(NRS.DISCOVERY_UNAVAILABLE);
             return;
           }

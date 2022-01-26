@@ -733,7 +733,7 @@ var NRS = (function (NRS, $, undefined) {
         } else {
             return '/';
         }
-        if (accountRS.toUpperCase() === "BENED-5H5H-PRS4-UYTA-8GY83")
+        if (accountRS.toLowerCase() === "bened5h5hprs4uyta8gy83")
             return "GENESIS";
         var accountTitle;
         if (accountRef && accountRS == accountRef) {
@@ -964,7 +964,7 @@ var NRS = (function (NRS, $, undefined) {
             } else if (key == "price" || key == "total" || key == "amount" || key == "fee" || key == "refund" || key == "discount") {
                 value = NRS.formatAmount(new BigInteger(String(value))) + " BENED";
             } else if (key == "sender" || key == "recipient" || key == "account" || key == "seller" || key == "buyer" || key == "lessee") {
-                if (value.toUpperCase() === "BENED-5H5H-PRS4-UYTA-8GY83" || value === "6961384895484640367") {
+                if (value.toLowerCase() === "bened5h5hprs4uyta8gy83" || value === "6961384895484640367") {
                     value = "GENESIS";
                 } else {
                     value = "<a href='#' data-user='" + String(value).escapeHTML() + "' class='show_account_modal_action'>" + NRS.getAccountTitle(value) + "</a>";
@@ -1602,7 +1602,7 @@ var NRS = (function (NRS, $, undefined) {
         if (!str || str == "") {
             return str;
         }
-        var firstChar = str.charAt(0).toUpperCase();
+        var firstChar = str.charAt(0).toLowerCase();
         if (str.length == 1) {
             return firstChar;
         }

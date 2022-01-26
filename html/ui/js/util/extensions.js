@@ -37,7 +37,7 @@ String.prototype.nl2br = function() {
 };
 
 String.prototype.capitalize = function() {
-	return this.charAt(0).toUpperCase() + this.slice(1);
+	return this.charAt(0).toLowerCase() + this.slice(1);
 };
 
 Number.prototype.pad = function(size) {

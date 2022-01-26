@@ -40,7 +40,7 @@ var NRS = (function(NRS, $) {
 		}
 
     try {
-      if (String(account.toUpperCase()) === "BENED-5H5H-PRS4-UYTA-8GY83" || String(account) === "6961384895484640367")
+      if (String(account.toLowerCase()) === "bened5h5hprs4uyta8gy83" || String(account) === "6961384895484640367")
         return;
     } catch (err) {}
 		if (typeof account == "object") {
@@ -102,7 +102,7 @@ var NRS = (function(NRS, $) {
         $("#activated_by").show();
         $("#activated_by_prefix").show();
         if (response.parentRS) {
-          if (response.parentRS.toUpperCase() == "BENED-5H5H-PRS4-UYTA-8GY83") {
+          if (response.parentRS.toLowerCase() == "bened5h5hprs4uyta8gy83") {
             $("#activated_by").html("activated by GENESIS");
           } else {
            $("#activated_by").html("activated by <a href='#' data-user='" + String(response.parentRS).escapeHTML() +
@@ -186,7 +186,7 @@ var NRS = (function(NRS, $) {
 
     function getTransactionType(transaction) {
         var transactionType = $.t(NRS.transactionTypes[transaction.type].subTypes[transaction.subtype].i18nKeyTitle);
-				if (transaction.senderRS == "BENED-5H5H-PRS4-UYTA-8GY83") {
+				if (transaction.senderRS == "bened5h5hprs4uyta8gy83") {
 					if (transaction.timestamp == 0)
 						transactionType = "Emission";
 					else

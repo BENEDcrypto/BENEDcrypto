@@ -102,16 +102,16 @@ public final class Convert {
         if (account == null || (account = account.trim()).isEmpty()) {
             return 0;
         }
-        account = account.toUpperCase();
-        if (account.startsWith("BENED-")) {
-            return Crypto.rsDecode(account.substring(6));
+        account = account.toLowerCase();
+        if (account.startsWith("bened")) {
+            return Crypto.rsDecode(account.substring(5));
         } else {
             return Long.parseUnsignedLong(account);
         }
     }
 
     public static String rsAccount(long accountId) {
-        return "BENED-" + Crypto.rsEncode(accountId);
+        return "bened" + Crypto.rsEncode(accountId);
     }
 
     public static long fullHashToId(byte[] hash) {

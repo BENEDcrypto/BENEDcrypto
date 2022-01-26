@@ -291,7 +291,7 @@ public final class Crypto {
     }
 
     public static long rsDecode(String rsString) {
-        rsString = rsString.toUpperCase();
+        rsString = rsString.toLowerCase();
         try {
             long id = ReedSolomon.decode(rsString);
             if (!rsString.equals(ReedSolomon.encode(id))) {

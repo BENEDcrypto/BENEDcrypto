@@ -93,11 +93,11 @@
                         if (0 === pos.end) for (;pos.end < firstNonMaskPos && !tests[pos.end]; ) pos.end++;
                         input.caret(pos.end, pos.end);
                     } else {
-                        var curValUpper = curVal.toUpperCase();
-                        var addressStart = curValUpper.indexOf('BENED-', 4);
+                        var curValUpper = curVal.toLowerCase();
+                        var addressStart = curValUpper.indexOf('bened', 5);
                         if (addressStart > 0) {
                             var insertedAddress = curValUpper.substr(addressStart, 24);
-                            if (/BENED\-[A-Z0-9]{4}\-[A-Z0-9]{4}\-[A-Z0-9]{4}\-[A-Z0-9]{5}/.test(insertedAddress)) {
+                            if (/bened[A-Z0-9]{4}[A-Z0-9]{4}[A-Z0-9]{4}[A-Z0-9]{5}/.test(insertedAddress)) {
                                 //since pasting into a msked field will first trigger androidInputEvent, search for inserted address and use it
                                 input.val(insertedAddress);
                             }
@@ -139,7 +139,7 @@
 
                         if (settings.unmask !== false) {
                             //backspace, remove
-                            if ((pos.begin == 0 && pos.end == 24) || (currentInput == "BENED-____-____-____-_____" && pos.begin == 4)) {
+                            if ((pos.begin == 0 && pos.end == 24) || (currentInput == "bened_________________" && pos.begin == 4)) {
                                 input.val("");
                                 $(this).trigger("unmask");
                                 return;
@@ -173,7 +173,7 @@
                         var p, c, next, k = e.which || e.keyCode, pos = input.caret();
                         if (!(e.ctrlKey || e.altKey || e.metaKey || 32 > k) && k && 13 !== k) {
                             if (pos.end - pos.begin !== 0 && (clearBuffer(pos.begin, pos.end), shiftL(pos.begin, pos.end - 1)), 
-                            p = seekNext(pos.begin - 1), len > p && (c = String.fromCharCode(k).toUpperCase(), tests[p].test(c))) {
+                            p = seekNext(pos.begin - 1), len > p && (c = String.fromCharCode(k).toLowerCase(), tests[p].test(c))) {
                                 if (shiftR(p), buffer[p] = c, writeBuffer(), next = seekNext(p), android) {
                                     var proxy = function() {
                                         $.proxy($.fn.caret, input, next)();
@@ -196,7 +196,7 @@
                 function checkVal(allow) {
                     var i, c, pos, test = input.val(), lastMatch = -1;
                     for (i = 0, pos = 0; len > i; i++) if (tests[i]) {
-                        for (buffer[i] = getPlaceholder(i); pos++ < test.length; ) if (c = test.charAt(pos - 1).toUpperCase(), 
+                        for (buffer[i] = getPlaceholder(i); pos++ < test.length; ) if (c = test.charAt(pos - 1).toLowerCase(), 
                         tests[i].test(c)) {
                             buffer[i] = c, lastMatch = i;
                             break;
@@ -215,19 +215,19 @@
                     return "?" != c ? defs[c] ? getPlaceholder(i) : c : void 0;
                 }), defaultBuffer = buffer.join(""), focusText = input.val();
                 input.bind("keyup.remask", function(e) {
-                    if (input.val().toLowerCase() == "bened-") {
-                        input.val("").mask("BENED-****-****-****-*****")./*unbind(".remask").*/trigger("focus");
+                    if (input.val().toLowerCase() == "bened") {
+                        input.val("").mask("bened*****************")./*unbind(".remask").*/trigger("focus");
                     }
                 }).bind("paste.remask", function(e) {
                     setTimeout(function() {
                         var newInput = input.val();
-                        var pastedData = newInput.substring(4).toUpperCase();
-                        if (/BENED\-[A-Z0-9]{4}\-[A-Z0-9]{4}\-[A-Z0-9]{4}\-[A-Z0-9]{5}/i.test(pastedData)) {
-                            var newAddress = String(pastedData.match("BENED\-[A-Z0-9]{4}\-[A-Z0-9]{4}\-[A-Z0-9]{4}\-[A-Z0-9]{5}"));
+                        var pastedData = newInput.substring(4).toLowerCase();
+                        if (/bened[A-Z0-9]{4}[A-Z0-9]{4}[A-Z0-9]{4}[A-Z0-9]{5}/i.test(pastedData)) {
+                            var newAddress = String(pastedData.match("bened[A-Z0-9]{4}[A-Z0-9]{4}[A-Z0-9]{4}[A-Z0-9]{5}"));
                             input.val(newAddress);
                             checkVal(true);
-                        } else if (/^BENED\-[A-Z0-9]{4}\-[A-Z0-9]{4}\-[A-Z0-9]{4}\-[A-Z0-9]{5}/i.test(newInput) || /^BENED[A-Z0-9]{17}/i.test(newInput)) {
-                            input.mask("BENED-****-****-****-*****").trigger("checkRecipient")/*.unbind(".remask")*/;
+                        } else if (/^bened[A-Z0-9]{4}[A-Z0-9]{4}[A-Z0-9]{4}[A-Z0-9]{5}/i.test(newInput) || /^bened[A-Z0-9]{17}/i.test(newInput)) {
+                            input.mask("bened*****************").trigger("checkRecipient")/*.unbind(".remask")*/;
                         }
                     }, 0);
                 });

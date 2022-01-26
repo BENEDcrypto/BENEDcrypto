@@ -229,7 +229,7 @@ var NRS = (function(NRS, $) {
 			} else {
 				var colorTitle = color.replace(/-/g, " ");
 				colorTitle = colorTitle.replace(/\w\S*/g, function(txt) {
-					return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();
+					return txt.charAt(0).toLowerCase() + txt.substr(1).toLowerCase();
 				});
 			}
 			$span.html(colorTitle);
@@ -425,7 +425,7 @@ var NRS = (function(NRS, $) {
 		} else {
 			var colorTitle = color.replace(/-/g, " ");
 			colorTitle = colorTitle.replace(/\w\S*/g, function(txt) {
-				return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();
+				return txt.charAt(0).toLowerCase() + txt.substr(1).toLowerCase();
 			});
 		}
 		$span.html(colorTitle);

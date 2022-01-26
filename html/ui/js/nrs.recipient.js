@@ -32,7 +32,7 @@ var NRS = (function(NRS, $) {
 			var value = $(this).val();
 			var modal = $(this).closest(".modal");
 
-			if (value && value != "BENED-____-____-____-_____") {
+			if (value && value != "BENED_________________") {
 				NRS.checkRecipient(value, modal);
 			} else {
 				modal.find(".account_info").hide();
@@ -318,7 +318,7 @@ var NRS = (function(NRS, $) {
 					}
 
 					if (match && match[1]) {
-						match[1] = String(match[1]).toUpperCase();
+						match[1] = String(match[1]).toLowerCase();
 
 						if (/^\d+$/.test(match[1])) {
 							var address = new BenedAddress();

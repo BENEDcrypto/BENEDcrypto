@@ -13,7 +13,8 @@ function BenedAddress() {
 
 	var cwmap = [3, 2, 1, 0, 7, 6, 5, 4, 13, 14, 15, 16, 12, 8, 9, 10, 11];
 
-	var alphabet = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
+	var alphabet = '23456789abcdefghjklmnpqrstuvwxyz';
+	//var alphabet = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
 	//var alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
 
 	this.guess = [];
@@ -256,12 +257,12 @@ function BenedAddress() {
 	} //__________________________
 
 	this.toString = function() {
-		var out = 'BENED-';
+		var out = 'bened';
 
 		for (var i = 0; i < 17; i++) {
 			out += alphabet[codeword[cwmap[i]]];
 
-			if ((i & 3) == 3 && i < 13) out += '-';
+//			if ((i & 3) == 3 && i < 13) out += '-';
 		}
 
 		return out;
@@ -309,9 +310,9 @@ function BenedAddress() {
 
 		adr = String(adr);
 
-		adr = adr.replace(/(^\s+)|(\s+$)/g, '').toUpperCase();
+		adr = adr.replace(/(^\s+)|(\s+$)/g, '').toLowerCase();
 
-		if (adr.indexOf('BENED-') == 0) adr = adr.substr(6);
+		if (adr.indexOf('BENED') == 0) adr = adr.substr(5);
 
 		if (adr.match(/^\d{1,20}$/g)) // account id
 		{
@@ -375,8 +376,8 @@ function BenedAddress() {
 		var d = '',
 			list = [];
 
-		s = s.toUpperCase();
-		org = org.toUpperCase();
+		s = s.toLowerCase();
+		org = org.toLowerCase();
 
 		for (var i = 0; i < s.length;) {
 			var m = 0;

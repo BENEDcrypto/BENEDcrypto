@@ -347,7 +347,7 @@ var NRS = (function (NRS, $, undefined) {
                         setAliasType("uri", response.aliasURI);
                     } else if ((aliasURI = /acct:(.*)@bnd/.exec(response.aliasURI)) || (aliasURI = /nacc:(.*)/.exec(response.aliasURI))) {
                         setAliasType("account", response.aliasURI);
-                        response.aliasURI = String(aliasURI[1]).toUpperCase();
+                        response.aliasURI = String(aliasURI[1]).toLowerCase();
                     } else {
                         setAliasType("general", response.aliasURI);
                     }
@@ -441,7 +441,7 @@ var NRS = (function (NRS, $, undefined) {
         } else if (type == "account") {
             $("#register_alias_uri_label").html($.t("account_id"));
             registerAliasUri.prop("placeholder", $.t("account_id"));
-            registerAliasUri.val("").mask("BENED-****-****-****-*****");
+            registerAliasUri.val("").mask("bened*****************");
 
             if (uri) {
                 var match = uri.match(/acct:(.*)@bnd/i);
@@ -465,7 +465,7 @@ var NRS = (function (NRS, $, undefined) {
                     uri = NRS.accountRS;
                 }
 
-                uri = uri.toUpperCase();
+                uri = uri.toLowerCase();
 
                 registerAliasUri.val(uri);
             } else {

@@ -176,7 +176,7 @@ var NRS = (function(NRS, $) {
 			"page": "main",
 			"searchStr": ""
 		};
-		$(".tagged_data_search input[name=q]").val("").trigger("unmask").mask("BENED-****-****-****-*****");
+		$(".tagged_data_search input[name=q]").val("").trigger("unmask").mask("bened*****************");
 		$(".tagged_data_fulltext_search input[name=fs_q]").val("");
 		$(".tagged_data_search_pageheader_addon").hide();
 		$("#tagged_data_search_contents").empty();
