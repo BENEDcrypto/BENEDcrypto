@@ -95,6 +95,7 @@
                     } else {
                         var curValUpper = curVal.toLowerCase();
                         var addressStart = curValUpper.indexOf('bened', 5);
+alert("va="+addressStart);
                         if (addressStart > 0) {
                             var insertedAddress = curValUpper.substr(addressStart, 24);
                             if (/bened[A-Z0-9]{4}[A-Z0-9]{4}[A-Z0-9]{4}[A-Z0-9]{5}/.test(insertedAddress)) {
@@ -139,7 +140,7 @@
 
                         if (settings.unmask !== false) {
                             //backspace, remove
-                            if ((pos.begin == 0 && pos.end == 24) || (currentInput == "bened_________________" && pos.begin == 4)) {
+                            if ((pos.begin == 0 && pos.end == 22) || (currentInput == "bened_________________" && pos.begin == 5)) {
                                 input.val("");
                                 $(this).trigger("unmask");
                                 return;
@@ -221,13 +222,16 @@
                 }).bind("paste.remask", function(e) {
                     setTimeout(function() {
                         var newInput = input.val();
-                        var pastedData = newInput.substring(4).toLowerCase();
-                        if (/bened[A-Z0-9]{4}[A-Z0-9]{4}[A-Z0-9]{4}[A-Z0-9]{5}/i.test(pastedData)) {
-                            var newAddress = String(pastedData.match("bened[A-Z0-9]{4}[A-Z0-9]{4}[A-Z0-9]{4}[A-Z0-9]{5}"));
+                        var pastedData = newInput.substring(5).toLowerCase();
+//alert("a="+pastedData);
+                        if (/bened[A-Z0-9]{17}/i.test(pastedData)) {
+                            var newAddress = String(pastedData.match("bened[A-Z0-9]{17}"));
                             input.val(newAddress);
                             checkVal(true);
+//alert("tr0");
                         } else if (/^bened[A-Z0-9]{4}[A-Z0-9]{4}[A-Z0-9]{4}[A-Z0-9]{5}/i.test(newInput) || /^bened[A-Z0-9]{17}/i.test(newInput)) {
                             input.mask("bened*****************").trigger("checkRecipient")/*.unbind(".remask")*/;
+//alert("fls0");
                         }
                     }, 0);
                 });
