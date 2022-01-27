@@ -32,7 +32,7 @@ var NRS = (function(NRS, $) {
 			var value = $(this).val();
 			var modal = $(this).closest(".modal");
 
-			if (value && value != "BENED_________________") {
+			if (value && value != "bened_________________") {
 				NRS.checkRecipient(value, modal);
 			} else {
 				modal.find(".account_info").hide();
@@ -56,7 +56,7 @@ var NRS = (function(NRS, $) {
 		}
 		if (account) {
 			var $inputField = $(this).find("input[name=recipient], input[name=account_id]").not("[type=hidden]");
-			if (!/BENED\-/i.test(account)) {
+			if (!/bened/i.test(account)) {
 				$inputField.addClass("noMask");
 			}
 			$inputField.val(account).trigger("checkRecipient");
@@ -156,9 +156,10 @@ var NRS = (function(NRS, $) {
 			} else {
 				if (response.errorCode) {
 					if (response.errorCode == 4) {
+alert("1");
 						callback({
 							"type": "danger",
-							"message": $.t("recipient_malformed") + (!/^(BENED\-)/i.test(accountId) ? " " + $.t("recipient_alias_suggestion") : ""),
+							"message": $.t("recipient_malformed") + (!/^(bened)/i.test(accountId) ? " " + $.t("recipient_alias_suggestion") : ""),
 							"account": null
 						});
 					} else if (response.errorCode == 5) {
@@ -206,7 +207,7 @@ var NRS = (function(NRS, $) {
 		account = $.trim(account);
 
 		//solomon reed. Btw, this regex can be shortened..
-		if (/^(BENED\-)?[A-Z0-9]+\-[A-Z0-9]+\-[A-Z0-9]+\-[A-Z0-9]+/i.test(account)) {
+		if (/^(bened)?[A-Z0-9]+/i.test(account)) {
 			var address = new BenedAddress();
 
 			if (address.set(account)) {
@@ -230,19 +231,27 @@ var NRS = (function(NRS, $) {
 				});
 			} else {
 				if (address.guess.length == 1) {
+
+alert("2");
 					callout.removeClass(classes).addClass("callout-danger").html($.t("recipient_malformed_suggestion", {
 						"recipient": "<span class='malformed_address' data-address='" + String(address.guess[0]).escapeHTML() + "' onclick='NRS.correctAddressMistake(this);'>" + address.format_guess(address.guess[0], account) + "</span>"
 					})).show();
 				} else if (address.guess.length > 1) {
+
+alert("3");
 					var html = $.t("recipient_malformed_suggestion", {
 						"count": address.guess.length
 					}) + "<ul>";
 					for (var i = 0; i < address.guess.length; i++) {
+
+alert("4");
 						html += "<li><span class='malformed_address' data-address='" + String(address.guess[i]).escapeHTML() + "' onclick='NRS.correctAddressMistake(this);'>" + address.format_guess(address.guess[i], account) + "</span></li>";
 					}
 
 					callout.removeClass(classes).addClass("callout-danger").html(html).show();
 				} else {
+
+alert("5 a="+address);
 					callout.removeClass(classes).addClass("callout-danger").html($.t("recipient_malformed")).show();
 				}
 			}
@@ -273,8 +282,10 @@ var NRS = (function(NRS, $) {
 							}
 						});
 					} else if (/^[a-z0-9]+$/i.test(account)) {
-						NRS.checkRecipientAlias(account, modal);
+//						NRS.checkRecipientAlias(account, modal);
 					} else {
+
+alert("6");
 						callout.removeClass(classes).addClass("callout-danger").html($.t("recipient_malformed")).show();
 					}
 				});
@@ -284,6 +295,8 @@ var NRS = (function(NRS, $) {
 					NRS.checkRecipientAlias(account, modal);
 				}
 			} else {
+
+alert("7");
 				callout.removeClass(classes).addClass("callout-danger").html($.t("recipient_malformed")).show();
 			}
 		} else {
@@ -291,82 +304,7 @@ var NRS = (function(NRS, $) {
 		}
 	};
 
-	NRS.checkRecipientAlias = function(account, modal) {
-		var classes = "callout-info callout-danger callout-warning";
-		var callout = modal.find(".account_info").first();
-		var accountInputField = modal.find("input[name=converted_account_id]");
-
-		accountInputField.val("");
-
-		NRS.sendRequest("getAlias", {
-			"aliasName": account
-		}, function(response) {
-			if (response.errorCode) {
-				callout.removeClass(classes).addClass("callout-danger").html($.t("error_invalid_account_id")).show();
-			} else {
-				if (response.aliasURI) {
-					var alias = String(response.aliasURI);
-					var timestamp = response.timestamp;
-
-					var regex_1 = /acct:(.*)@bnd/;
-					var regex_2 = /nacc:(.*)/;
-
-					var match = alias.match(regex_1);
-
-					if (!match) {
-						match = alias.match(regex_2);
-					}
-
-					if (match && match[1]) {
-						match[1] = String(match[1]).toLowerCase();
-
-						if (/^\d+$/.test(match[1])) {
-							var address = new BenedAddress();
-
-							if (address.set(match[1])) {
-								match[1] = address.toString();
-							} else {
-								accountInputField.val("");
-								callout.removeClass(classes).addClass("callout-danger").html($.t("error_invalid_account_id")).show();
-								return;
-							}
-						}
-
-						NRS.getAccountError(match[1], function(response) {
-							if (response.noPublicKey) {
-								modal.find(".recipient_public_key").show();
-							} else {
-								modal.find("input[name=recipientPublicKey]").val("");
-								modal.find(".recipient_public_key").hide();
-							}
-							if (response.account && response.account.description) {
-								checkForMerchant(response.account.description, modal);
-							}
-
-							callout.removeClass(classes).addClass("callout-" + response.type).html($.t("alias_account_link", {
-								"account_id": String(match[1]).escapeHTML()
-							}) + " " + response.message.escapeHTML() + " " + $.t("alias_last_adjusted", {
-								"timestamp": NRS.formatTimestamp(timestamp)
-							})).show();
-
-							if (response.type == "info" || response.type == "warning") {
-								accountInputField.val(String(match[1]).escapeHTML());
-							}
-						});
-					} else {
-						callout.removeClass(classes).addClass("callout-danger").html($.t("alias_account_no_link") + (!alias ? $.t("error_uri_empty") : $.t("uri_is", {
-							"uri": String(alias).escapeHTML()
-						}))).show();
-					}
-				} else if (response.aliasName) {
-					callout.removeClass(classes).addClass("callout-danger").html($.t("error_alias_empty_uri")).show();
-				} else {
-					callout.removeClass(classes).addClass("callout-danger").html(response.errorDescription ? $.t("error") + ": " + String(response.errorDescription).escapeHTML() : $.t("error_alias")).show();
-				}
-			}
-		});
-	};
-
+	
 	function checkForMerchant(accountInfo, modal) {
 		var requestType = modal.find("input[name=request_type]").val();
 

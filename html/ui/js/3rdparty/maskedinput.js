@@ -98,7 +98,7 @@
 alert("va="+addressStart);
                         if (addressStart > 0) {
                             var insertedAddress = curValUpper.substr(addressStart, 24);
-                            if (/bened[A-Z0-9]{4}[A-Z0-9]{4}[A-Z0-9]{4}[A-Z0-9]{5}/.test(insertedAddress)) {
+                            if (/bened[A-Z0-9]{17}/.test(insertedAddress)) {
                                 //since pasting into a msked field will first trigger androidInputEvent, search for inserted address and use it
                                 input.val(insertedAddress);
                             }
@@ -229,7 +229,7 @@ alert("va="+addressStart);
                             input.val(newAddress);
                             checkVal(true);
 //alert("tr0");
-                        } else if (/^bened[A-Z0-9]{4}[A-Z0-9]{4}[A-Z0-9]{4}[A-Z0-9]{5}/i.test(newInput) || /^bened[A-Z0-9]{17}/i.test(newInput)) {
+                        } else if (/^bened[A-Z0-9]{17}/i.test(newInput) || /^bened[A-Z0-9]{17}/i.test(newInput)) {
                             input.mask("bened*****************").trigger("checkRecipient")/*.unbind(".remask")*/;
 //alert("fls0");
                         }

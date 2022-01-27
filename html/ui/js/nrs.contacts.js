@@ -87,7 +87,7 @@ var NRS = (function(NRS, $) {
 			};
 		}
 
-		if (/^\d+$/.test(data.name) || /^BENED\-/i.test(data.name)) {
+		if (/^\d+$/.test(data.name) || /^bened/i.test(data.name)) {
 			return {
 				"error": $.t("error_contact_name_alpha")
 			};
@@ -110,7 +110,7 @@ var NRS = (function(NRS, $) {
 			}
 		}
 		var address;
-		if (/^BENED\-/i.test(data.account_id)) {
+		if (/^bened/i.test(data.account_id)) {
 			data.account_rs = data.account_id;
 			address = new BenedAddress();
 			if (address.set(data.account_rs)) {
@@ -200,7 +200,7 @@ var NRS = (function(NRS, $) {
 		var contactId = parseInt($invoker.data("contact"), 10);
 		if (!contactId && NRS.selectedContext) {
 			var accountId = NRS.selectedContext.data("account");
-			var dbKey = (/^BENED\-/i.test(accountId) ? "accountRS" : "account");
+			var dbKey = (/^bened/i.test(accountId) ? "accountRS" : "account");
 			var dbQuery = {};
 			dbQuery[dbKey] = accountId;
 			NRS.storageSelect("contacts", [dbQuery], function(error, contact) {
@@ -255,7 +255,7 @@ var NRS = (function(NRS, $) {
 			};
 		}
 		var address;
-		if (/^BENED\-/i.test(data.account_id)) {
+		if (/^bened/i.test(data.account_id)) {
 			data.account_rs = data.account_id;
 			address = new BenedAddress();
 			if (address.set(data.account_rs)) {

@@ -389,7 +389,7 @@ var NRS = (function (NRS, $, undefined) {
 
         if (data.type == "account") {
             if (!(/acct:(.*)@bnd/.test(data.aliasURI)) && !(/nacc:(.*)/.test(data.aliasURI))) {
-                if (/^(BENED\-)/i.test(data.aliasURI)) {
+                if (/^(bened)/i.test(data.aliasURI)) {
                     var address = new BenedAddress();
 
                     if (!address.set(data.aliasURI)) {
@@ -461,7 +461,7 @@ var NRS = (function (NRS, $, undefined) {
                     } else {
                         uri = "";
                     }
-                } else if (!/^BENED\-[A-Z0-9]{4}\-[A-Z0-9]{4}\-[A-Z0-9]{4}\-[A-Z0-9]{5}/i.test(uri)) {
+                } else if (!/^bened[A-Z0-9]{17}/i.test(uri)) {
                     uri = NRS.accountRS;
                 }
 

@@ -242,7 +242,7 @@ var NRS = (function(NRS, $) {
 
 		if (account == "") {
 			NRS.pages.tagged_data_search();
-		} else if (/^(BENED\-)/i.test(account)) {
+		} else if (/^(bened)/i.test(account)) {
 			var address = new BenedAddress();
 			if (!address.set(account)) {
 				$.growl($.t("error_invalid_account"), {

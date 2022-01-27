@@ -711,7 +711,7 @@ var NRS = (function (NRS, $, undefined) {
     };
 
     NRS.convertNumericToRSAccountFormat = function (account) {
-		if (/^BENED\-/i.test(account)) {
+		if (/^bened/i.test(account)) {
 			return String(account).escapeHTML();
 		} else {
 			var address = new BenedAddress();

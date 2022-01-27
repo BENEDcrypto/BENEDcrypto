@@ -312,7 +312,7 @@ function BenedAddress() {
 
 		adr = adr.replace(/(^\s+)|(\s+$)/g, '').toLowerCase();
 
-		if (adr.indexOf('BENED') == 0) adr = adr.substr(5);
+		if (adr.indexOf('bened') == 0) adr = adr.substr(5);
 
 		if (adr.match(/^\d{1,20}$/g)) // account id
 		{

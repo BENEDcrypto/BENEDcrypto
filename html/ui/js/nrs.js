@@ -1401,7 +1401,7 @@ var NRS = (function (NRS, $, undefined) {
 
         var id = $.trim($("#id_search").find("input[name=q]").val());
 
-        if (/BENED\-/i.test(id)) {
+        if (/bened/i.test(id)) {
             NRS.sendRequest("getAccount", {
                 "account": id
             }, function (response, input) {

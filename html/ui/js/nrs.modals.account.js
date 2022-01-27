@@ -221,7 +221,7 @@ var NRS = (function(NRS, $) {
           else
             transactionType = getTransactionType(transaction);
           var receiving;
-					if (/^BENED\-/i.test(String(NRS.userInfoModal.user))) {
+					if (/^bened/i.test(String(NRS.userInfoModal.user))) {
 						receiving = (transaction.recipientRS == NRS.userInfoModal.user);
 					} else {
 						receiving = (transaction.recipient == NRS.userInfoModal.user);
