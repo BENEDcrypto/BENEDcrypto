@@ -207,7 +207,7 @@ alert("1");
 		account = $.trim(account);
 
 		//solomon reed. Btw, this regex can be shortened..
-		if (/^(bened)?[A-Z0-9]+/i.test(account)) {
+		if (/^(bened)?[a-zA-Z0-9]+/i.test(account)) {
 			var address = new BenedAddress();
 
 			if (address.set(account)) {
@@ -281,7 +281,7 @@ alert("5 a="+address);
 								accountInputField.val(contact.accountRS);
 							}
 						});
-					} else if (/^[a-z0-9]+$/i.test(account)) {
+					} else if (/^[a-zA-Z0-9]+$/i.test(account)) {
 //						NRS.checkRecipientAlias(account, modal);
 					} else {
 
@@ -289,7 +289,7 @@ alert("6");
 						callout.removeClass(classes).addClass("callout-danger").html($.t("recipient_malformed")).show();
 					}
 				});
-			} else if (/^[a-z0-9@]+$/i.test(account)) {
+			} else if (/^[a-zA-Z0-9@]+$/i.test(account)) {
 				if (account.charAt(0) == '@') {
 					account = account.substring(1);
 					NRS.checkRecipientAlias(account, modal);

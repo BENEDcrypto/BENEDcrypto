@@ -132,7 +132,7 @@
 
 		if (password.length < 35) {
 			error = $.t("error_passphrase_length");
-		} else if (password.length < 50 && (!password.match(/[A-Z]/) || !password.match(/[0-9]/))) {
+		} else if (password.length < 50 && (!password.match(/[a-zA-Z]/) || !password.match(/[0-9]/))) {
 			error = $.t("error_passphrase_strength");
 		} else if (password != repeat) {
 			error = $.t("error_passphrase_match");
@@ -386,7 +386,7 @@
 
 					if (id.length < 35 && isPassphraseLogin) {
 						passwordNotice = $.t("error_passphrase_length_secure");
-					} else if (isPassphraseLogin && id.length < 50 && (!id.match(/[A-Z]/) || !id.match(/[0-9]/))) {
+					} else if (isPassphraseLogin && id.length < 50 && (!id.match(/[a-zA-Z]/) || !id.match(/[0-9]/))) {
 						passwordNotice = $.t("error_passphrase_strength_secure");
 					}
 

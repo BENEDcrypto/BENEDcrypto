@@ -290,7 +290,7 @@ var NRS = (function (NRS, $, undefined) {
         }
 
         if (data.referencedTransactionFullHash) {
-            if (!/^[a-z0-9]{64}$/.test(data.referencedTransactionFullHash)) {
+            if (!/^[a-zA-Z0-9]{64}$/.test(data.referencedTransactionFullHash)) {
                 callback({
                     "errorCode": -1,
                     "errorDescription": $.t("error_invalid_referenced_transaction_hash")

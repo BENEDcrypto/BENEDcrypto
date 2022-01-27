@@ -214,7 +214,7 @@ var NRS = (function(NRS, $) {
 		}
 
 		var requestType = $form.find("input[name=request_type]").val();
-		var requestTypeKey = requestType.replace(/([A-Z])/g, function($1) {
+		var requestTypeKey = requestType.replace(/([a-zA-Z])/g, function($1) {
 			return "_" + $1.toLowerCase();
 		});
 
@@ -372,9 +372,9 @@ var NRS = (function(NRS, $) {
 				}
 				NRS.unlockForm($modal, $btn);
 				return;
-			} else if (!/^bened[A-Z0-9]+/i.test(data.recipient)) {
+			} else if (!/^bened[a-zA-Z0-9]+/i.test(data.recipient)) {
 				var convertedAccountId = $modal.find("input[name=converted_account_id]").val();
-				if (!convertedAccountId || (!/^\d+$/.test(convertedAccountId) && !/^[A-Z0-9]+/i.test(convertedAccountId))) {
+				if (!convertedAccountId || (!/^\d+$/.test(convertedAccountId) && !/^[a-zA-Z0-9]+/i.test(convertedAccountId))) {
 					$form.find(".error_message").html($.t("error_account_id")).show();
 					if (formErrorFunction) {
 						formErrorFunction(false, data);
@@ -447,7 +447,7 @@ var NRS = (function(NRS, $) {
 
 						if (strippedRegex == "[0-9]+") {
 							regexType = "numeric";
-						} else if (strippedRegex == "[a-z0-9]+" || strippedRegex.toLowerCase() == "[a-za-z0-9]+" || strippedRegex == "[a-z0-9]+") {
+						} else if (strippedRegex == "[a-zA-Z0-9]+" || strippedRegex.toLowerCase() == "[a-zA-Z0-9]+" || strippedRegex == "[a-zA-Z0-9]+") {
 							regexType = "alphanumeric";
 						} else {
 							regexType = "custom";

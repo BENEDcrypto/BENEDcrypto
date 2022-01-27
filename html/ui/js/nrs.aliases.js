@@ -461,7 +461,7 @@ var NRS = (function (NRS, $, undefined) {
                     } else {
                         uri = "";
                     }
-                } else if (!/^bened[A-Z0-9]{17}/i.test(uri)) {
+                } else if (!/^bened[a-zA-Z0-9]{17}/i.test(uri)) {
                     uri = NRS.accountRS;
                 }
 

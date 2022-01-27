@@ -11,8 +11,8 @@
     $.mask = {
         definitions: {
             "9": "[0-9]",
-            a: "[A-Za-z]",
-            "*": "[A-Za-z0-9]"
+            a: "[a-zA-Z]",
+            "*": "[a-zA-Z0-9]"
         },
         autoclear: 0,
         dataName: "rawMaskFn",
@@ -98,7 +98,7 @@
 alert("va="+addressStart);
                         if (addressStart > 0) {
                             var insertedAddress = curValUpper.substr(addressStart, 24);
-                            if (/bened[A-Z0-9]{17}/.test(insertedAddress)) {
+                            if (/bened[a-zA-Z0-9]{17}/.test(insertedAddress)) {
                                 //since pasting into a msked field will first trigger androidInputEvent, search for inserted address and use it
                                 input.val(insertedAddress);
                             }
@@ -224,12 +224,12 @@ alert("va="+addressStart);
                         var newInput = input.val();
                         var pastedData = newInput.substring(5).toLowerCase();
 //alert("a="+pastedData);
-                        if (/bened[A-Z0-9]{17}/i.test(pastedData)) {
-                            var newAddress = String(pastedData.match("bened[A-Z0-9]{17}"));
+                        if (/bened[a-zA-Z0-9]{17}/i.test(pastedData)) {
+                            var newAddress = String(pastedData.match("bened[a-zA-Z0-9]{17}"));
                             input.val(newAddress);
                             checkVal(true);
 //alert("tr0");
-                        } else if (/^bened[A-Z0-9]{17}/i.test(newInput) || /^bened[A-Z0-9]{17}/i.test(newInput)) {
+                        } else if (/^bened[a-zA-Z0-9]{17}/i.test(newInput) || /^bened[a-zA-Z0-9]{17}/i.test(newInput)) {
                             input.mask("bened*****************").trigger("checkRecipient")/*.unbind(".remask")*/;
 //alert("fls0");
                         }
