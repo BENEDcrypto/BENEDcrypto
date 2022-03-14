@@ -284,7 +284,7 @@ public final class API {
             gzipHandler.setMinGzipSize(bened.peer.Peers.MIN_COMPRESS_SIZE);
             apiHandler.setGzipHandler(gzipHandler);
 
-        //    apiHandler.addServlet(APITestServlet.class, "/test");
+            apiHandler.addServlet(APITestServlet.class, "/test");
         //    apiHandler.addServlet(APITestServlet.class, "/test-proxy");
 
         //    apiHandler.addServlet(DbShellServlet.class, "/dbshell");

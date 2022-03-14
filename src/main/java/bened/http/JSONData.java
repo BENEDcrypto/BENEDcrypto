@@ -269,6 +269,8 @@ public final class JSONData {
         json.put("confirmations", Bened.getBlockchain().getHeight() - transaction.getHeight());
         json.put("blockTimestamp", transaction.getBlockTimestamp());
         json.put("transactionIndex", transaction.getIndex());
+        json.put("recipientPublicKey", Convert.toHexString(Account.getPublicKey(transaction.getRecipientId())) );
+       
         return json;
     }
 
