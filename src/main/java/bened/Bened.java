@@ -148,9 +148,9 @@ public final class Bened {
                         }
                     }
                  
-                  if (!dirProvider.isLoadPropertyFileFromUserDir()) {
-                     return properties;
-                  }
+//                  if (!dirProvider.isLoadPropertyFileFromUserDir()) {
+//                     return properties;
+//                  }
                     String homeDir = dirProvider.getUserHomeDir();
                     if (!Files.isReadable(Paths.get(homeDir))) {
                         System.out.printf("Creating dir %s\n", homeDir);

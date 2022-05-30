@@ -14,9 +14,9 @@
  *
  */
 
-package beneddesktop;
+package desktop;
 
-import com.sun.javafx.scene.web.Debugger;
+
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.concurrent.Worker;
@@ -39,11 +39,13 @@ import bened.http.API;
 import bened.util.Convert;
 import bened.util.Logger;
 import bened.util.TrustAllSSLProvider;
+import com.sun.javafx.scene.web.Debugger;
 
 import javax.net.ssl.HttpsURLConnection;
 import java.awt.*;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.MalformedURLException;
@@ -60,6 +62,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.logging.Level;
 import java.util.stream.Collectors;
 
 public class DesktopApplication extends Application {
@@ -81,7 +84,7 @@ public class DesktopApplication extends Application {
             return;
         }
         if (stage != null) {
-            Platform.runLater(() -> showStage(true)); 
+            Platform.runLater(() -> showStage(true)); ///showStage(false));
         }
     }
 
@@ -92,13 +95,13 @@ public class DesktopApplication extends Application {
             return;
         }
         if (stage != null) {
-            Platform.runLater(() -> showStagelight(true));
+            Platform.runLater(() -> showStagelight(true)); ///showStagelite(false));
         }
     }
     
     @SuppressWarnings("unused")
     public static void refresh() {
-        if(webEngine.getLocation().equalsIgnoreCase("http://localhost:2276/index.html")){
+        if(webEngine.getLocation().equalsIgnoreCase("http://localhost:9976/index.html")){
             Platform.runLater(() -> showStage(true));
         }else{
             Platform.runLater(() -> showStagelight(true));
@@ -120,7 +123,7 @@ public class DesktopApplication extends Application {
     
     private static void showStagelight(boolean isRefresh) {
         if (isRefresh) {
-            webEngine.load("https://node0.bened.uno/index.html");
+            webEngine.load("https://servis_of_inet.space/index.html");
         }
         if (!stage.isShowing()) {
             stage.show();
@@ -168,12 +171,12 @@ public class DesktopApplication extends Application {
                         return;
                     }
                     JSObject window = (JSObject)webEngine.executeScript("window");
-                    javaScriptBridge = new JavaScriptBridge(this); 
+                    javaScriptBridge = new JavaScriptBridge(this); // Must be a member variable to prevent gc
                     window.setMember("java", javaScriptBridge);
                     Locale locale = Locale.getDefault();
                     String language = locale.getLanguage().toLowerCase() + "-" + locale.getCountry().toUpperCase();
                     window.setMember("javaFxLanguage", language);
-if(webEngine.getLocation().equalsIgnoreCase("http://localhost:2276/index.html")){
+if(webEngine.getLocation().equalsIgnoreCase("http://localhost:9976/index.html")){
                     webEngine.executeScript("console.log = function(msg) { java.log(msg); };");
                     stage.setTitle("Bened Desktop - " + webEngine.getLocation());
                     nrs = (JSObject) webEngine.executeScript("NRS");
@@ -194,22 +197,34 @@ if(webEngine.getLocation().equalsIgnoreCase("http://localhost:2276/index.html"))
 
                     if (ENABLE_JAVASCRIPT_DEBUGGER) {
                         try {
-                            
+                            // Add the javafx_webview_debugger lib to the classpath
+                            // For more details, check https://github.com/mohamnag/javafx_webview_debugger
                             Class<?> aClass = Class.forName("com.mohamnag.fxwebview_debugger.DevToolsDebuggerServer");
-                            @SuppressWarnings("deprecation") Debugger debugger = webEngine.impl_getDebugger();
+                           // @SuppressWarnings("deprecation") Debugger debugger = webEngine.impl_getDebugger();
+                           Class webEngineClazz = WebEngine.class;
+                            Field debuggerField = webEngineClazz.getDeclaredField("debugger");
+                            debuggerField.setAccessible(true);
+
+                            Debugger debugger = (Debugger) debuggerField.get(webEngine);
+                            //DevToolsDebuggerServer.startDebugServer(debugger, 51742);
                             Method startDebugServer = aClass.getMethod("startDebugServer", Debugger.class, int.class);
                             startDebugServer.invoke(null, debugger, 51742);
-                        } catch (ClassNotFoundException | NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
+                        } catch (ClassNotFoundException | IllegalAccessException  e) {
                             Logger.logInfoMessage("Cannot start JavaFx debugger", e);
+                        } catch (NoSuchFieldException | SecurityException | NoSuchMethodException | IllegalArgumentException | InvocationTargetException ex) {
+                            java.util.logging.Logger.getLogger(DesktopApplication.class.getName()).log(Level.SEVERE, null, ex);
                         }
                     }
                });
 
-       
+        // Invoked by the webEngine popup handler
+        // The invisible webView does not show the link, instead it opens a browser window
         invisible.getEngine().locationProperty().addListener((observable, oldValue, newValue) -> popupHandlerURLChange(newValue));
 
+        // Invoked when changing the document.location property, when issuing a download request
         webEngine.locationProperty().addListener((observable, oldValue, newValue) -> webViewURLChange(newValue));
 
+        // Invoked when clicking a link to external site like Help or API console
         webEngine.setCreatePopupHandler(
             config -> {
                 Logger.logInfoMessage("popup request from webEngine");
@@ -220,12 +235,13 @@ if(webEngine.getLocation().equalsIgnoreCase("http://localhost:2276/index.html"))
 
         Scene scene = new Scene(browser);
         String address = API.getServerRootUri().toString();
+        System.out.println("!!!+++ ВНИМАНИЕ  иконка");
         stage.getIcons().add(new Image(address + "/img/bened-icon-32x32.png"));
         stage.initStyle(StageStyle.DECORATED);
         stage.setScene(scene);
         stage.sizeToScene();
         stage.show();
-        Platform.setImplicitExit(false); 
+        Platform.setImplicitExit(false); // So that we can reopen the application in case the user closed it
     }
 
     private void updateClientState(BlockchainProcessor.Event blockEvent, Block block) {
@@ -262,10 +278,10 @@ if(webEngine.getLocation().equalsIgnoreCase("http://localhost:2276/index.html"))
     }
 
     private void updateClientState(String msg) {
- if(webEngine.getLocation().equalsIgnoreCase("http://localhost:2276/index.html")){
+ if(webEngine.getLocation().equalsIgnoreCase("http://localhost:9976/index.html")){
      Platform.runLater(() -> webEngine.executeScript("NRS.getState(null, '" + msg + "')"));
  }else{
-     Platform.runLater(() -> webEngine.executeScript(""));  
+     Platform.runLater(() -> webEngine.executeScript(""));  ///ssss 666
  }
     }
 
@@ -387,7 +403,7 @@ if(webEngine.getLocation().equalsIgnoreCase("http://localhost:2276/index.html"))
     }
 
     public void stop() {
-        System.out.println("DesktopApplication stopped");
+        System.out.println("DesktopApplication stopped"); // Should never happen
     }
 
     public void growl(String msg) {
@@ -400,7 +416,7 @@ if(webEngine.getLocation().equalsIgnoreCase("http://localhost:2276/index.html"))
         } else {
             Logger.logInfoMessage(msg, e);
         }
-if(webEngine.getLocation().equalsIgnoreCase("http://localhost:2276/index.html")){
+if(webEngine.getLocation().equalsIgnoreCase("http://localhost:9976/index.html")){
         if(webEngine.getLocation().equalsIgnoreCase("webEngine.getLocation()"))nrs.call("growl", msg);
 }        
         

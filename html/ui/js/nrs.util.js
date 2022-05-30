@@ -733,7 +733,7 @@ var NRS = (function (NRS, $, undefined) {
         } else {
             return '/';
         }
-        if (accountRS.toLowerCase() === "bened5h5hprs4uyta8gy83")
+        if (accountRS.toLowerCase === "bened5h5hprs4uyta8gy83") 
             return "GENESIS";
         var accountTitle;
         if (accountRef && accountRS == accountRef) {

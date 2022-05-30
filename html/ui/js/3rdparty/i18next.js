@@ -816,7 +816,7 @@
     
                     ret = o.lowerCaseLng ?
                         parts[0].toLowerCase() +  '-' + parts[1].toLowerCase() :
-                        parts[0].toLowerCase() +  '-' + parts[1].toUpperCase();
+                        parts[0].toLowerCase() +  '-' + parts[1].toLowerCase();
                 } else {
                     ret = o.lowerCaseLng ? l.toLowerCase() : l;
                 }
@@ -1697,7 +1697,7 @@
                     var parts = lng.split('-');
                     lng = o.lowerCaseLng ?
                         parts[0].toLowerCase() +  '-' + parts[1].toLowerCase() :
-                        parts[0].toLowerCase() +  '-' + parts[1].toUpperCase();
+                        parts[0].toLowerCase() +  '-' + parts[1].toLowerCase();
                 }
     
                 if (whitelist.length === 0 || whitelist.indexOf(lng) > -1) {
@@ -2017,7 +2017,7 @@
                         case 's': arg = ((arg = String(arg)) && match[7] ? arg.substring(0, match[7]) : arg); break;
                         case 'u': arg = Math.abs(arg); break;
                         case 'x': arg = arg.toString(16); break;
-                        case 'X': arg = arg.toString(16).toUpperCase(); break;
+                        case 'X': arg = arg.toString(16).toLowerCase(); break;
                     }
                     arg = (/[def]/.test(match[8]) && match[3] && arg >= 0 ? '+'+ arg : arg);
                     pad_character = match[4] ? match[4] == '0' ? '0' : match[4].charAt(1) : ' ';

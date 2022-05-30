@@ -14,7 +14,7 @@
  *
  */
 
-package beneddesktop;
+package desktop;
 
 import javafx.application.Platform;
 import javafx.scene.input.Clipboard;

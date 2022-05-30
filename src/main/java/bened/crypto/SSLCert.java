@@ -1,5 +1,6 @@
 package bened.crypto;
 
+import bened.Bened;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -11,8 +12,24 @@ import java.util.Date;
 
 import bened.util.Convert;
 import bened.util.Logger;
-import sun.security.tools.keytool.CertAndKeyGen;
-import sun.security.x509.X500Name;
+import java.io.IOException;
+import java.math.BigInteger;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.security.Security;
+import java.security.cert.CertificateException;
+import java.util.logging.Level;
+import javax.security.auth.x500.X500Principal;
+import org.bouncycastle.asn1.x509.ExtendedKeyUsage;
+import org.bouncycastle.asn1.x509.KeyPurposeId;
+import org.bouncycastle.asn1.x509.X509Extensions;
+import org.bouncycastle.asn1.x509.X509Name;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.x509.X509V3CertificateGenerator;
+
 
 public class SSLCert {
     private int keysize = 1024;
@@ -50,7 +67,8 @@ public class SSLCert {
                 f.delete();
                 return false;
             }
-        } else return false;
+        } else
+            return false;
     }
 
     private boolean doesExist(String path) {
@@ -69,32 +87,40 @@ public class SSLCert {
         }
     }
 
-    private String writeInternal(String path) throws Exception {
-        this.pathToSave = path;
+    private String writeInternal(String path) {
+         String fingerprint ="error fingerprint";
+        try {
+            this.pathToSave = path;
 
-        KeyStore keyStore = KeyStore.getInstance("JKS");
-        keyStore.load(null, null);
+            KeyStore keyStore = KeyStore.getInstance("JKS");
+            keyStore.load(null, null);
 
-        CertAndKeyGen keypair = new CertAndKeyGen("RSA", "SHA1WithRSA", null);
+//        CertAndKeyGen keypair = new CertAndKeyGen("RSA", "SHA1WithRSA", null);
+//
+//        X500Name x500Name = new X500Name(commonName, organizationalUnit, organization, city, state, country);
+//        keypair.generate(keysize);
+//        PrivateKey privKey = keypair.getPrivateKey();
+            X509Certificate[] chain = new X509Certificate[1];
+            X509Certificate selfSignedX509Certificate = generateSelfSignedX509Certificate();
 
-        X500Name x500Name = new X500Name(commonName, organizationalUnit, organization, city, state, country);
+//chain[0] = keypair.getSelfCertificate(x500Name, new Date(), (long) validity * 24 * 60 * 60);
+            chain[0] = selfSignedX509Certificate;
+            MessageDigest sha1 = MessageDigest.getInstance("SHA1");
+            
+            sha1.update(chain[0].getEncoded());
 
-        keypair.generate(keysize);
-        PrivateKey privKey = keypair.getPrivateKey();
+            fingerprint = Convert.toHexString(sha1.digest()).toUpperCase().replaceAll("(.{2})", "$1 ");
 
-        X509Certificate[] chain = new X509Certificate[1];
+            keyStore.setKeyEntry(alias, keyPair.getPrivate(), keyPass, chain);
 
-        chain[0] = keypair.getSelfCertificate(x500Name, new Date(), (long) validity * 24 * 60 * 60);
-        MessageDigest sha1 = MessageDigest.getInstance("SHA1");
-        sha1.update(chain[0].getEncoded());
-
-        String fingerprint = Convert.toHexString(sha1.digest()).toUpperCase().replaceAll("(.{2})", "$1 ");
-
-
-        keyStore.setKeyEntry(alias, privKey, keyPass, chain);
-
-        keyStore.store(new FileOutputStream(this.pathToSave), keyPass);
-        return fingerprint;
+            keyStore.store(new FileOutputStream(this.pathToSave), keyPass);
+            
+        } catch (KeyStoreException | NoSuchAlgorithmException | IOException | CertificateException ex) {
+            java.util.logging.Logger.getLogger(SSLCert.class.getName()).log(Level.SEVERE, null, ex);
+        }finally{
+            return fingerprint;
+        }
+            
     }
 
     public int getKeysize() {
@@ -172,4 +198,58 @@ public class SSLCert {
     public void setKeyPass(String keyPass) {
         this.keyPass = keyPass.toCharArray();
     }
+    
+    ////////////new 
+//       public static void main(String[] args) throws CertificateEncodingException, InvalidKeyException, IllegalStateException, NoSuchProviderException, NoSuchAlgorithmException, SignatureException {
+//        X509Certificate selfSignedX509Certificate = new BouncyCastle().generateSelfSignedX509Certificate();
+//        System.out.println(selfSignedX509Certificate);
+//    }
+
+    private KeyPair keyPair;
+    public X509Certificate generateSelfSignedX509Certificate(){
+        final String host = Bened.getStringProperty("bened.apiServerHost");
+        String localhost = "0.0.0.0".equals(host) || "127.0.0.1".equals(host) ? "localhost" : host;
+        
+        
+        
+        Security.addProvider(new BouncyCastleProvider());
+        X509Certificate cert =null;
+        try{
+        // generate a key pair
+        KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA", "BC");
+        keyPairGenerator.initialize(keysize, new SecureRandom());
+        keyPair = keyPairGenerator.generateKeyPair();
+
+        //        X500Name x500Name = new X500Name(commonName, organizationalUnit, organization, city, state, country);
+       
+        String fqdn = "CN="+localhost+", OU="+organizationalUnit+", O="+organization+", L="+city+", ST="+state+", C="+country;
+                // build a certificate generator
+        X509V3CertificateGenerator certGen = new X509V3CertificateGenerator();
+        X500Principal dnName = new X500Principal(fqdn) ; //("cn="+host);
+
+        // add some options
+        certGen.setSerialNumber(BigInteger.valueOf(System.currentTimeMillis()));
+        certGen.setSubjectDN(new X509Name(fqdn));
+        certGen.setIssuerDN(dnName); // use the same
+
+        // yesterday
+        certGen.setNotBefore(new Date(System.currentTimeMillis() - 24 * 60 * 60 * 1000));
+        // in 2 years
+        certGen.setNotAfter(new Date(System.currentTimeMillis() + ((long)5 * ((long)1000*(long)60*(long)525600)) ));  
+        certGen.setPublicKey(keyPair.getPublic());
+        certGen.setSignatureAlgorithm("SHA256WithRSAEncryption");
+        certGen.addExtension(X509Extensions.ExtendedKeyUsage, true, new ExtendedKeyUsage(KeyPurposeId.id_kp_timeStamping));
+
+        // finally, sign the certificate with the private key of the same KeyPair
+        cert = certGen.generate(keyPair.getPrivate(), "BC");
+            System.out.println("sert = "+cert.toString());
+        }catch(Exception e){
+            System.out.println("\n----error ssl e="+e);
+        }finally{
+             return cert;
+        }
+       
+    }
+
+   
 }

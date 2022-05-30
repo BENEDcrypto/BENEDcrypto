@@ -188,7 +188,7 @@ var NRS = (function(NRS, $, undefined) {
 		//Hide/Reset any possible error messages
 		$(this).find(".callout-danger:not(.never_hide), .error_message, .account_info").html("").hide();
 		$(this).find(".advanced").hide();
-		$(this).find(".recipient_public_key").hide();
+		$(this).find(".recipient_public_key").show();
 		$(this).find(".optional_message, .optional_note, .optional_do_not_sign, .optional_public_key").hide();
 		$(this).find(".advanced_info a").text($.t("advanced"));
 		$(this).find(".advanced_extend").each(function(index, obj) {

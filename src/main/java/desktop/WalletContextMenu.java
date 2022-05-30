@@ -14,9 +14,9 @@
  *
  */
 
-package beneddesktop;
+package desktop;
 
-import com.sun.javafx.scene.control.skin.ContextMenuContent;
+import com.sun.javafx.scene.control.ContextMenuContent;
 import javafx.event.EventHandler;
 import javafx.scene.Node;
 import javafx.scene.Parent;
@@ -39,8 +39,9 @@ class WalletContextMenu implements EventHandler<ContextMenuEvent> {
     @Override
     public void handle(ContextMenuEvent event) {
         @SuppressWarnings("deprecation")
-        final Iterator<Window> windows = Window.impl_getWindows();
+        final Iterator<Window> windows = (Iterator<Window>) Window.getWindows(); // May not work in Java 9
         while (windows.hasNext()) {
+            // access the context menu window
             final Window window = windows.next();
             if (window instanceof ContextMenu) {
                 if (window.getScene() != null && window.getScene().getRoot() != null) {

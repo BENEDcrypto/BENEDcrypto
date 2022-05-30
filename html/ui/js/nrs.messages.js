@@ -239,7 +239,7 @@ var NRS = (function(NRS, $) {
 		e.preventDefault();
 		var account = NRS.getAccountFormatted(NRS.selectedContext.data("account"));
 		var option = $(this).data("option");
-		NRS.closeContextMenu();
+		NRS.closeContextMenu();               
 		if (option == "add_contact") {
 			$("#add_contact_account_id").val(account).trigger("blur");
 			$("#add_contact_modal").modal("show");
@@ -255,7 +255,7 @@ var NRS = (function(NRS, $) {
 		e.preventDefault();
 		var account = NRS.getAccountFormatted(NRS.selectedContext.data("account"));
 		var option = $(this).data("option");
-		NRS.closeContextMenu();
+		NRS.closeContextMenu();                   
 		if (option == "update_contact") {
 			$("#update_contact_modal").modal("show");
 		} else if (option == "send_cointech") {

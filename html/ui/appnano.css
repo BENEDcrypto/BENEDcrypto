@@ -4339,7 +4339,7 @@ input.masked {
 }
 
 .recipient_public_key {
-  display: none;
+  display: block;
 }
 
 .optional_message,.optional_note,.optional_do_not_sign,.optional_public_key {
@@ -31667,7 +31667,7 @@ input.masked {
 }
 
 .recipient_public_key {
-  display: none;
+  display: block;
 }
 
 .optional_message,.optional_note,.optional_do_not_sign,.optional_public_key {

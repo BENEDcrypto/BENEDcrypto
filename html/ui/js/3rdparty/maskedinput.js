@@ -11,8 +11,8 @@
     $.mask = {
         definitions: {
             "9": "[0-9]",
-            a: "[a-zA-Z]",
-            "*": "[a-zA-Z0-9]"
+            a: "[A-Za-z]",
+            "*": "[A-Za-z0-9]"
         },
         autoclear: 0,
         dataName: "rawMaskFn",
@@ -95,7 +95,6 @@
                     } else {
                         var curValUpper = curVal.toLowerCase();
                         var addressStart = curValUpper.indexOf('bened', 5);
-alert("va="+addressStart);
                         if (addressStart > 0) {
                             var insertedAddress = curValUpper.substr(addressStart, 24);
                             if (/bened[a-zA-Z0-9]{17}/.test(insertedAddress)) {
@@ -223,15 +222,12 @@ alert("va="+addressStart);
                     setTimeout(function() {
                         var newInput = input.val();
                         var pastedData = newInput.substring(5).toLowerCase();
-//alert("a="+pastedData);
                         if (/bened[a-zA-Z0-9]{17}/i.test(pastedData)) {
                             var newAddress = String(pastedData.match("bened[a-zA-Z0-9]{17}"));
                             input.val(newAddress);
                             checkVal(true);
-//alert("tr0");
                         } else if (/^bened[a-zA-Z0-9]{17}/i.test(newInput) || /^bened[a-zA-Z0-9]{17}/i.test(newInput)) {
                             input.mask("bened*****************").trigger("checkRecipient")/*.unbind(".remask")*/;
-//alert("fls0");
                         }
                     }, 0);
                 });

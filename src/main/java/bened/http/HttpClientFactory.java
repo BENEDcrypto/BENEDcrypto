@@ -17,6 +17,7 @@
 package bened.http;
 
 import org.eclipse.jetty.client.HttpClient;
+import org.eclipse.jetty.client.HttpClientTransport;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 
 class HttpClientFactory {
@@ -28,8 +29,8 @@ class HttpClientFactory {
                 "SSL_DHE_RSA_EXPORT_WITH_DES40_CBC_SHA", "SSL_DHE_DSS_EXPORT_WITH_DES40_CBC_SHA");
         sslContextFactory.addExcludeProtocols("SSLv3");
         sslContextFactory.setTrustAll(true);
-        HttpClient httpClient = new HttpClient(sslContextFactory);
-        httpClient.setAddressResolutionTimeout(300 * 1000); 
+        HttpClient httpClient = new HttpClient((HttpClientTransport) sslContextFactory);
+        httpClient.setAddressResolutionTimeout(300 * 1000); // On my Windows workstation, first time, DNS resolution can take a while
         return httpClient;
     }
 }
