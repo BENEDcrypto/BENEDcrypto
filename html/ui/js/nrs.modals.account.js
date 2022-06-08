@@ -77,8 +77,7 @@ var NRS = (function(NRS, $) {
 			NRS.processAccountModalData(account);
 		}
 		NRS.userInfoModal.transactions();
-    if (NRS.discoveryState==NRS.DISCOVERY_PUBLIC)
-        NRS.userInfoModal.hierarchy();
+
 
     if (!$("#user_info_modal_hierarchy").is(":visible")) {
       $("#user_info_modal_transactions").show();
@@ -97,25 +96,7 @@ var NRS = (function(NRS, $) {
     $(this).find("ul.nav li.active").removeClass("active");
     $("#user_info_transactions").addClass("active");
 
-    if (NRS.discoveryState == NRS.DISCOVERY_PUBLIC) {
-      NRS.sendRequest("getParent", {"account" : NRS.userInfoModal.user }, function(response) {
-        $("#activated_by").show();
-        $("#activated_by_prefix").show();
-        if (response.parentRS) {
-          if (response.parentRS.toLowerCase() == "bened5h5hprs4uyta8gy83") {
-            $("#activated_by").html("activated by GENESIS");
-          } else {
-           $("#activated_by").html("activated by <a href='#' data-user='" + String(response.parentRS).escapeHTML() +
-                  "' id='account_link_in_sidebar' class='show_account_modal_action user-info activated-by-button'>" + response.parentRS + "</a>");
-          }
-        } else {
-          $("#activated_by").html("not activated");
-        }
-      });
-    } else {
-      $("#activated_by").hide();
-      $("#activated_by_prefix").hide();
-    }
+
 
 	};
 
@@ -140,11 +121,7 @@ var NRS = (function(NRS, $) {
 			$("#user_info_description").hide();
 		}
 
-    if (NRS.discoveryState==NRS.DISCOVERY_PUBLIC) {
-      $("#user_info_hierarchy").show();
-    } else {
-      $("#user_info_hierarchy").hide();
-    }
+
 		var switchAccount = $("#user_info_switch_account");
     switchAccount.hide();
 

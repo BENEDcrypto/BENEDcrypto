@@ -45,8 +45,6 @@ var NRS = (function (NRS, $, undefined) {
     NRS.accountRS = "";
     NRS.publicKey = "";
     NRS.accountInfo = {};
-    NRS.discoveryServer = "";
-    NRS.discoveryAerialURL = "путь к какойто странице/Embedded/page.html";
     NRS.database = null;
     NRS.databaseSupport = false;
     NRS.databaseFirstStart = false;
@@ -74,8 +72,7 @@ var NRS = (function (NRS, $, undefined) {
     NRS.downloadingBlockchain = false;
 
     NRS.rememberPassword = false;
-    NRS.discoveryState = NRS.DISCOVERY_UNAVAILABLE;
-    NRS.selectedContext = null;
+   NRS.selectedContext = null;
 
     NRS.currentPage = "dashboard";
     NRS.currentSubPage = "";
@@ -135,10 +132,7 @@ var NRS = (function (NRS, $, undefined) {
             NRS.loadServerConstants();
             NRS.initializePlugins();
             NRS.printEnvInfo();
-            NRS.getDiscoveryState(function (state) {
-                NRS.discoveryState = state;
-                console.log("DiscoveryAPI: " + state);
-            });
+
         });
 
         if (!NRS.server) {
@@ -373,13 +367,7 @@ var NRS = (function (NRS, $, undefined) {
 
         var page = $(this).data("page");
 
-        // Discovery Aerial Background Frame Draw Errors Fix
-        if (page == NRS.currentPage) {
-            if (data && data.callback) {
-                data.callback();
-            }
-            return;
-        }
+
 
         $(".page").hide();
 

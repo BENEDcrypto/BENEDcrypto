@@ -34,36 +34,6 @@ var NRS = (function (NRS) {
         return isDesktopApplication && navigator.userAgent.indexOf("Linux") == -1;
     };
 
-    NRS.isDiscoveryAvailableToLaunch = function () {
-      return isDesktopApplication;
-    }
-    NRS.DISCOVERY_PUBLIC = 1;
-    NRS.DISCOVERY_PROTECTED = 2;
-    NRS.DISCOVERY_PRIVATE = 3;
-    NRS.DISCOVERY_UNAVAILABLE = 0;
-    NRS.getDiscoveryState = function (callback) {
-      NRS.sendRequest("getParent", {"account":"bened5h5hprs4uyta8gy83"}, function(response){
-        if (response.errorDescription) {
-          if (NRS.compareStrings(response.errorDescription, 'Incorrect "adminPassword" (the specified password does not match local adminPassword)')
-              || NRS.compareStrings(response.errorDescription, 'Administrator password not specified.')) {
-            callback(NRS.DISCOVERY_PROTECTED);
-            return;
-          }
-          if (NRS.compareStrings(response.errorDescription, 'Not allowed')) {
-            callback(NRS.DISCOVERY_PRIVATE);
-            return;
-          }
-          if (response.parentRS.lastIndexOf("bened", 0) === 0 || NRS.compareStrings(response.errorDescription, 'Incorrect "account"')) {
-            allback(NRS.DISCOVERY_UNAVAILABLE);
-            return;
-          }
-          callback(NRS.DISCOVERY_UNAVAILABLE);
-        } else {
-          
-          callback(NRS.DISCOVERY_PUBLIC);
-        }
-      });
-    }
 
     NRS.compareStrings = function (string1, string2) {
       var areEqual = string1.trim().valueOf() === string2.trim().valueOf();

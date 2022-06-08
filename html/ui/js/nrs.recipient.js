@@ -31,8 +31,11 @@ var NRS = (function(NRS, $) {
 		$recipientFields.on("checkRecipient", function() {
 			var value = $(this).val();
 			var modal = $(this).closest(".modal");
-
-
+//a+
+                        if (value && value.length===64 && (modal.find("input[name=recipient]").val()==="" || modal.find("input[name=recipient]").val()==="bened_________________")) {                         
+                            modal.find("input[name=recipient]").val(NRS.getAccountIdFromPublicKey(value, true) );
+                        }
+///a-
 			if (value && value != "bened_________________") {
 				NRS.checkRecipient(value, modal);
 			} else {
@@ -53,7 +56,6 @@ var NRS = (function(NRS, $) {
 	$("#send_message_modal, #send_money_modal, #transfer_currency_modal, #add_contact_modal, #set_account_property_modal, #delete_account_property_modal").on("show.bs.modal", function(e) {
 		var $invoker = $(e.relatedTarget);
 		var account = $invoker.data("account");
-
 		if (!account) {
 			account = $invoker.data("contact");
 		}
@@ -68,7 +70,7 @@ var NRS = (function(NRS, $) {
 
 	//todo later: http://twitter.github.io/typeahead.js/
 	var modal = $(".modal");
-    modal.on("click", "span.recipient_selector button, span.plain_address_selector button", function(e) {
+    modal.on("click", "span.recipient_selector button, span.plain_address_selector button", function(e) {   
 		if (!Object.keys(NRS.contacts).length) {
 			e.preventDefault();
 			e.stopPropagation();
@@ -132,7 +134,7 @@ var NRS = (function(NRS, $) {
 		});
 	};
 
-	NRS.getAccountError = function(accountId, callback) {
+	NRS.getAccountError = function(accountId, callback) {          
 		NRS.sendRequest("getAccount", {
 			"account": accountId
 		}, function(response) {
@@ -144,7 +146,8 @@ var NRS = (function(NRS, $) {
 							"name" : response.name,
 							"techcoin": NRS.formatAmount(response.unconfirmedBalanceNQT, false, true)
 						}),
-						"account": response
+						"account": response,
+                                                "publicKey":response.publicKey
 					});
 				}
 				else{
@@ -153,7 +156,8 @@ var NRS = (function(NRS, $) {
 						"message": $.t("recipient_info", {
 							"techcoin": NRS.formatAmount(response.unconfirmedBalanceNQT, false, true)
 						}),
-						"account": response
+						"account": response,
+                                                "publicKey":response.publicKey
 					});
 				}
 			} else {
@@ -196,7 +200,7 @@ var NRS = (function(NRS, $) {
 		$(el).closest(".modal-body").find("input[name=recipient],input[name=account_id]").val($(el).data("address")).trigger("blur");
 	};
 
-	NRS.checkRecipient = function(account, modal) {
+	NRS.checkRecipient = function(account, modal) {      
 		var classes = "callout-info callout-danger callout-warning";
 
 		var callout = modal.find(".account_info").first();
@@ -208,37 +212,41 @@ var NRS = (function(NRS, $) {
 
 		account = $.trim(account);
 
+ if(modal.find("input[name=recipientPublicKey]").val()!="" && /^(bened)?[a-zA-Z0-9]+/i.test(account))return ;
 		//solomon reed. Btw, this regex can be shortened..
 		if (/^(bened)?[a-zA-Z0-9]+/i.test(account)) {
 			var address = new BenedAddress();
-
 			if (address.set(account)) {
 				NRS.getAccountError(account, function(response) {
 					if (response.noPublicKey && account!=NRS.accountRS) {
-						modal.find(".recipient_public_key").show();
+						modal.find(".recipient_public_key").show();                                               
 					} else {
-						modal.find("input[name=recipientPublicKey]").val("");
-						modal.find(".recipient_public_key").show();
+                                                if(modal.find("input[name=recipientPublicKey]").val()===response.publicKey)return ;
+                                                if(response.publicKey){
+                                                    modal.find("input[name=recipientPublicKey]").val(response.publicKey);
+                                                }else{
+                                                   modal.find("input[name=recipientPublicKey]").val(""); 
+                                                }
+						
+						modal.find(".recipient_public_key").show();                                                 
 					}
 					if (response.account && response.account.description) {
 						checkForMerchant(response.account.description, modal);
 					}
 
-					if (account==NRS.accountRS)
+					if (account==NRS.accountRS){
 						callout.removeClass(classes).addClass("callout-" + response.type).html("This is your account").show();
-					else{
+                                        }else{                                           
 						var message = response.message.escapeHTML();
 						callout.removeClass(classes).addClass("callout-" + response.type).html(message).show();
 					}
 				});
 			} else {
-				if (address.guess.length == 1) {
-                                    
+				if (address.guess.length == 1) {                                  
 					callout.removeClass(classes).addClass("callout-danger").html($.t("recipient_malformed_suggestion", {
 						"recipient": "<span class='malformed_address' data-address='" + String(address.guess[0]).escapeHTML() + "' onclick='NRS.correctAddressMistake(this);'>" + address.format_guess(address.guess[0], account) + "</span>"
 					})).show();
-				} else if (address.guess.length > 1) {
-                                    
+				} else if (address.guess.length > 1) {                                   
 					var html = $.t("recipient_malformed_suggestion", {
 						"count": address.guess.length
 					}) + "<ul>";
@@ -247,22 +255,22 @@ var NRS = (function(NRS, $) {
 					}
 
 					callout.removeClass(classes).addClass("callout-danger").html(html).show();
-				} else {
+				} else {                                   
 					callout.removeClass(classes).addClass("callout-danger").html($.t("recipient_malformed")).show();
                                         
 				}
 			}
-		} else if (!(/^\d+$/.test(account))) {
-			if (account.charAt(0) != '@') {
+		} else if (!(/^\d+$/.test(account))) {                    
+			if (account.charAt(0) != '@') {;                            
 				NRS.storageSelect("contacts", [{
 					"name": account
 				}], function(error, contact) {
-					if (!error && contact.length) {
+					if (!error && contact.length) {                                            
 						contact = contact[0];
 						NRS.getAccountError(contact.accountRS, function(response) {
 							if (response.noPublicKey && account!=NRS.account) {
-								modal.find(".recipient_public_key").show();
-							} else {
+								modal.find(".recipient_public_key").show();                                                               
+							} else {                                                            
 								modal.find("input[name=recipientPublicKey]").val("");
 								modal.find(".recipient_public_key").show();
 							}
@@ -280,99 +288,22 @@ var NRS = (function(NRS, $) {
 						});
 					} else if (/^[a-zA-Z0-9]+$/i.test(account)) {
 //						NRS.checkRecipientAlias(account, modal);
-					} else {
-                                            
+					} else {                                           
 						callout.removeClass(classes).addClass("callout-danger").html($.t("recipient_malformed")).show();
 					}
 				});
-			} else if (/^[a-zA-Z0-9@]+$/i.test(account)) {
+			} else if (/^[a-zA-Z0-9@]+$/i.test(account)) {                            
 				if (account.charAt(0) == '@') {
 					account = account.substring(1);
 //					NRS.checkRecipientAlias(account, modal);
 				}
-			} else {
+			} else {                           
 				callout.removeClass(classes).addClass("callout-danger").html($.t("recipient_malformed")).show();
 			}
 		} else {
 			callout.removeClass(classes).addClass("callout-danger").html($.t("error_numeric_ids_not_allowed")).show();
 		}
 	};
-
-//	NRS.checkRecipientAlias = function(account, modal) {
-//		var classes = "callout-info callout-danger callout-warning";
-//		var callout = modal.find(".account_info").first();
-//		var accountInputField = modal.find("input[name=converted_account_id]");
-//
-//		accountInputField.val("");
-//
-//		NRS.sendRequest("getAlias", {
-//			"aliasName": account
-//		}, function(response) {
-//			if (response.errorCode) {
-//				callout.removeClass(classes).addClass("callout-danger").html($.t("error_invalid_account_id")).show();
-//			} else {
-//				if (response.aliasURI) {
-//					var alias = String(response.aliasURI);
-//					var timestamp = response.timestamp;
-//
-//					var regex_1 = /acct:(.*)@bnd/;
-//					var regex_2 = /nacc:(.*)/;
-//
-//					var match = alias.match(regex_1);
-//
-//					if (!match) {
-//						match = alias.match(regex_2);
-//					}
-//
-//					if (match && match[1]) {
-//						match[1] = String(match[1]).toLowerCase();
-//
-//						if (/^\d+$/.test(match[1])) {
-//							var address = new BenedAddress();
-//
-//							if (address.set(match[1])) {
-//								match[1] = address.toString();
-//							} else {
-//								accountInputField.val("");
-//								callout.removeClass(classes).addClass("callout-danger").html($.t("error_invalid_account_id")).show();
-//								return;
-//							}
-//						}
-//
-//						NRS.getAccountError(match[1], function(response) {
-//							if (response.noPublicKey) {
-//								modal.find(".recipient_public_key").show();
-//							} else {
-//								modal.find("input[name=recipientPublicKey]").val("");
-//								modal.find(".recipient_public_key").hide();
-//							}
-//							if (response.account && response.account.description) {
-//								checkForMerchant(response.account.description, modal);
-//							}
-//
-//							callout.removeClass(classes).addClass("callout-" + response.type).html($.t("alias_account_link", {
-//								"account_id": String(match[1]).escapeHTML()
-//							}) + " " + response.message.escapeHTML() + " " + $.t("alias_last_adjusted", {
-//								"timestamp": NRS.formatTimestamp(timestamp)
-//							})).show();
-//
-//							if (response.type == "info" || response.type == "warning") {
-//								accountInputField.val(String(match[1]).escapeHTML());
-//							}
-//						});
-//					} else {
-//						callout.removeClass(classes).addClass("callout-danger").html($.t("alias_account_no_link") + (!alias ? $.t("error_uri_empty") : $.t("uri_is", {
-//							"uri": String(alias).escapeHTML()
-//						}))).show();
-//					}
-//				} else if (response.aliasName) {
-//					callout.removeClass(classes).addClass("callout-danger").html($.t("error_alias_empty_uri")).show();
-//				} else {
-//					callout.removeClass(classes).addClass("callout-danger").html(response.errorDescription ? $.t("error") + ": " + String(response.errorDescription).escapeHTML() : $.t("error_alias")).show();
-//				}
-//			}
-//		});
-//	};
 
 	function checkForMerchant(accountInfo, modal) {
 		var requestType = modal.find("input[name=request_type]").val();

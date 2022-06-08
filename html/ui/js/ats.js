@@ -210,9 +210,9 @@ var ATS = (function(ATS, $, undefined) {
         .error(function() {
             alert('API not available, check if Bened Server is running!');
         });
-        if ($(form).has('.uri-link').length > 0) { 
-            var uri = '/xsrv?' + jQuery.param(params, true);
-            form.getElementsByClassName("uri-link")[0].innerHTML = '<a href="' + uri + '" target="_blank" style="font-size:12px;font-weight:normal;">Open GET URL</a>';
+        if ($(form).has('.uri-link').length > 0) {            
+            var uri = '/xsrv?' + jQuery.param(params, true).replace("=%2Fxsrv&","");
+            form.getElementsByClassName("uri-link")[0].innerHTML = '<a href="' + uri + '" target="_blank" style="font-size:12px;font-weight:normal;">Open GET URL</a>';          
         }
         return false;
     };
