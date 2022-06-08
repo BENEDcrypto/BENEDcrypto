@@ -136,7 +136,7 @@ var NRS = (function(NRS, $) {
 
 	NRS.getAccountError = function(accountId, callback) {  
                 
-alert("accerr 1");            
+           
 		NRS.sendRequest("getAccount", {
 			"account": accountId
 		}, function(response) {
@@ -214,7 +214,7 @@ alert("accerr 1");
 
 		account = $.trim(account);
                 
-alert("cekrec 1");
+
 
  if(modal.find("input[name=recipientPublicKey]").val()!="" && /^(bened)?[a-zA-Z0-9]+/i.test(account))return ;
 		//solomon reed. Btw, this regex can be shortened..
