@@ -1,0 +1,8 @@
+#!/bin/sh
+echo "Sending blockchain status request to locally running SoldoCore"
+wget -nv http://127.0.0.1:2276/xsrv?requestType=getBlockchainStatus -O response.json
+echo "response.json content:"
+cat response.json
+rm response.json
+echo ""
+

@@ -1031,6 +1031,7 @@ var NRS = (function (NRS, $, undefined) {
                                             clearInterval(NRS.softMGCounterId);
                                         }
                                         $("#account_hold").html(NRS.formatStyledAmount(response.hold));
+                                        
                                         NRS.softMGCounterId = setInterval(function () {
                                             var _forPerc = new bened.SoftMG().calc(Number(_softMG.balance), Number(_softMG.amount), Number(_softMG.last), Number(_softMG._genesisEM), Number(_softMG._forgePercent));
                                             $("#account_softMG").html(NRS.formatNumberSmart( _forPerc ));
@@ -1049,7 +1050,7 @@ var NRS = (function (NRS, $, undefined) {
                                                 //connectedIndicator.find("span").html($.t("Not Connected")).attr("data-i18n", "not_connected");
                                                 connectedIndicator.show();
                                     }    
-                                        }, 100);
+                                        }, 10000);
                                     }
                                 });
                             }
