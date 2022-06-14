@@ -368,8 +368,9 @@ final class BlockImpl implements Block {
 
             BigInteger hit = new BigInteger(1, new byte[]{generationSignatureHash[7], generationSignatureHash[6], generationSignatureHash[5], generationSignatureHash[4], generationSignatureHash[3], generationSignatureHash[2], generationSignatureHash[1], generationSignatureHash[0]});
             final boolean verified = SimplDimpl.verifyHit(hit, BigInteger.valueOf(effectiveBalance), previousBlock, timestamp);
-            if (!verified)
+            if (!verified){
                 Logger.logDebugMessage("Refused block "+ height +" because of failed verify hit");
+            }
             return verified;
         } catch (RuntimeException e) {
 
