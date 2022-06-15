@@ -35,11 +35,14 @@ public class SimplDimpl {
             Long ac_ID = iterator.next();
             String rs = Convert.rsAccount(ac_ID);
             long _effectBL = Account.getAccount(ac_ID).getEffectiveBalanceBND(_height);
-             if(_effectBL<1)continue;
+             long _grntBL = Account.getAccount(ac_ID).getGuaranteedBalanceNQT(1440, _height);
+             if(_effectBL<1){
+                 continue;
+             }
             json_.put("rs", rs); 
             json_.put("id", ac_ID);
             json_.put("effectBalans", _effectBL);
-            hm.put(_effectBL,json_);
+            hm.put(_grntBL,json_);
         }
          Map<Long, JSONObject> treeMap = new TreeMap<>(hm);
          int a=0;   

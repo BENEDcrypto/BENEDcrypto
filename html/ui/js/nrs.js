@@ -1050,7 +1050,7 @@ var NRS = (function (NRS, $, undefined) {
                                                 //connectedIndicator.find("span").html($.t("Not Connected")).attr("data-i18n", "not_connected");
                                                 connectedIndicator.show();
                                     }    
-                                        }, 10000);
+                                        }, 5000);
                                     }
                                 });
                             }

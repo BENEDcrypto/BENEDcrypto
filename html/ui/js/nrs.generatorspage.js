@@ -44,7 +44,7 @@ var NRS = (function(NRS) {
 					$('#generators_table tbody').html(rows);
 				});
 			}
-			}, 1000);
+			}, 10000);
 		}
 	};
 	

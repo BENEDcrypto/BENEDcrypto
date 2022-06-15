@@ -108,7 +108,7 @@ var NRS = (function(NRS) {
                         } else {
                             NRS.renderGenerators(true);
                         }
-                    }, 1000);
+                    }, 10000);
                 }
             }
         );
