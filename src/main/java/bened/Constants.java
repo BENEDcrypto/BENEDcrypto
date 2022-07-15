@@ -36,7 +36,7 @@ public final class Constants {
     
     
     public static final int MAX_TRANSACTION_PAYLOAD_LENGTH = 1536;
-    public static final long MAX_BALANCE_BND = 15000000000L;
+    public static final long MAX_BALANCE_BND =       15000000000L;
     public static final long OKON4ATELNAYA_EMISSIA = 150000000000L; 
     public static final long ONE_BND = 1000000L; 
     public static final long MAX_BALANCE_centesimo = MAX_BALANCE_BND * ONE_BND;

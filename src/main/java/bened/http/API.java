@@ -291,6 +291,7 @@ public final class API {
         apiHandler.addServlet(ApizSupply.class, "/Supply");
             apiHandler.addServlet(ApizCirculationSupply.class, "/CirculationSupply");
             apiHandler.addServlet(ApizMaxSupply.class, "/MaxSupply");
+            apiHandler.addServlet(ApizMiningSupply.class, "/MiningSupply");
             apiHandler.addServlet(ApizShow.class, "/Show");
 
             if (apiServerCORS) {
