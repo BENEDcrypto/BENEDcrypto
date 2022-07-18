@@ -17,6 +17,7 @@
 package bened;
 
 import bened.db.DbUtils;
+import bened.util.Convert;
 import bened.util.Logger;
 
 import java.math.BigInteger;
@@ -32,6 +33,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import org.json.simple.JSONObject;
 
 final class BlockDb {
 

@@ -292,7 +292,8 @@ public final class API {
             apiHandler.addServlet(ApizCirculationSupply.class, "/CirculationSupply");
             apiHandler.addServlet(ApizMaxSupply.class, "/MaxSupply");
             apiHandler.addServlet(ApizMiningSupply.class, "/MiningSupply");
-            apiHandler.addServlet(ApizShow.class, "/Show");
+            apiHandler.addServlet(ApizShow.class, "/Show"); // /Show?Trx=17355369217368057888
+            apiHandler.addServlet(ApizTop100accounts.class, "/Top100accounts"); 
 
             if (apiServerCORS) {
                 FilterHolder filterHolder = apiHandler.addFilter(CrossOriginFilter.class, "/*", null);

@@ -16,6 +16,7 @@
 
 package bened.http;
 
+import bened.Account;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.text.DecimalFormat;
@@ -24,13 +25,21 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import bened.Bened;
+import bened.Db;
 import bened.Transaction;
+import bened.crypto.Crypto;
 import bened.util.Convert;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.HashMap;
+import java.util.Map;
 
 
 
 
-public final class ApizShow extends HttpServlet {
+public final class ApizTop100accounts extends HttpServlet {
 
     private static final String header =
             "<!DOCTYPE html>\n" +
@@ -47,53 +56,59 @@ public final class ApizShow extends HttpServlet {
 
     
     
-    
+    String httrx;
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         resp.setHeader("Cache-Control", "no-cache, no-store, must-revalidate, private");
         resp.setHeader("Pragma", "no-cache");
         resp.setDateHeader("Expires", 0);
-        String transactionIdString = req.getParameter("Trx");
-        String transactionFullHash = null;
-        long transactionId=0;
-        Transaction transaction = null;
-        String retrun="";
-        String httrx = "";
-        try {
-            if (transactionIdString != null) {
-                transactionId = Convert.parseUnsignedLong(transactionIdString);
-                transaction = Bened.getBlockchain().getTransaction(transactionId);
-            } else {
-                transaction = Bened.getBlockchain().getTransactionByFullHash(transactionFullHash);
-                if (transaction == null) {
-                    retrun= "UNKNOWN TRANSACTION";
+        String reqgetparam = req.getParameter("param");
+       
+        try (Connection con = Db.db.getConnection();
+            PreparedStatement pstmt = con.prepareStatement("SELECT * FROM account WHERE latest=? ORDER BY balance DESC LIMIT 100  ")) {
+            pstmt.setBoolean(1, true);
+            HashMap<Long, Long> top100acc = new HashMap<>();
+            try (ResultSet rs = pstmt.executeQuery()) {
+                //Account account = null;
+                int _heig =Bened.getBlockchain().getHeight();
+                while(rs.next()) {
+                   // account = Account.getAccount(rs.getLong("id"));
+                   // top100acc.put(Convert.toHexString( Account.getPublicKey(rs.getLong("id"))) , account.getEffectiveBalanceBND());
+                    //top100acc.put(Convert.toHexString( Account.getPublicKey(rs.getLong("id"))) , account.getGuaranteedBalanceNQT(1441, _heig));
+                    top100acc.put(rs.getLong("id") , rs.getLong("balance"));
                 }
             }
-            if (transaction == null) {
-                transaction = Bened.getTransactionProcessor().getUnconfirmedTransaction(transactionId);
-            if (transaction == null) {
-                retrun= "UNKNOWN TRANSACTION";
-            }
+            httrx = "<p style=\"margin-bottom: 0px;\">Top 100 accounts </p>";
+            httrx = "<table class=\"table table-striped\" id=\"Top 100 accounts\" style=\"margin-bottom: 0px; display: table;\">";
+            httrx =httrx +" <tbody><tr><td  style=\"font-weight:bold\">Bened balance </td>"
+                    + "<td style=\"width:60%;text-transform:none;word-break:break-all\">Bened Public key</td>"
+                    + "<td style=\"width:20%;text-transform:none;word-break:break-all;font-weight:bold\">Bened adress</td></tr>";
+            
+            top100acc.entrySet().stream()
+            .sorted(Map.Entry.<Long, Long>comparingByValue().reversed()) 
+            .forEach((t) -> {
+                Account account = Account.getAccount(t.getKey());
+                httrx = httrx + "<tr><td  style=\"font-weight:bold\">"+new DecimalFormat("#0.000000").format(Double.valueOf(t.getValue())/1000000)+" BND"+"</td>" // +t.getKey()+
+                        + "<td style=\"width:60%;text-transform:none;word-break:break-all\">"+ Convert.toHexString(  Account.getPublicKey(t.getKey()) )+ "</td>"
+                        + "<td style=\"width:20%;text-transform:none;word-break:break-all;font-weight:bold\"> bened"+ Crypto.rsEncode(t.getKey())+ "</td></tr>";
+             });
+             httrx = httrx +"</tbody></table>";
+            
+        } catch (SQLException e) {
+            throw new RuntimeException(e.toString(), e);
         }
-        } catch (RuntimeException e) {
-            retrun= "INCORRECT TRANSACTION";
-        }
-
         
-           // return JSONData.unconfirmedTransaction(transaction);
-//        } else {
-//            return JSONData.transaction(transaction, includePhasingResult);
-//        }
+       
         
-        if(retrun.equals("")){
-            httrx = "<table class=\"table table-striped\" id=\"transaction_info_table\" style=\"margin-bottom: 0px; display: table;\">";
-            httrx =httrx +" <tbody><tr><td  style=\"font-weight:bold\">PaymentAmount:</td><td style=\"width:80%;text-transform:none;word-break:break-all\">";
-            httrx = httrx + new DecimalFormat("#0.000000").format(Double.valueOf(transaction.getAmountNQT())/1000000)+" BND"+"</td></tr><tr><td style=\"font-weight:bold\">Fee:</td><td style=\"width:80%;text-transform:none;word-break:break-all\">";
-            httrx = httrx + new DecimalFormat("#0.000000").format(Double.valueOf(transaction.getFeeNQT())/1000000)+" BND"+"</td></tr><tr><td style=\"font-weight:bold\">Recipient:</td><td style=\"width:80%;text-transform:none;word-break:break-all\">";
-            httrx = httrx + Convert.rsAccount(transaction.getRecipientId())+"</td></tr><tr><td  style=\"font-weight:bold\">Sender:</td><td style=\"width:80%;text-transform:none;word-break:break-all\">";
-            httrx = httrx + Convert.rsAccount(transaction.getSenderId())+"</td></tr><tr><td  style=\"font-weight:bold\">Confirmations:</td><td style=\"width:80%;text-transform:none;word-break:break-all\">";
-            long confirms =  (Bened.getBlockchain().getHeight()-transaction.getHeight())<0?0:(Bened.getBlockchain().getHeight()-transaction.getHeight());
-            httrx = httrx + ((confirms<1440)?confirms:"1440+")+"</td></tr></tbody></table>";
+//        if(retrun.equals("")){
+//            httrx = "<table class=\"table table-striped\" id=\"transaction_info_table\" style=\"margin-bottom: 0px; display: table;\">";
+//            httrx =httrx +" <tbody><tr><td  style=\"font-weight:bold\">PaymentAmount:</td><td style=\"width:80%;text-transform:none;word-break:break-all\">";
+//            httrx = httrx + new DecimalFormat("#0.000000").format(Double.valueOf(transaction.getAmountNQT())/1000000)+" BND"+"</td></tr><tr><td style=\"font-weight:bold\">Fee:</td><td style=\"width:80%;text-transform:none;word-break:break-all\">";
+//            httrx = httrx + new DecimalFormat("#0.000000").format(Double.valueOf(transaction.getFeeNQT())/1000000)+" BND"+"</td></tr><tr><td style=\"font-weight:bold\">Recipient:</td><td style=\"width:80%;text-transform:none;word-break:break-all\">";
+//            httrx = httrx + Convert.rsAccount(transaction.getRecipientId())+"</td></tr><tr><td  style=\"font-weight:bold\">Sender:</td><td style=\"width:80%;text-transform:none;word-break:break-all\">";
+//            httrx = httrx + Convert.rsAccount(transaction.getSenderId())+"</td></tr><tr><td  style=\"font-weight:bold\">Confirmations:</td><td style=\"width:80%;text-transform:none;word-break:break-all\">";
+//            long confirms =  (Bened.getBlockchain().getHeight()-transaction.getHeight())<0?0:(Bened.getBlockchain().getHeight()-transaction.getHeight());
+//            httrx = httrx + ((confirms<1440)?confirms:"1440+")+"</td></tr></tbody></table>";
             
             
     //byte[] signature = Convert.emptyToNull(transaction.getSignature());
@@ -129,10 +144,10 @@ public final class ApizShow extends HttpServlet {
 //            json.put("ecBlockId", Long.toUnsignedString(transaction.getECBlockId()));
 //            json.put("ecBlockHeight", transaction.getECBlockHeight());
 //        }
-        }else{
-            httrx = retrun;
-            
-        }    
+//        }else{
+//            httrx = retrun;
+//            
+//        }    
         
 
       //  String body = ""+bened.Constants.MAX_BALANCE_BND;
