@@ -17,7 +17,7 @@
 package bened.http;
 
 import bened.Bened;
-import bened.InnerException;
+import bened.BNDException;
 import bened.Transaction;
 import bened.util.Convert;
 import bened.util.Filter;
@@ -38,7 +38,7 @@ public final class GetExpectedTransactions extends APIServlet.APIRequestHandler 
     }
 
     @Override
-    protected JSONStreamAware processRequest(HttpServletRequest req) throws InnerException {
+    protected JSONStreamAware processRequest(HttpServletRequest req) throws BNDException {
 
         Set<Long> accountIds = Convert.toSet(ParameterParser.getAccountIds(req, false));
         Filter<Transaction> filter = accountIds.isEmpty() ? transaction -> true :

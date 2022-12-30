@@ -1,18 +1,21 @@
 package bened.http;
 
-import org.json.simple.JSONObject;
-import org.json.simple.JSONStreamAware;
+
 import bened.Genesis;
 import bened.Bened;
-import bened.InnerException;
+import bened.BNDException;
+import bened.Constants;
 import bened.util.Convert;
 import bened.util.BenedTree;
-
-import javax.servlet.http.HttpServletRequest;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import javax.servlet.http.HttpServletRequest;
+import org.json.simple.JSONObject;
+import org.json.simple.JSONStreamAware;
+
+
 
 public class IsChildOf extends BenedTree.APIHierarchyRequestHandler {
 
@@ -23,7 +26,7 @@ public class IsChildOf extends BenedTree.APIHierarchyRequestHandler {
     }
 
     @Override
-    protected JSONStreamAware processHierarchyRequest(HttpServletRequest req) throws InnerException {
+    protected JSONStreamAware processHierarchyRequest(HttpServletRequest req) throws BNDException {
 
         long child = ParameterParser.getAccountId(req, "childRS", true);
         long parent = ParameterParser.getAccountId(req, "parentRS", true);
@@ -80,7 +83,7 @@ public class IsChildOf extends BenedTree.APIHierarchyRequestHandler {
                             solvedParent = rs.getLong(1);
                             haveParent = true;
                         }
-                        if (i == 10) {  
+                        if (i == (Bened.getBlockchain().getHeight()<Constants.change_evendek22? Constants.affil_struct : Constants.affil_struct*100)) {   //// было 88
                             solvedParent = Genesis.CREATOR_ID;
                             break;
                         }
@@ -114,7 +117,7 @@ public class IsChildOf extends BenedTree.APIHierarchyRequestHandler {
                 if(statement!=null)statement.close();
             }
         } catch (SQLException e) {
-            throw new InnerException.NotValidException (e.getMessage(), e.getCause());
+            throw new BNDException.NotValidException (e.getMessage(), e.getCause());
         }
     }
 }

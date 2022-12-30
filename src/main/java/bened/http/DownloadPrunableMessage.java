@@ -17,7 +17,7 @@
 package bened.http;
 
 import bened.Bened;
-import bened.InnerException;
+import bened.BNDException;
 import bened.PrunableMessage;
 import bened.util.Convert;
 import bened.util.Logger;
@@ -39,7 +39,7 @@ public final class DownloadPrunableMessage extends APIServlet.APIRequestHandler 
     }
 
     @Override
-    protected JSONStreamAware processRequest(HttpServletRequest request, HttpServletResponse response) throws InnerException {
+    protected JSONStreamAware processRequest(HttpServletRequest request, HttpServletResponse response) throws BNDException {
         long transactionId = ParameterParser.getUnsignedLong(request, "transaction", true);
         boolean retrieve = "true".equalsIgnoreCase(request.getParameter("retrieve"));
         PrunableMessage prunableMessage = PrunableMessage.getPrunableMessage(transactionId);
@@ -88,7 +88,7 @@ public final class DownloadPrunableMessage extends APIServlet.APIRequestHandler 
     }
 
     @Override
-    protected JSONStreamAware processRequest(HttpServletRequest request) throws InnerException {
+    protected JSONStreamAware processRequest(HttpServletRequest request) throws BNDException {
         throw new UnsupportedOperationException();
     }
 }

@@ -49,14 +49,14 @@ import java.util.*;
 
 public final class Bened {
 
-    private static SoftMG softMG_;
+    private static  SoftMG softMG_;
 
     public static SoftMG softMG() {
         return softMG_;
     }
 
-    public static final String MINIMAL_COMPATIBLE_VERSION = "0.0.0.1"; 
-    public static final String VERSION = "0.0.0.1";
+    public static final String MINIMAL_COMPATIBLE_VERSION = "1.2.0.1"; 
+    public static final String VERSION = "1.3.0.5";
     public static final String APPLICATION = "BND";
 
     private static volatile Time time = new Time.EpochTime();
@@ -147,10 +147,7 @@ public final class Bened {
                             return properties;
                         }
                     }
-                 
-//                  if (!dirProvider.isLoadPropertyFileFromUserDir()) {
-//                     return properties;
-//                  }
+
                     String homeDir = dirProvider.getUserHomeDir();
                     if (!Files.isReadable(Paths.get(homeDir))) {
                         System.out.printf("Creating dir %s\n", homeDir);
@@ -297,15 +294,15 @@ public final class Bened {
         return new TransactionImpl.BuilderImpl((byte) 1, senderPublicKey, amountNQT, feeNQT, deadline, (Attachment.AbstractAttachment) attachment);
     }
 
-    public static Transaction.Builder newTransactionBuilder(byte[] transactionBytes) throws InnerException.NotValidException {
+    public static Transaction.Builder newTransactionBuilder(byte[] transactionBytes) throws BNDException.NotValidException {
         return TransactionImpl.newTransactionBuilder(transactionBytes);
     }
 
-    public static Transaction.Builder newTransactionBuilder(JSONObject transactionJSON) throws InnerException.NotValidException {
+    public static Transaction.Builder newTransactionBuilder(JSONObject transactionJSON) throws BNDException.NotValidException {
         return TransactionImpl.newTransactionBuilder(transactionJSON);
     }
 
-    public static Transaction.Builder newTransactionBuilder(byte[] transactionBytes, JSONObject prunableAttachments) throws InnerException.NotValidException {
+    public static Transaction.Builder newTransactionBuilder(byte[] transactionBytes, JSONObject prunableAttachments) throws BNDException.NotValidException {
         return TransactionImpl.newTransactionBuilder(transactionBytes, prunableAttachments);
     }
 
@@ -330,6 +327,8 @@ public final class Bened {
         }
     }
 
+    
+    
     public static void init(Properties customProperties) {
         properties.putAll(customProperties);
         init();
@@ -348,9 +347,9 @@ public final class Bened {
         BlockchainProcessorImpl.getInstance().shutdown();
         Peers.shutdown();
         Db.shutdown();
+        Bened.softMG().shutdown();
         Logger.logShutdownMessage("Bened server " + VERSION + " stopped.");
         Logger.shutdown();
-        Bened.softMG().shutdown();
         runtimeMode.shutdown();
     }
 
@@ -368,7 +367,7 @@ public final class Bened {
                 Thread secureRandomInitThread = initSecureRandom();
                 setServerStatus(ServerStatus.BEFORE_DATABASE, null);
                 Db.init();
-                softMG_ = new SoftMGImpl(Db.SoftMG_DB_URL, Db.SoftMG_DB_USERNAME, Db.SoftMG_DB_PASSWORD);
+                softMG_ = new SoftMG(Db.SoftMG_DB_URL, Db.SoftMG_DB_USERNAME, Db.SoftMG_DB_PASSWORD);
                 setServerStatus(ServerStatus.AFTER_DATABASE, null);
                 TransactionProcessorImpl.getInstance();
                 BlockchainProcessorImpl.getInstance();

@@ -35,10 +35,10 @@ public class SoftMGs {
         double stpKof = 1d;
         
         if (balance>=1l && balance<=999999l) percent = 1d;
-        if (balance>=1000000l && balance<=9999999999l) percent = 0.25d;
-        if (balance>=10000000000l && balance<=99999999999l) percent = 0.5d;
+        if (balance>=1000000l && balance<=9999999999l) percent =  (Bened.getBlockchain().getHeight()<Constants.change_evendek22? 0.25d : 0.1d);
+        if (balance>=10000000000l && balance<=99999999999l) percent = (Bened.getBlockchain().getHeight()<Constants.change_evendek22? 0.5d : 0.19d);
         
-        int yaForgu = Bened.getBlockchain().OnforginBlock(AccouuntID, Constants.GlubinaPoiska);
+        int yaForgu = Bened.getBlockchain().GetLastForgBlk(AccouuntID, Constants.GlubinaPoiska);
         if(percent>0 && yaForgu>0 ){
             percent=1d;
         }

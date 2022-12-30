@@ -33,6 +33,8 @@ public interface Transaction {
 
         Builder appendix(Appendix.EncryptedMessage encryptedMessage);
 
+        Builder appendix(Appendix.MessageHash MessageHash);        
+                
         Builder appendix(Appendix.EncryptToSelfMessage encryptToSelfMessage);
 
         Builder appendix(Appendix.PublicKeyAnnouncement publicKeyAnnouncement);
@@ -47,9 +49,9 @@ public interface Transaction {
 
         Builder ecBlockId(long blockId);
 
-        Transaction build() throws InnerException.NotValidException;
+        Transaction build() throws BNDException.NotValidException;
 
-        Transaction build(String secretPhrase) throws InnerException.NotValidException;
+        Transaction build(String secretPhrase) throws BNDException.NotValidException;
 
     }
 
@@ -95,7 +97,7 @@ public interface Transaction {
 
     boolean verifySignature();
 
-    void validate() throws InnerException.ValidationException;
+    void validate() throws BNDException.ValidationException;
 
     byte[] getBytes();
 

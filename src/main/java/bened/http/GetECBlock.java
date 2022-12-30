@@ -18,7 +18,7 @@ package bened.http;
 
 import bened.Block;
 import bened.Bened;
-import bened.InnerException;
+import bened.BNDException;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONStreamAware;
 
@@ -33,7 +33,7 @@ public final class GetECBlock extends APIServlet.APIRequestHandler {
     }
 
     @Override
-    protected JSONStreamAware processRequest(HttpServletRequest req) throws InnerException {
+    protected JSONStreamAware processRequest(HttpServletRequest req) throws BNDException {
         int timestamp = ParameterParser.getTimestamp(req);
         if (timestamp == 0) {
             timestamp = Bened.getEpochTime();

@@ -24,15 +24,26 @@ public final class Constants {
     public static final boolean isTestnet = Bened.getBooleanProperty("bened.isTestnet");
     public static final boolean isOffline = Bened.getBooleanProperty("bened.isOffline");
     public static final boolean isLightClient = Bened.getBooleanProperty("bened.isLightClient");
-    public static final String customLoginWarning = Bened.getStringProperty("bened.customLoginWarning", null, false, "UTF-8");
-
+    public static final int defaultNumberOfForkConfirmations = Bened.getIntProperty(Constants.isTestnet
+            ? "bened.testnetNumberOfForkConfirmations" : "bened.numberOfForkConfirmations");
+ //   public static final String customLoginWarning = Bened.getStringProperty("bened.customLoginWarning", null, false, "UTF-8");
+    
+    
+    public static final int change_evendek22 = 663399;
+    
+    
+    public static final int affil_struct = 10;
+    
+   
+    
     public static final int MAX_NUMBER_OF_TRANSACTIONS = 100;
-    public static final int MAX_NAGRADNIH = MAX_NUMBER_OF_TRANSACTIONS * 70 / 100;
-    public static final int MAX_PROSTIH = MAX_NUMBER_OF_TRANSACTIONS * 30 / 100;  
+    public static final int MAX_NAGRADNIH = MAX_NUMBER_OF_TRANSACTIONS * 70 / 100;   // 70 %
+    public static final int MAX_PROSTIH = MAX_NUMBER_OF_TRANSACTIONS * 30 / 100;     // 30 %
     
     public static final int MIN_TRANSACTION_SIZE = 400;
     public static final int MAX_PAYLOAD_LENGTH = MAX_NUMBER_OF_TRANSACTIONS * MIN_TRANSACTION_SIZE; 
     
+    public static final int MAX_HASH_TRX_SIZE = 600000;
     
     
     public static final int MAX_TRANSACTION_PAYLOAD_LENGTH = 1536;
@@ -45,9 +56,7 @@ public final class Constants {
      public static final int BLOCK_TIME = 60;
     public static final long INITIAL_BASE_TARGET = BigInteger.valueOf(2).pow(63).divide(BigInteger.valueOf(BLOCK_TIME * MAX_BALANCE_BND)).longValue(); //153722867;
     
-
-public static final int fasterer_GENERACII_BLOCKOV = 1;
-
+public static final int USKORITEL_GENERACII_BLOCKOV = 1;
 public static final int MIN_BLOCKTIME_DELTA = 10;
 public static final int MAX_BLOCKTIME_DELTA = 30;
 
@@ -82,7 +91,8 @@ public static long getMIN_BASE_TARGET(int height) {
     public static final int LEASING_DELAY = isTestnet ? Bened.getIntProperty("bened.testnetLeasingDelay", 1440) : 1440;
     public static final long MIN_FORGING_BALANCE_NQT = 1000 * ONE_BND;
 
-    public static final int MAX_TIMEDRIFT = 15; 
+    public static final int MAX_TIMEDRIFT = 15; // allow up to 15 s clock difference
+    public static final int Allow_future_inVM = Bened.getIntProperty("bened.allowfuturevm", 0); // allow up to 15 s clock difference
 
     
     public static final int FORGING_DELAY = Math.min(MAX_TIMEDRIFT - 1, Bened.getIntProperty("nxt.forgingDelay"));
@@ -203,7 +213,7 @@ public static long getMIN_BASE_TARGET(int height) {
     public static long getINITIAL_BASE_TARGET(int height) {
         if(height<1)return INITIAL_BASE_TARGET;
 
-        long IBT = BigInteger.valueOf(2).pow(63).divide(BigInteger.valueOf(BLOCK_TIME * (Account.getAccount(Genesis.CREATOR_ID).getBalanceNQT()*(-1)/ONE_BND) )).longValue();
+        long IBT = BigInteger.valueOf(2).pow(63).divide(BigInteger.valueOf((Bened.getBlockchain().getHeight()<Constants.change_evendek22? BLOCK_TIME : BLOCK_TIME*5) * (Account.getAccount(Genesis.CREATOR_ID).getBalanceNQT()*(-1)/ONE_BND) )).longValue();
         return IBT;
     }
 

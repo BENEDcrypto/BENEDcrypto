@@ -46,7 +46,7 @@ public interface BlockchainProcessor extends Observable<Block,BlockchainProcesso
 
     int getInitialScanHeight();
 
-    void processPeerBlock(JSONObject request) throws InnerException;
+    void processPeerBlock(JSONObject request) throws BNDException;
 
     void fullReset();
 
@@ -66,7 +66,7 @@ public interface BlockchainProcessor extends Observable<Block,BlockchainProcesso
 
     Transaction restorePrunedTransaction(long transactionId);
 
-    class BlockNotAcceptedException extends InnerException {
+    class BlockNotAcceptedException extends BNDException {
 
         private final BlockImpl block;
 

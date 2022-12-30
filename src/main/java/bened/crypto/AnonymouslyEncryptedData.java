@@ -16,7 +16,7 @@
 
 package bened.crypto;
 
-import bened.InnerException;
+import bened.BNDException;
 import bened.util.Convert;
 
 import java.nio.ByteBuffer;
@@ -35,9 +35,9 @@ public final class AnonymouslyEncryptedData {
     }
 
     public static AnonymouslyEncryptedData readEncryptedData(ByteBuffer buffer, int length, int maxLength)
-            throws InnerException.NotValidException {
+            throws BNDException.NotValidException {
         if (length > maxLength) {
-            throw new InnerException.NotValidException("Max encrypted data length exceeded: " + length);
+            throw new BNDException.NotValidException("Max encrypted data length exceeded: " + length);
         }
         byte[] data = new byte[length];
         buffer.get(data);
@@ -51,7 +51,7 @@ public final class AnonymouslyEncryptedData {
         buffer.order(ByteOrder.LITTLE_ENDIAN);
         try {
             return readEncryptedData(buffer, bytes.length - 32, Integer.MAX_VALUE);
-        } catch (InnerException.NotValidException e) {
+        } catch (BNDException.NotValidException e) {
             throw new RuntimeException(e.toString(), e); // never
         }
     }

@@ -24,7 +24,7 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
-class InnerDbVersion extends DbVersion {
+class benedDbVersion extends DbVersion {
 
     protected void update(int nextUpdate) {
         boolean bypassRescan = false;

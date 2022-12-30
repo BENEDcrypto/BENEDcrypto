@@ -16,7 +16,7 @@
 
 package bened.http;
 
-import bened.InnerException;
+import bened.BNDException;
 import bened.http.APIServlet.APIRequestHandler;
 import bened.peer.Peer;
 import bened.peer.Peers;
@@ -38,7 +38,7 @@ public class AddPeer extends APIRequestHandler {
 
     @Override
     protected JSONStreamAware processRequest(HttpServletRequest request)
-            throws InnerException {
+            throws BNDException {
         String peerAddress = Convert.emptyToNull(request.getParameter("peer"));
         if (peerAddress == null) {
             return MISSING_PEER;

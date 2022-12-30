@@ -190,6 +190,7 @@ final class BlockchainImpl implements Blockchain {
 
     @Override
     public List<Long> getBlockIdsAfter(long blockId, int limit) {
+        // Check the block cache
         List<Long> result = new ArrayList<>(BlockDb.BLOCK_CACHE_SIZE);
         synchronized (BlockDb.blockCache) {
             BlockImpl block = BlockDb.blockCache.get(blockId);
@@ -204,6 +205,7 @@ final class BlockchainImpl implements Blockchain {
                 return result;
             }
         }
+        // Search the database
         try (Connection con = Db.db.getConnection();
                 PreparedStatement pstmt = con.prepareStatement("SELECT id FROM block "
                         + "WHERE db_id > IFNULL ((SELECT db_id FROM block WHERE id = ?), " + Long.MAX_VALUE + ") "
@@ -226,6 +228,7 @@ final class BlockchainImpl implements Blockchain {
         if (limit <= 0) {
             return Collections.emptyList();
         }
+        // Check the block cache
         List<BlockImpl> result = new ArrayList<>(BlockDb.BLOCK_CACHE_SIZE);
         synchronized (BlockDb.blockCache) {
             BlockImpl block = BlockDb.blockCache.get(blockId);
@@ -240,6 +243,7 @@ final class BlockchainImpl implements Blockchain {
                 return result;
             }
         }
+        // Search the database
         try (Connection con = Db.db.getConnection();
                 PreparedStatement pstmt = con.prepareStatement("SELECT * FROM block "
                         + "WHERE db_id > IFNULL ((SELECT db_id FROM block WHERE id = ?), " + Long.MAX_VALUE + ") "
@@ -262,6 +266,7 @@ final class BlockchainImpl implements Blockchain {
         if (blockList.isEmpty()) {
             return Collections.emptyList();
         }
+        // Check the block cache
         List<BlockImpl> result = new ArrayList<>(BlockDb.BLOCK_CACHE_SIZE);
         synchronized (BlockDb.blockCache) {
             BlockImpl block = BlockDb.blockCache.get(blockId);
@@ -277,7 +282,8 @@ final class BlockchainImpl implements Blockchain {
                 return result;
             }
         }
-       try (Connection con = Db.db.getConnection();
+        // Search the database
+        try (Connection con = Db.db.getConnection();
                 PreparedStatement pstmt = con.prepareStatement("SELECT * FROM block "
                         + "WHERE db_id > IFNULL ((SELECT db_id FROM block WHERE id = ?), " + Long.MAX_VALUE + ") "
                         + "ORDER BY db_id ASC LIMIT ?")) {
@@ -660,7 +666,7 @@ final class BlockchainImpl implements Blockchain {
     
     
     @Override
-    public int OnforginBlock(long accountId, int deepH){
+    public int GetLastForgBlk(long accountId, int deepH){
         Connection con = null;
         PreparedStatement pstmt = null;
         ResultSet rs = null;
@@ -669,14 +675,14 @@ final class BlockchainImpl implements Blockchain {
             pstmt = con.prepareStatement("SELECT height FROM block WHERE height <= ? AND height >= ? AND  generator_id = ? ORDER BY height DESC");
             int blockchainHeight = getHeight();
             pstmt.setInt(1, blockchainHeight);
-            pstmt.setInt(2, blockchainHeight -deepH);
+            pstmt.setInt(2, (blockchainHeight -deepH)<0?0:(blockchainHeight -deepH));
             pstmt.setLong(3, accountId);
             rs = pstmt.executeQuery();
             int lastblh=0;
             
             if(rs.next()) lastblh = rs.getInt("height");
             
-           int miforg =0;
+            int miforg =0;
             if(blockchainHeight<deepH){
                 miforg = lastblh;
             }else{

@@ -368,10 +368,14 @@ public class AccountLedger {
      * the event_type field of the account_ledger table.
      */
     public enum LedgerEvent {
-
+        // Block and Transaction
             BLOCK_GENERATED(1, false),
             TRANSACTION_FEE(50, true),
+        // TYPE_PAYMENT
             ORDINARY_PAYMENT(3, true),
+            HASH_PAYMENT(11, true),
+            HASH_TRANSFER(12, true),
+        // TYPE_MESSAGING
             ACCOUNT_INFO(4, true),
             ALIAS_ASSIGNMENT(5, true),
             ALIAS_BUY(6, true),
@@ -380,7 +384,7 @@ public class AccountLedger {
             ARBITRARY_MESSAGE(9, true);
 
 
-
+        /** Event code mapping */
         private static final Map<Integer, LedgerEvent> eventMap = new HashMap<>();
         static {
             for (LedgerEvent event : values()) {
@@ -390,9 +394,10 @@ public class AccountLedger {
             }
         }
 
-
+        /** Event code */
         private final int code;
 
+        /** Event identifier is a transaction */
         private final boolean isTransaction;
 
         /**
@@ -453,7 +458,7 @@ public class AccountLedger {
         UNCONFIRMED_CURRENCY_BALANCE(5, true),
         CURRENCY_BALANCE(6, false);
 
-
+        /** Holding code mapping */
         private static final Map<Integer, LedgerHolding> holdingMap = new HashMap<>();
         static {
             for (LedgerHolding holding : values()) {
@@ -463,10 +468,10 @@ public class AccountLedger {
             }
         }
 
-
+        /** Holding code */
         private final int code;
 
-
+        /** Unconfirmed holding */
         private final boolean isUnconfirmed;
 
         /**

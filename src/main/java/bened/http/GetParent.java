@@ -4,7 +4,7 @@ import org.json.simple.JSONObject;
 import org.json.simple.JSONStreamAware;
 import bened.Account;
 import bened.Bened;
-import bened.InnerException;
+import bened.BNDException;
 import bened.util.Convert;
 import bened.util.BenedTree;
 
@@ -22,7 +22,7 @@ public class GetParent extends BenedTree.APIHierarchyRequestHandler {
         
     }
     @Override
-    protected JSONStreamAware processHierarchyRequest(HttpServletRequest request) throws InnerException {
+    protected JSONStreamAware processHierarchyRequest(HttpServletRequest request) throws BNDException {
 
         long account = ParameterParser.getAccountId(request, true);
 
@@ -52,7 +52,7 @@ public class GetParent extends BenedTree.APIHierarchyRequestHandler {
             
             return response;
         } catch (SQLException e) {
-            throw new InnerException.NotValidException (e.getMessage(), e.getCause());
+            throw new BNDException.NotValidException (e.getMessage(), e.getCause());
         }
     }
 }

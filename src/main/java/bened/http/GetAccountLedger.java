@@ -20,7 +20,7 @@ import bened.AccountLedger;
 import bened.AccountLedger.LedgerEntry;
 import bened.AccountLedger.LedgerEvent;
 import bened.AccountLedger.LedgerHolding;
-import bened.InnerException;
+import bened.BNDException;
 import bened.util.Convert;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -237,10 +237,10 @@ public class GetAccountLedger extends APIServlet.APIRequestHandler {
      *
      * @param   req                 API request
      * @return                      API response
-     * @throws  InnerException        Invalid request
+     * @throws  BNDException        Invalid request
      */
     @Override
-    protected JSONStreamAware processRequest(HttpServletRequest req) throws InnerException {
+    protected JSONStreamAware processRequest(HttpServletRequest req) throws BNDException {
         //
         // Process the request parameters
         //

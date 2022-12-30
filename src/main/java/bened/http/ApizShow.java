@@ -26,6 +26,10 @@ import javax.servlet.http.HttpServletResponse;
 import bened.Bened;
 import bened.Transaction;
 import bened.util.Convert;
+import bened.util.JSON;
+import java.io.Writer;
+import org.json.simple.JSONObject;
+import org.json.simple.JSONStreamAware;
 
 
 
@@ -45,14 +49,20 @@ public final class ApizShow extends HttpServlet {
                     "</body>\n" +
                     "</html>\n";
 
-    
-    
-    
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        resp.setHeader("Cache-Control", "no-cache, no-store, must-revalidate, private");
-        resp.setHeader("Pragma", "no-cache");
-        resp.setDateHeader("Expires", 0);
+        process(req, resp);
+    }
+
+    @Override
+    protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        process(req, resp);
+    }
+    
+    
+    private void process(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+       
+        ///////////gettrx
         String transactionIdString = req.getParameter("Trx");
         String transactionFullHash = null;
         long transactionId=0;
@@ -78,13 +88,45 @@ public final class ApizShow extends HttpServlet {
         } catch (RuntimeException e) {
             retrun= "INCORRECT TRANSACTION";
         }
-
         
-           // return JSONData.unconfirmedTransaction(transaction);
-//        } else {
-//            return JSONData.transaction(transaction, includePhasingResult);
-//        }
-        
+        ///// do
+       if(req.getRequestURI().contains("json")){
+        resp.setHeader("Cache-Control", "no-cache, no-store, must-revalidate, private");
+        resp.setHeader("Pragma", "no-cache");
+        resp.setDateHeader("Expires", 0);
+        resp.setContentType("text/plain; charset=UTF-8");
+        JSONStreamAware response = JSON.emptyJSON;
+        long startTime = System.currentTimeMillis();
+        JSONObject json = new JSONObject();
+        JSONObject jtrx = new JSONObject();
+        try{
+            if(retrun.equals("")){
+            jtrx.put("PaymentAmount", ""+ new DecimalFormat("#0.000000").format(Double.valueOf(transaction.getAmountNQT())/1000000));
+            jtrx.put("Fee",           ""+ new DecimalFormat("#0.000000").format(Double.valueOf(transaction.getFeeNQT())/1000000));
+            jtrx.put("Recipient",     ""+ Convert.rsAccount(transaction.getRecipientId()) );
+            jtrx.put("Sender",        ""+ Convert.rsAccount(transaction.getSenderId()) );
+            long confirms =  (Bened.getBlockchain().getHeight()-transaction.getHeight())<0?0:(Bened.getBlockchain().getHeight()-transaction.getHeight());
+            jtrx.put("Confirmations", ""+ ((confirms<1440)?confirms:"1440+") );
+        }else{
+            jtrx.put("Error get data", "No Data from transaction "+transactionIdString);
+        }   
+        json.put("Transaction", jtrx);
+            response = JSON.prepare(json);
+            } finally {
+            if (response != null) {
+                if (response instanceof JSONObject) {
+                    ((JSONObject) response).put("requestProcessingTime", System.currentTimeMillis() - startTime);
+                }
+                try (Writer writer = resp.getWriter()) {
+                    JSON.writeJSONString(response, writer);
+                }
+            }
+        }
+           
+       }else{
+        resp.setHeader("Cache-Control", "no-cache, no-store, must-revalidate, private");
+        resp.setHeader("Pragma", "no-cache");
+        resp.setDateHeader("Expires", 0);
         if(retrun.equals("")){
             httrx = "<table class=\"table table-striped\" id=\"transaction_info_table\" style=\"margin-bottom: 0px; display: table;\">";
             httrx =httrx +" <tbody><tr><td  style=\"font-weight:bold\">PaymentAmount:</td><td style=\"width:80%;text-transform:none;word-break:break-all\">";
@@ -95,77 +137,21 @@ public final class ApizShow extends HttpServlet {
             long confirms =  (Bened.getBlockchain().getHeight()-transaction.getHeight())<0?0:(Bened.getBlockchain().getHeight()-transaction.getHeight());
             httrx = httrx + ((confirms<1440)?confirms:"1440+")+"</td></tr></tbody></table>";
             
-            
-    //byte[] signature = Convert.emptyToNull(transaction.getSignature());
-//            if (signature != null) {
-//                json.put("signature", Convert.toHexString(signature));
-//                json.put("signatureHash", Convert.toHexString(Crypto.sha256().digest(signature)));
-//                json.put("fullHash", transaction.getFullHash());
-//                json.put("transaction", transaction.getStringId());
-//            }
-            
-           // httrx = httrx + 
-           // </td></tr></tbody>
-               // json.put("type", transaction.getType().getType());
-//                json.put("subtype", transaction.getType().getSubtype());
-//                json.put("timestamp", transaction.getTimestamp());
-//                json.put("deadline", transaction.getDeadline());
-//                json.put("senderPublicKey", Convert.toHexString(transaction.getSenderPublicKey()));
-////                if (transaction.getRecipientId() != 0) {
-//                    putAccount(json, "recipient", transaction.getRecipientId());
-//                }
-                //json.put("amountNQT", String.valueOf(transaction.getAmountNQT()));
-        //json.put("feeNQT", String.valueOf(transaction.getFeeNQT()));
-        //String referencedTransactionFullHash = transaction.getReferencedTransactionFullHash();
-//        if (referencedTransactionFullHash != null) {
-//            json.put("referencedTransactionFullHash", referencedTransactionFullHash);
-//        }
-//        byte[] signature = Convert.emptyToNull(transaction.getSignature());
-//        
-//        putAccount(json, "sender", transaction.getSenderId());
-//        json.put("height", transaction.getHeight());
-//        json.put("version", transaction.getVersion());
-//        if (transaction.getVersion() > 0) {
-//            json.put("ecBlockId", Long.toUnsignedString(transaction.getECBlockId()));
-//            json.put("ecBlockHeight", transaction.getECBlockHeight());
-//        }
         }else{
-            httrx = retrun;
-            
+            httrx = retrun+" No Data from transaction "+transactionIdString;
         }    
-        
-
-      //  String body = ""+bened.Constants.MAX_BALANCE_BND;
-        
-        
         try (PrintStream out = new PrintStream(resp.getOutputStream())) {
             out.print(header);
 //            out.print(body);
             out.print("<div>"+httrx+"</div>");
             out.print(footer);
         }
+   }
+    
     }
-
-    @Override
-    protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        resp.setHeader("Cache-Control", "no-cache, no-store, must-revalidate, private");
-        resp.setHeader("Pragma", "no-cache");
-        resp.setDateHeader("Expires", 0);
        
+    
 
-        String body = ""+bened.Constants.MAX_BALANCE_BND;
-        
-        
-        
-            try (PrintStream out = new PrintStream(resp.getOutputStream())) {
-                out.print(header);
-                out.print(body);
-                out.print(footer);
-            }
-     
-        
-       
-        
-    }
+   
 
 }

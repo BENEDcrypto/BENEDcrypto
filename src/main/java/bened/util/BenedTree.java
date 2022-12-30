@@ -1,7 +1,7 @@
 package bened.util;
 
 import bened.Transaction;
-import bened.InnerException;
+import bened.BNDException;
 import bened.Bened;
 import bened.Genesis;
 import bened.Account;
@@ -330,7 +330,7 @@ public class BenedTree {
             super(tags, parameters);
         }
         @Override
-        public JSONStreamAware processRequest (HttpServletRequest req) throws InnerException {
+        public JSONStreamAware processRequest (HttpServletRequest req) throws BNDException {
             if (ALLOW_API_HIERARCHY_ONLY_LOCALHOST) {
                 final String host = req.getRemoteHost();
                 final boolean isLocalhost = host.equals("127.0.0.1") || host.equals("localhost") || host.equals("[0:0:0:0:0:0:0:1]") || host.equals("0:0:0:0:0:0:0:1");
@@ -339,7 +339,7 @@ public class BenedTree {
             }
             return processHierarchyRequest(req);
         }
-        protected abstract JSONStreamAware processHierarchyRequest(HttpServletRequest req) throws InnerException;
+        protected abstract JSONStreamAware processHierarchyRequest(HttpServletRequest req) throws BNDException;
         @Override
         protected final boolean requirePassword() {
             return !BenedTree.ALLOW_API_HIERARCHY_WITHOUT_PASSWORD;

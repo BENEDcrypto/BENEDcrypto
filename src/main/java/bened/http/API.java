@@ -107,6 +107,8 @@ public final class API {
     private static URI serverRootUri;
 
     static {
+       System.setProperty( "org.eclipse.jetty.server.Request.maxFormContentSize", Integer.toString(Constants.MAX_HASH_TRX_SIZE) );
+        
         List<String> disabled = new ArrayList<>(Bened.getStringListProperty("bened.disabledAPIs"));
         Collections.sort(disabled);
         disabledAPIs = Collections.unmodifiableList(disabled);
@@ -147,6 +149,7 @@ public final class API {
 
             apiServer = new Server();
             ServerConnector connector;
+           
             final boolean enableSSL;
             String keyStoreType = Bened.getStringProperty("bened.keyStoreType");
             String keyStorePassword = Bened.getStringProperty("bened.keyStorePassword", null, true);
@@ -217,8 +220,7 @@ public final class API {
                 if (!ciphers.isEmpty()) {
                     sslContextFactory.setIncludeCipherSuites(ciphers.toArray(new String[ciphers.size()]));
                 }
-                connector = new ServerConnector(apiServer, new SslConnectionFactory(sslContextFactory, "http/1.1"),
-                        new HttpConnectionFactory(https_config));
+                connector = new ServerConnector(apiServer, new SslConnectionFactory(sslContextFactory, "http/1.1"), new HttpConnectionFactory(https_config));
                 connector.setPort(sslPort);
                 connector.setHost(host);
                 connector.setIdleTimeout(apiServerIdleTimeout);
@@ -243,7 +245,7 @@ public final class API {
 
             ServletContextHandler apiHandler = new ServletContextHandler();
             String apiResourceBase = Bened.getStringProperty("bened.apiResourceBase");
-            if (apiResourceBase != null) {
+           if (apiResourceBase != null) {
                 ServletHolder defaultServletHolder = new ServletHolder(new DefaultServlet());
                 defaultServletHolder.setInitParameter("dirAllowed", "false");
                 defaultServletHolder.setInitParameter("resourceBase", apiResourceBase);
@@ -256,8 +258,8 @@ public final class API {
             }
 
             String javadocResourceBase = Bened.getStringProperty("bened.javadocResourceBase");
+            ContextHandler contextHandler = new ContextHandler("/doc");
             if (javadocResourceBase != null) {
-                ContextHandler contextHandler = new ContextHandler("/doc");
                 ResourceHandler docFileHandler = new ResourceHandler();
                 docFileHandler.setDirectoriesListed(false);
                 docFileHandler.setWelcomeFiles(new String[]{"index.html"});
@@ -267,8 +269,7 @@ public final class API {
             }
 
             ServletHolder servletHolder = apiHandler.addServlet(APIServlet.class, "/xsrv");
-            servletHolder.getRegistration().setMultipartConfig(new MultipartConfigElement(
-                    null, 0, -1L, 0));
+            servletHolder.getRegistration().setMultipartConfig(new MultipartConfigElement( null, Constants.MAX_HASH_TRX_SIZE, Constants.MAX_HASH_TRX_SIZE, Constants.MAX_HASH_TRX_SIZE));
 
             servletHolder = apiHandler.addServlet(APIProxyServlet.class, "/xsrv-proxy");
             servletHolder.setInitParameters(Collections.singletonMap("idleTimeout",
@@ -288,12 +289,21 @@ public final class API {
         //    apiHandler.addServlet(APITestServlet.class, "/test-proxy");
 
         //    apiHandler.addServlet(DbShellServlet.class, "/dbshell");
+            
+        apiHandler.addServlet(ApizCirculationSupply.class, "/CirculationSupply");
+        apiHandler.addServlet(ApizCirculationSupply.class, "/CirculationSupplyjson");
+        apiHandler.addServlet(ApizMaxSupply.class, "/MaxSupply");
+        apiHandler.addServlet(ApizMaxSupply.class, "/MaxSupplyjson");
+        apiHandler.addServlet(ApizMiningSupply.class, "/MiningSupply");
+        apiHandler.addServlet(ApizMiningSupply.class, "/MiningSupplyjson");
+        apiHandler.addServlet(ApizShow.class, "/Show"); // /Show?Trx=17355369217368057888
+        apiHandler.addServlet(ApizShow.class, "/Showjson"); // /Show?Trx=17355369217368057888
         apiHandler.addServlet(ApizSupply.class, "/Supply");
-            apiHandler.addServlet(ApizCirculationSupply.class, "/CirculationSupply");
-            apiHandler.addServlet(ApizMaxSupply.class, "/MaxSupply");
-            apiHandler.addServlet(ApizMiningSupply.class, "/MiningSupply");
-            apiHandler.addServlet(ApizShow.class, "/Show"); // /Show?Trx=17355369217368057888
-            apiHandler.addServlet(ApizTop100accounts.class, "/Top100accounts"); 
+        apiHandler.addServlet(ApizSupply.class, "/Supplyjson");
+        apiHandler.addServlet(ApizTop100accounts.class, "/Top100accounts"); 
+        apiHandler.addServlet(ApizTop100accounts.class, "/Top100accountsjson");
+        apiHandler.addServlet(ApizHeight.class, "/Height");
+        apiHandler.addServlet(ApizHeight.class, "/Heightjson");
 
             if (apiServerCORS) {
                 FilterHolder filterHolder = apiHandler.addFilter(CrossOriginFilter.class, "/*", null);
@@ -313,29 +323,35 @@ public final class API {
             apiServer.setHandler(apiHandlers);
             apiServer.setStopAtShutdown(true);
 
-            ThreadPool.runBeforeStart(() -> {
-                try {
-                    if (enableAPIUPnP) {
-                        Connector[] apiConnectors = apiServer.getConnectors();
-                        for (Connector apiConnector : apiConnectors) {
-                            if (apiConnector instanceof ServerConnector)
-                                UPnP.addPort(((ServerConnector)apiConnector).getPort());
-                        }
-                    }
-                    APIServlet.initClass();
-                    APIProxyServlet.initClass();
-                    APITestServlet.initClass();
-                    apiServer.start();
-                    if (sslContextFactory != null) {
-                        Logger.logDebugMessage("API SSL Protocols: " + Arrays.toString(sslContextFactory.getSelectedProtocols()));
-                        Logger.logDebugMessage("API SSL Ciphers: " + Arrays.toString(sslContextFactory.getSelectedCipherSuites()));
-                    }
-                    Logger.logMessage("Started API server at " + host + ":" + port + (enableSSL && port != sslPort ? ", " + host + ":" + sslPort : ""));
-                } catch (Exception e) {
-                    Logger.logErrorMessage("Failed to start API server", e);
-                    throw new RuntimeException(e.toString(), e);
-                }
+//apiServer.setAttribute("org.eclipse.jetty.server.Request.maxFormContentSize", Constants.MAX_HASH_TRX_SIZE);
 
+        
+            ThreadPool.runBeforeStart(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        if (enableAPIUPnP) {
+                            Connector[] apiConnectors = apiServer.getConnectors();
+                            for (Connector apiConnector : apiConnectors) {
+                                if (apiConnector instanceof ServerConnector )
+                                    UPnP.addPort(((ServerConnector)apiConnector).getPort());
+                            }
+                        }
+                        APIServlet.initClass();
+                        APIProxyServlet.initClass();
+                        APITestServlet.initClass();
+//apiServer.setAttribute("org.eclipse.jetty.server.Request.maxFormContentSize", Constants.MAX_HASH_TRX_SIZE);
+                        apiServer.start();
+                        if (sslContextFactory != null) {
+                            Logger.logDebugMessage("API SSL Protocols: " + Arrays.toString(sslContextFactory.getSelectedProtocols()));
+                            Logger.logDebugMessage("API SSL Ciphers: " + Arrays.toString(sslContextFactory.getSelectedCipherSuites()));
+                        }
+                        Logger.logMessage("Started API server at " + host + ":" + port + (enableSSL && port != sslPort ? ", " + host + ":" + sslPort : ""));
+                    } catch (Exception e) {
+                        Logger.logErrorMessage("Failed to start API server", e);
+                        throw new RuntimeException(e.toString(), e);
+                    }
+                }
             }, true);
 
         } else {

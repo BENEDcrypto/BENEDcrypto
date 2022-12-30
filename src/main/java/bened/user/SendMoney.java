@@ -20,7 +20,7 @@ import bened.Account;
 import bened.Attachment;
 import bened.Constants;
 import bened.Bened;
-import bened.InnerException;
+import bened.BNDException;
 import bened.Transaction;
 import bened.util.Convert;
 import org.json.simple.JSONObject;
@@ -38,7 +38,7 @@ public final class SendMoney extends UserServlet.UserRequestHandler {
     private SendMoney() {}
 
     @Override
-    JSONStreamAware processRequest(HttpServletRequest req, User user) throws InnerException.ValidationException, IOException {
+    JSONStreamAware processRequest(HttpServletRequest req, User user) throws BNDException.ValidationException, IOException {
         if (user.getSecretPhrase() == null) {
             return null;
         }

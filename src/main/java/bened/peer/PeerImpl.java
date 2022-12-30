@@ -20,7 +20,7 @@ import bened.Account;
 import bened.BlockchainProcessor;
 import bened.Constants;
 import bened.Bened;
-import bened.InnerException;
+import bened.BNDException;
 import bened.http.API;
 import bened.http.APIEnum;
 import bened.util.Convert;
@@ -339,7 +339,7 @@ final class PeerImpl implements Peer {
 
     @Override
     public void blacklist(Exception cause) {
-        if (cause instanceof InnerException.NotCurrentlyValidException || cause instanceof BlockchainProcessor.BlockOutOfOrderException
+        if (cause instanceof BNDException.NotCurrentlyValidException || cause instanceof BlockchainProcessor.BlockOutOfOrderException
                 || cause instanceof SQLException || cause.getCause() instanceof SQLException) {
             // don't blacklist peers just because a feature is not yet enabled, or because of database timeouts
             // prevents erroneous blacklisting during loading of blockchain from scratch
@@ -469,9 +469,10 @@ final class PeerImpl implements Peer {
             // Create a new WebSocket session if we don't have one
             //
             if (useWebSocket && !webSocket.isOpen()){
+                log="create ws:"+ host + ":" + getPort() + "/xsrv";
                 useWebSocket = webSocket.startClient(URI.create("ws://" + host + ":" + getPort() + "/xsrv"));
             }
-            
+            if(log!=null&& !log.isBlank())Logger.logMessage(log + "\n");
             //
             // Send the request and process the response
             //
@@ -484,14 +485,14 @@ final class PeerImpl implements Peer {
                 String wsRequest = wsWriter.toString();
                 if (communicationLoggingMask != 0)       log = "WebSocket " + host + ": " + wsRequest;
                 String wsResponse = webSocket.doPost(wsRequest);
-                updateUploadedVolume(wsRequest.length());
+               updateUploadedVolume(wsRequest.length());
                 if (maxResponseSize > 0) {
                     if ((communicationLoggingMask & Peers.LOGGING_MASK_200_RESPONSES) != 0) {
                         log += " useSocket >>> " + wsResponse;
                         showLog = true;
                     }
                     if (wsResponse.length() > maxResponseSize)
-                        throw new InnerException.BenedIOException("Maximum size exceeded: " + wsResponse.length());
+                        throw new BNDException.BenedIOException("Maximum size exceeded: " + wsResponse.length());
                     response = (JSONObject)JSONValue.parseWithException(wsResponse);
                     updateDownloadedVolume(wsResponse.length());
                 }
@@ -499,9 +500,9 @@ final class PeerImpl implements Peer {
                 //
                 // Send the request using HTTP
                 //
+                log="create http://"+ host + ":" + getPort() + "/xsrv";
                 URL url = new URL("http://" + host + ":" + getPort() + "/xsrv");
-                if (communicationLoggingMask != 0)
-                    log = "\"" + url.toString() + "\": " + JSON.toString(request);
+                if (communicationLoggingMask != 0) log = "HttpConnect\"" + url.toString() + "\": " + JSON.toString(request);
                 connection = (HttpURLConnection) url.openConnection();
                 connection.setRequestMethod("POST");
                 connection.setDoOutput(true);
@@ -574,7 +575,7 @@ final class PeerImpl implements Peer {
                     }
                 }
             }
-        } catch (InnerException.BenedIOException e) {
+        } catch (BNDException.BenedIOException e) {
             blacklist(e);
             if (connection != null) {
                 connection.disconnect();

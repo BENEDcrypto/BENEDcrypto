@@ -54,7 +54,7 @@ class UnconfirmedTransaction implements Transaction {
             this.transaction.setHeight(rs.getInt("transaction_height"));
             this.arrivalTimestamp = rs.getLong("arrival_timestamp");
             this.feePerByte = rs.getLong("fee_per_byte");
-        } catch (InnerException.ValidationException e) {
+        } catch (BNDException.ValidationException e) {
             throw new RuntimeException(e.toString(), e);
         }
     }
@@ -63,7 +63,7 @@ class UnconfirmedTransaction implements Transaction {
         if (bytes == null || bytes.length <= 0) return false;
         try {
             Bened.newTransactionBuilder(bytes, null);
-        } catch (InnerException.NotValidException ex) {
+        } catch (BNDException.NotValidException ex) {
             return false;
         }
         return true;
@@ -222,7 +222,7 @@ class UnconfirmedTransaction implements Transaction {
     }
 
     @Override
-    public void validate() throws InnerException.ValidationException {
+    public void validate() throws BNDException.ValidationException {
         transaction.validate();
     }
 

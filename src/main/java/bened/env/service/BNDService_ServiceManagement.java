@@ -22,7 +22,7 @@ import bened.env.LookAndFeel;
 import javax.swing.*;
 
 @SuppressWarnings("UnusedDeclaration")
-public class XService_ServiceManagement {
+public class BNDService_ServiceManagement {
 
     public static boolean serviceInit() {
         LookAndFeel.init();

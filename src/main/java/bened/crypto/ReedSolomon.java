@@ -13,7 +13,7 @@ final class ReedSolomon {
     private static final int[] glog = {0, 0, 1, 18, 2, 5, 19, 11, 3, 29, 6, 27, 20, 8, 12, 23, 4, 10, 30, 17, 7, 22, 28, 26, 21, 25, 9, 16, 13, 14, 24, 15};
     private static final int[] codeword_map = {3, 2, 1, 0, 7, 6, 5, 4, 13, 14, 15, 16, 12, 8, 9, 10, 11};
     //private static final String alphabet = "PRZM23456789ABCDEFGHJKLNQSTUVWXY";
-    // private static final String alphabet = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ";
+    //private static final String alphabet = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ";
     private static final String alphabet = "23456789abcdefghjklmnpqrstuvwxyz";
     
     private static final int base_32_length = 13;

@@ -35,10 +35,11 @@ import bened.peer.Hallmark;
 import bened.peer.Peer;
 import bened.util.Convert;
 import bened.util.Filter;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
+
 
 import java.util.Map;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
 
 public final class JSONData {
 
@@ -86,7 +87,7 @@ public final class JSONData {
         json.put("multiplier", String.valueOf(metrics.getMultiplier()));
         json.put("hold", String.valueOf(metrics.getHold()));
         json.put("height", String.valueOf(metrics.getLastForgedBlockHeight()));
-        json.put("_forgePercent", Bened.getBlockchain().OnforginBlock(accountId, Constants.GlubinaPoiska) );
+        json.put("_forgePercent", Bened.getBlockchain().GetLastForgBlk(accountId, Constants.GlubinaPoiska) );
         return json;
     }
     

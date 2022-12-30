@@ -17,7 +17,7 @@
 package bened.http;
 
 import bened.Account;
-import bened.InnerException;
+import bened.BNDException;
 import bened.crypto.EncryptedData;
 import bened.util.Convert;
 import org.json.simple.JSONStreamAware;
@@ -37,7 +37,7 @@ public final class EncryptTo extends APIServlet.APIRequestHandler {
     }
 
     @Override
-    protected JSONStreamAware processRequest(HttpServletRequest req) throws InnerException {
+    protected JSONStreamAware processRequest(HttpServletRequest req) throws BNDException {
 
         long recipientId = ParameterParser.getAccountId(req, "recipient", true);
         byte[] recipientPublicKey = Account.getPublicKey(recipientId);

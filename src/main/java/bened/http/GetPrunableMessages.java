@@ -16,7 +16,7 @@
 
 package bened.http;
 
-import bened.InnerException;
+import bened.BNDException;
 import bened.PrunableMessage;
 import bened.db.DbIterator;
 import org.json.simple.JSONArray;
@@ -34,7 +34,7 @@ public final class GetPrunableMessages extends APIServlet.APIRequestHandler {
     }
 
     @Override
-    protected JSONStreamAware processRequest(HttpServletRequest req) throws InnerException {
+    protected JSONStreamAware processRequest(HttpServletRequest req) throws BNDException {
         long accountId = ParameterParser.getAccountId(req, true);
         String secretPhrase = ParameterParser.getSecretPhrase(req, false);
         int firstIndex = ParameterParser.getFirstIndex(req);

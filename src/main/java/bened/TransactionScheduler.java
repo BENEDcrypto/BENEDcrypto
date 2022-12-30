@@ -95,7 +95,7 @@ public class TransactionScheduler {
         try {
             TransactionProcessorImpl.getInstance().broadcast(transaction);
             return true;
-        } catch (InnerException.ValidationException e) {
+        } catch (BNDException.ValidationException e) {
             Logger.logInfoMessage("Failed to broadcast: " + e.getMessage());
             return true;
         }

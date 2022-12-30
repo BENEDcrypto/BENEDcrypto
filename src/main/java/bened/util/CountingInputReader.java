@@ -16,7 +16,7 @@
 
 package bened.util;
 
-import bened.InnerException.BenedIOException;
+import bened.BNDException.BenedIOException;
 
 import java.io.FilterReader;
 import java.io.IOException;

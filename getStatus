@@ -5,4 +5,9 @@ echo "response.json content:"
 cat response.json
 rm response.json
 echo ""
+wget -nv https://localhost:2276/xsrv?requestType=getBlockchainStatus --no-check-certificate -O response_hs.json
+echo "response_hs.json content:"
+cat response_hs.json
+rm response_hs.json
+echo ""
 

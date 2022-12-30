@@ -16,7 +16,7 @@
 
 package bened.http;
 
-import bened.InnerException;
+import bened.BNDException;
 import bened.Transaction;
 import bened.util.Convert;
 import org.json.simple.JSONObject;
@@ -58,7 +58,7 @@ public final class SignTransaction extends APIServlet.APIRequestHandler {
             response.put("transaction", transaction.getStringId());
             response.put("transactionBytes", Convert.toHexString(transaction.getBytes()));
             JSONData.putPrunableAttachment(response, transaction);
-        } catch (InnerException.ValidationException|RuntimeException e) {
+        } catch (BNDException.ValidationException|RuntimeException e) {
             JSONData.putException(response, e, "Incorrect unsigned transaction json or bytes");
         }
         return response;

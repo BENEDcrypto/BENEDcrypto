@@ -18,7 +18,7 @@ package bened.http;
 
 import bened.Account;
 import bened.Attachment;
-import bened.InnerException;
+import bened.BNDException;
 import org.json.simple.JSONStreamAware;
 
 import javax.servlet.http.HttpServletRequest;
@@ -32,7 +32,7 @@ public final class SendMessage extends CreateTransaction {
     }
 
     @Override
-    protected JSONStreamAware processRequest(HttpServletRequest req) throws InnerException {
+    protected JSONStreamAware processRequest(HttpServletRequest req) throws BNDException {
         long recipientId = ParameterParser.getAccountId(req, "recipient", false);
         Account account = ParameterParser.getSenderAccount(req);
         return createTransaction(req, account, recipientId, 0, Attachment.ARBITRARY_MESSAGE);

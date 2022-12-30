@@ -17,7 +17,7 @@
 package bened.http;
 
 import bened.Alias;
-import bened.InnerException;
+import bened.BNDException;
 import bened.db.FilteringIterator;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -34,7 +34,7 @@ public final class GetAliases extends APIServlet.APIRequestHandler {
     }
 
     @Override
-    protected JSONStreamAware processRequest(HttpServletRequest req) throws InnerException {
+    protected JSONStreamAware processRequest(HttpServletRequest req) throws BNDException {
         return JSONResponses.FEATURE_NOT_AVAILABLE;
     }
 

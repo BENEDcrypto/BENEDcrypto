@@ -17,7 +17,7 @@
 package bened.tools;
 
 import bened.Bened;
-import bened.env.service.XService_ServiceManagement;
+import bened.env.service.BNDService_ServiceManagement;
 
 import java.io.IOException;
 import java.nio.file.FileVisitOption;
@@ -37,7 +37,7 @@ public class ManifestGenerator {
     public static void main(String[] args) {
         ManifestGenerator manifestGenerator = new ManifestGenerator();
         manifestGenerator.generate("./resource/manifest.mf", Bened.class.getCanonicalName(), "./lib");
-        String serviceClassName = XService_ServiceManagement.class.getCanonicalName();
+        String serviceClassName = BNDService_ServiceManagement.class.getCanonicalName();
         serviceClassName = serviceClassName.substring(0, serviceClassName.length() - "_ServiceManagement".length());
         manifestGenerator.generate("./resource/service.manifest.mf", serviceClassName, "./lib");
     }

@@ -16,10 +16,10 @@
 
 package bened.http;
 
-import bened.InnerException;
+import bened.BNDException;
 import org.json.simple.JSONStreamAware;
 
-public final class ParameterException extends InnerException {
+public final class ParameterException extends BNDException {
 
     private final JSONStreamAware errorResponse;
 

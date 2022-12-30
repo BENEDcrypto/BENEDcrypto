@@ -16,7 +16,7 @@
 
 package bened.http;
 
-import bened.InnerException;
+import bened.BNDException;
 import org.json.simple.JSONStreamAware;
 
 import javax.servlet.http.HttpServletRequest;
@@ -30,7 +30,7 @@ public final class GetBNDActivGenerators extends APIServlet.APIRequestHandler {
     }
 
     @Override
-    protected JSONStreamAware processRequest(HttpServletRequest req) throws InnerException {
+    protected JSONStreamAware processRequest(HttpServletRequest req) throws BNDException {
    
         return SimplDimpl.getBNDgenerators();
     }

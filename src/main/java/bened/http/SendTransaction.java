@@ -16,7 +16,7 @@
 
 package bened.http;
 
-import bened.InnerException;
+import bened.BNDException;
 import bened.Transaction;
 import bened.peer.Peers;
 import bened.util.Convert;
@@ -73,9 +73,10 @@ public final class SendTransaction extends APIServlet.APIRequestHandler {
             Peers.sendToSomePeers(Collections.singletonList(transaction));
             response.put("transaction", transaction.getStringId());
             response.put("fullHash", transaction.getFullHash());
-        } catch (InnerException.ValidationException|RuntimeException e) {
+        } catch (BNDException.ValidationException|RuntimeException e) {
             JSONData.putException(response, e, "Failed to broadcast transaction");
         }
+        
         return response;
 
     }

@@ -17,7 +17,7 @@
 package bened.util;
 
 import bened.Constants;
-import bened.InnerException;
+import bened.BNDException;
 import bened.crypto.Crypto;
 
 import java.io.ByteArrayInputStream;
@@ -238,10 +238,10 @@ public final class Convert {
         return bytes;
     }
 
-    public static String readString(ByteBuffer buffer, int numBytes, int maxLength) throws InnerException.NotValidException {
+    public static String readString(ByteBuffer buffer, int numBytes, int maxLength) throws BNDException.NotValidException {
         if (buffer == null || numBytes <= 0 || maxLength <= 0) return "";
         if (numBytes > 3 * maxLength) {
-            throw new InnerException.NotValidException("Max parameter length exceeded: "+numBytes+" / "+maxLength);
+            throw new BNDException.NotValidException("Max parameter length exceeded: "+numBytes+" / "+maxLength);
         }
         byte[] bytes = new byte[numBytes];
         buffer.get(bytes);

@@ -19,7 +19,7 @@ package bened.http;
 import bened.Account;
 import bened.Alias;
 import bened.Attachment;
-import bened.InnerException;
+import bened.BNDException;
 import org.json.simple.JSONStreamAware;
 
 import javax.servlet.http.HttpServletRequest;
@@ -36,7 +36,7 @@ public final class DeleteAlias extends CreateTransaction {
     }
 
     @Override
-    protected JSONStreamAware processRequest(final HttpServletRequest req) throws InnerException {
+    protected JSONStreamAware processRequest(final HttpServletRequest req) throws BNDException {
         return JSONResponses.FEATURE_NOT_AVAILABLE;
     }
 }

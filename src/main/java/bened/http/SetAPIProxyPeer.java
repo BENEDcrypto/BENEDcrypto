@@ -16,7 +16,7 @@
 
 package bened.http;
 
-import bened.InnerException;
+import bened.BNDException;
 import bened.peer.Peer;
 import bened.peer.Peers;
 import bened.util.Convert;
@@ -38,7 +38,7 @@ public class SetAPIProxyPeer extends APIServlet.APIRequestHandler {
     }
 
     @Override
-    protected JSONStreamAware processRequest(HttpServletRequest request) throws InnerException {
+    protected JSONStreamAware processRequest(HttpServletRequest request) throws BNDException {
         String peerAddress = Convert.emptyToNull(request.getParameter("peer"));
         if (peerAddress == null) {
             Peer peer = APIProxy.getInstance().setForcedPeer(null);

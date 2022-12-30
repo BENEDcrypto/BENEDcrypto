@@ -17,7 +17,7 @@
 package bened.http;
 
 import bened.Alias;
-import bened.InnerException;
+import bened.BNDException;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONStreamAware;
 
@@ -32,7 +32,7 @@ public final class GetAliasCount extends APIServlet.APIRequestHandler {
     }
 
     @Override
-    protected JSONStreamAware processRequest(HttpServletRequest req) throws InnerException {
+    protected JSONStreamAware processRequest(HttpServletRequest req) throws BNDException {
         return JSONResponses.FEATURE_NOT_AVAILABLE;
     }
 

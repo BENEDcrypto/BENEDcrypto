@@ -49,6 +49,7 @@ final class TransactionImpl implements Transaction {
         private byte[] referencedTransactionFullHash;
         private byte[] signature;
         private Appendix.Message message;
+        private Appendix.MessageHash MessageHash;
         private Appendix.EncryptedMessage encryptedMessage;
         private Appendix.EncryptToSelfMessage encryptToSelfMessage;
         private Appendix.PublicKeyAnnouncement publicKeyAnnouncement;
@@ -78,7 +79,7 @@ final class TransactionImpl implements Transaction {
         }
 
         @Override
-        public TransactionImpl build(String secretPhrase) throws InnerException.NotValidException {
+        public TransactionImpl build(String secretPhrase) throws BNDException.NotValidException {
             if (timestamp == Integer.MAX_VALUE) {
                 timestamp = Bened.getEpochTime();
             }
@@ -91,7 +92,7 @@ final class TransactionImpl implements Transaction {
         }
 
         @Override
-        public TransactionImpl build() throws InnerException.NotValidException {
+        public TransactionImpl build() throws BNDException.NotValidException {
             return build(null);
         }
 
@@ -125,6 +126,12 @@ final class TransactionImpl implements Transaction {
         @Override
         public BuilderImpl appendix(Appendix.EncryptedMessage encryptedMessage) {
             this.encryptedMessage = encryptedMessage;
+            return this;
+        }
+        
+        @Override
+        public BuilderImpl appendix(Appendix.MessageHash MessageHash) {
+            this.MessageHash = MessageHash;
             return this;
         }
 
@@ -212,6 +219,8 @@ final class TransactionImpl implements Transaction {
             return this;
         }
 
+        
+
     }
 
     private final short deadline;
@@ -249,7 +258,7 @@ final class TransactionImpl implements Transaction {
     private volatile DbKey dbKey;
     private volatile byte[] bytes = null;
 
-    private TransactionImpl(BuilderImpl builder, String secretPhrase) throws InnerException.NotValidException {
+    private TransactionImpl(BuilderImpl builder, String secretPhrase) throws BNDException.NotValidException {
 
         this.timestamp = builder.timestamp;
         this.deadline = builder.deadline;
@@ -309,13 +318,13 @@ final class TransactionImpl implements Transaction {
         }
         
         if (builder.signature != null && secretPhrase != null) {
-            throw new InnerException.NotValidException("Transaction is already signed");
+            throw new BNDException.NotValidException("Transaction is already signed");
         } else if (builder.signature != null) {
             this.signature = builder.signature;
         } else if (secretPhrase != null) {
             if (getSenderPublicKey() != null && !Arrays.equals(senderPublicKey, Crypto.getPublicKey(secretPhrase))) {
                 if (!Arrays.equals(senderPublicKey, Genesis.CREATOR_PUBLIC_KEY)) {
-                    throw new InnerException.NotValidException("Secret phrase doesn't match transaction sender public key");
+                    throw new BNDException.NotValidException("Secret phrase doesn't match transaction sender public key");
                 }
             }
             signature = Crypto.sign(bytes(), secretPhrase);
@@ -416,7 +425,7 @@ final class TransactionImpl implements Transaction {
         this.blockId = 0;
         this.blockTimestamp = -1;
         this.index = -1;
-        }
+            }
 
     @Override
     public short getIndex() {
@@ -619,6 +628,7 @@ final class TransactionImpl implements Transaction {
                     buffer.putInt(ecBlockHeight);
                     buffer.putLong(ecBlockId);
                 }
+                               
                 for (Appendix appendage : appendages) {
                     appendage.putBytes(buffer);
                 }
@@ -634,7 +644,7 @@ final class TransactionImpl implements Transaction {
         return bytes;
     }
 
-    static TransactionImpl.BuilderImpl newTransactionBuilder(byte[] bytes) throws InnerException.NotValidException {
+    static TransactionImpl.BuilderImpl newTransactionBuilder(byte[] bytes) throws BNDException.NotValidException {
         try {
             ByteBuffer buffer = ByteBuffer.wrap(bytes);
             buffer.order(ByteOrder.LITTLE_ENDIAN);
@@ -700,17 +710,17 @@ final class TransactionImpl implements Transaction {
                 builder.appendix(new Appendix.PrunableEncryptedMessage(buffer, version));
             }
             if (buffer.hasRemaining()) {
-                throw new InnerException.NotValidException("Transaction bytes too long, " + buffer.remaining() + " extra bytes");
+                throw new BNDException.NotValidException("Transaction bytes too long, " + buffer.remaining() + " extra bytes");
             }
             return builder;
-        } catch (InnerException.NotValidException | RuntimeException e) {
+        } catch (BNDException.NotValidException | RuntimeException e) {
             Logger.logDebugMessage("Failed to parse transaction bytes: " + Convert.toHexString(bytes));
             e.printStackTrace();
             throw e;
         }
     }
 
-    static TransactionImpl.BuilderImpl newTransactionBuilder(byte[] bytes, JSONObject prunableAttachments) throws InnerException.NotValidException {
+    static TransactionImpl.BuilderImpl newTransactionBuilder(byte[] bytes, JSONObject prunableAttachments) throws BNDException.NotValidException {
         BuilderImpl builder = newTransactionBuilder(bytes);
         if (prunableAttachments != null) {
             Appendix.PrunablePlainMessage prunablePlainMessage = Appendix.PrunablePlainMessage.parse(prunableAttachments);
@@ -776,15 +786,15 @@ final class TransactionImpl implements Transaction {
         return prunableJSON;
     }
 
-    static TransactionImpl parseTransaction(JSONObject transactionData) throws InnerException.NotValidException {
+    static TransactionImpl parseTransaction(JSONObject transactionData) throws BNDException.NotValidException {
         TransactionImpl transaction = newTransactionBuilder(transactionData).build();
         if (transaction.getSignature() != null && !transaction.checkSignature()) {
-            throw new InnerException.NotValidException("Invalid transaction signature for transaction " + transaction.getJSONObject().toJSONString());
+            throw new BNDException.NotValidException("Invalid transaction signature for transaction " + transaction.getJSONObject().toJSONString());
         }
         return transaction;
     }
 
-    static TransactionImpl.BuilderImpl newTransactionBuilder(JSONObject transactionData) throws InnerException.NotValidException {
+    static TransactionImpl.BuilderImpl newTransactionBuilder(JSONObject transactionData) throws BNDException.NotValidException {
         try {
             byte type = ((Long) transactionData.get("type")).byteValue();
             byte subtype = ((Long) transactionData.get("subtype")).byteValue();
@@ -807,7 +817,7 @@ final class TransactionImpl implements Transaction {
 
             TransactionType transactionType = TransactionType.findTransactionType(type, subtype);
             if (transactionType == null) {
-                throw new InnerException.NotValidException("Invalid transaction type: " + type + ", " + subtype);
+                throw new BNDException.NotValidException("Invalid transaction type: " + type + ", " + subtype);
             }
             TransactionImpl.BuilderImpl builder = new BuilderImpl(version, senderPublicKey,
                     amountNQT, feeNQT, deadline,
@@ -828,9 +838,14 @@ final class TransactionImpl implements Transaction {
                 builder.appendix(Appendix.EncryptToSelfMessage.parse(attachmentData));
                 builder.appendix(Appendix.PrunablePlainMessage.parse(attachmentData));
                 builder.appendix(Appendix.PrunableEncryptedMessage.parse(attachmentData));
+                
+                builder.appendix(Appendix.MessageHash.parse(attachmentData));
+                
             }
+            
+           
             return builder;
-        } catch (InnerException.NotValidException | RuntimeException e) {
+        } catch (BNDException.NotValidException | RuntimeException e) {
             Logger.logDebugMessage("Failed to parse transaction: " + transactionData.toJSONString() + " trx="+transactionData.size());
             throw e;
         }
@@ -933,7 +948,7 @@ final class TransactionImpl implements Transaction {
     }
 
     @Override
-    public void validate() throws InnerException.ValidationException {
+    public void validate() throws BNDException.ValidationException {
 
         int currentHeight = BlockchainImpl.getInstance().getHeight();
        
@@ -944,59 +959,58 @@ final class TransactionImpl implements Transaction {
                 || amountNQT < 0
                 || amountNQT > Constants.MAX_BALANCE_centesimo
                 || type == null) {
-            throw new InnerException.NotValidException("Invalid transaction parameters:\n type: " + type + ", timestamp: " + timestamp
+            throw new BNDException.NotValidException("Invalid transaction parameters:\n type: " + type + ", timestamp: " + timestamp
                     + ", deadline: " + deadline + ", fee: " + feeNQT + ", amount: " + amountNQT);
         }
 
         if (currentHeight > Constants.CONTROL_TRX_TO_ORDINARY) {
             if (getType().getType() > 1) {
-                throw new InnerException.NotCurrentlyValidException("Invalid transaction type:" + getType().getName());
+                throw new BNDException.NotCurrentlyValidException("Invalid transaction type:" + getType().getName());
             }
             if (currentHeight > Constants.LAST_ALIASES_BLOCK) {
                 if (getType().getType() == 1 && (getType().getSubtype() == 1 || getType().getSubtype() == 8)) { 
-                    throw new InnerException.NotCurrentlyValidException("Invalid transaction subtype " + type.getSubtype() + " for transaction of type " + type.getName());
+                    throw new BNDException.NotCurrentlyValidException("Invalid transaction subtype " + type.getSubtype() + " for transaction of type " + type.getName());
                 }
             }
         }
 
         if (referencedTransactionFullHash != null && referencedTransactionFullHash.length != 32) {
-            throw new InnerException.NotValidException("Invalid referenced transaction full hash " + Convert.toHexString(referencedTransactionFullHash));
+            throw new BNDException.NotValidException("Invalid referenced transaction full hash " + Convert.toHexString(referencedTransactionFullHash));
         }
 
         if (attachment == null || type != attachment.getTransactionType()) {
-            throw new InnerException.NotValidException("Invalid attachment " + attachment + " for transaction of type " + type);
+            throw new BNDException.NotValidException("Invalid attachment " + attachment + " for transaction of type " + type);
         }
 
         if (!type.canHaveRecipient()) {
             if (recipientId != 0 || getAmountNQT() != 0) {
-                throw new InnerException.NotValidException("Transactions of this type must have recipient == 0, amount == 0");
+                throw new BNDException.NotValidException("Transactions of this type must have recipient == 0, amount == 0");
             }
         }
 
         if (type.mustHaveRecipient() && version > 0) {
             if (recipientId == 0) {
-                throw new InnerException.NotValidException("Transactions of this type must have a valid recipient");
+                throw new BNDException.NotValidException("Transactions of this type must have a valid recipient");
             }
         }
 
         for (Appendix.AbstractAppendix appendage : appendages) {
             appendage.loadPrunable(this);
             if (!appendage.verifyVersion(this.version)) {
-                throw new InnerException.NotValidException("Invalid attachment version " + appendage.getVersion()
-                        + " for transaction version " + this.version);
+                throw new BNDException.NotValidException("Invalid attachment version " + appendage.getVersion()+ " for transaction version " + this.version);
             }
             appendage.validate(this);
         }
 
         if (getFullSize() > Constants.MAX_TRANSACTION_PAYLOAD_LENGTH) {
-            throw new InnerException.NotValidException("Transaction size " + getFullSize() + " exceeds maximum transaction payload size");
+            throw new BNDException.NotValidException("Transaction size " + getFullSize() + " exceeds maximum transaction payload size");
         }
 
         int blockchainHeight = Bened.getBlockchain().getHeight();
 
         long minimumFeeNQT = getMinimumFeeNQT(blockchainHeight);
         if (feeNQT < minimumFeeNQT) {
-            throw new InnerException.NotCurrentlyValidException(String.format("Transaction fee %f coins less than minimum fee %f coins at height %d",
+            throw new BNDException.NotCurrentlyValidException(String.format("Transaction fee %f coins less than minimum fee %f coins at height %d",
                     ((double) feeNQT) / Constants.ONE_BND, ((double) minimumFeeNQT) / Constants.ONE_BND, blockchainHeight));
         }
     }

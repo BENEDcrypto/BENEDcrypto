@@ -18,7 +18,7 @@ package bened.peer;
 
 import bened.Block;
 import bened.Bened;
-import bened.InnerException;
+import bened.BNDException;
 import bened.util.Convert;
 import bened.util.JSON;
 import org.json.simple.JSONObject;
@@ -40,7 +40,7 @@ final class ProcessBlock extends PeerServlet.PeerRequestHandler {
             Peers.peersService.submit(() -> {
                 try {
                     Bened.getBlockchainProcessor().processPeerBlock(request);
-                } catch (InnerException | RuntimeException e) {
+                } catch (BNDException | RuntimeException e) {
                     Bened.softMG().rollbackToBlock(Bened.getBlockchain().getHeight());
                     if (peer != null) {
                         peer.blacklist(e);

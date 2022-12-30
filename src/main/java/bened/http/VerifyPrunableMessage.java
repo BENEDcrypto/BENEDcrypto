@@ -18,7 +18,7 @@ package bened.http;
 
 import bened.Appendix;
 import bened.Bened;
-import bened.InnerException;
+import bened.BNDException;
 import bened.Transaction;
 import bened.util.JSON;
 import org.json.simple.JSONObject;
@@ -58,7 +58,7 @@ public final class VerifyPrunableMessage extends APIServlet.APIRequestHandler {
     }
 
     @Override
-    protected JSONStreamAware processRequest(HttpServletRequest req) throws InnerException {
+    protected JSONStreamAware processRequest(HttpServletRequest req) throws BNDException {
 
         long transactionId = ParameterParser.getUnsignedLong(req, "transaction", true);
         Transaction transaction = Bened.getBlockchain().getTransaction(transactionId);

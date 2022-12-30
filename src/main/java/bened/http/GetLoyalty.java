@@ -3,7 +3,7 @@ package bened.http;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONStreamAware;
 import bened.Bened;
-import bened.InnerException;
+import bened.BNDException;
 import bened.Transaction;
 import bened.db.DbIterator;
 import bened.util.BenedTree;
@@ -19,7 +19,7 @@ public class GetLoyalty extends BenedTree.APIHierarchyRequestHandler {
     }
 
     @Override
-    protected JSONStreamAware processHierarchyRequest(HttpServletRequest req) throws InnerException {
+    protected JSONStreamAware processHierarchyRequest(HttpServletRequest req) throws BNDException {
 
         long child = ParameterParser.getAccountId(req, "accountChild", true);
         long parent = ParameterParser.getAccountId(req, "accountParent", true);

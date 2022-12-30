@@ -496,15 +496,14 @@ public final class Account {
     }
 
     public long getEffectiveBalanceBND() {
-        
         return getEffectiveBalanceBND(Bened.getBlockchain().getHeight());
     }
 
     public long getEffectiveBalanceBND(int height) {
-                 if ( ArrayUtils.contains(Genesis.first_RECIPIENTS , id)   ) {
+        
+         if ( ArrayUtils.contains(Genesis.first_RECIPIENTS , id)   ) {
                 return balanceNQT / Constants.ONE_BND;
             }
-        
         if (height >= Constants.FORBID_FORGING_WITH_YOUNG_PUBLIC_KEY) {
             
             if (this.publicKey == null) {

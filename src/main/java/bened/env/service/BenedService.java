@@ -19,6 +19,6 @@ package bened.env.service;
 public class BenedService {
 
     public static void main(String[] args) {
-        XService_ServiceManagement.serviceInit();
+        BNDService_ServiceManagement.serviceInit();
     }
 }

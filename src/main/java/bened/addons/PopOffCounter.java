@@ -18,7 +18,7 @@ package bened.addons;
 
 import bened.BlockchainProcessor;
 import bened.Bened;
-import bened.InnerException;
+import bened.BNDException;
 import bened.http.APIServlet;
 import bened.http.APITag;
 import org.json.simple.JSONObject;
@@ -39,7 +39,7 @@ public final class PopOffCounter implements AddOn {
     public APIServlet.APIRequestHandler getAPIRequestHandler() {
         return new APIServlet.APIRequestHandler(new APITag[]{APITag.ADDONS, APITag.BLOCKS}) {
             @Override
-            protected JSONStreamAware processRequest(HttpServletRequest request) throws InnerException {
+            protected JSONStreamAware processRequest(HttpServletRequest request) throws BNDException {
                 JSONObject response = new JSONObject();
                 response.put("numberOfPopOffs", numberOfPopOffs);
                 return response;

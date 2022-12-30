@@ -32,7 +32,7 @@ import org.json.simple.JSONStreamAware;
 
 
 
-public final class ApizMaxSupply extends HttpServlet {
+public final class ApizHeight extends HttpServlet {
 
     private static final String header =
             "<!DOCTYPE html>\n" +
@@ -47,7 +47,6 @@ public final class ApizMaxSupply extends HttpServlet {
                     "</body>\n" +
                     "</html>\n";
 
-    
      @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         process(req, resp);
@@ -59,8 +58,9 @@ public final class ApizMaxSupply extends HttpServlet {
     }
     
     
-    private void process(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        
+    
+   private void process(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+       
        if(req.getRequestURI().contains("json")){
         resp.setHeader("Cache-Control", "no-cache, no-store, must-revalidate, private");
         resp.setHeader("Pragma", "no-cache");
@@ -70,7 +70,7 @@ public final class ApizMaxSupply extends HttpServlet {
         long startTime = System.currentTimeMillis();
         JSONObject json = new JSONObject();
         try{
-            json.put("MaxSupply", ""+bened.Constants.OKON4ATELNAYA_EMISSIA);
+            json.put("height", ""+Bened.getBlockchain().getHeight());
             response = JSON.prepare(json);
             } finally {
             if (response != null) {
@@ -89,15 +89,11 @@ public final class ApizMaxSupply extends HttpServlet {
         resp.setDateHeader("Expires", 0);
         try (PrintStream out = new PrintStream(resp.getOutputStream())) {
             out.print(header);
-            out.print(""+bened.Constants.OKON4ATELNAYA_EMISSIA);
+            out.print(""+Bened.getBlockchain().getHeight());
             out.print(footer);
-            }
         }
-        
-        
-        
-        
-        /////////////////
+       
+       }   
         
     }
 

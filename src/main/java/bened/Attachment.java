@@ -47,7 +47,7 @@ public interface Attachment extends Appendix {
         }
 
         @Override
-        final void validate(Transaction transaction) throws InnerException.ValidationException {
+        final void validate(Transaction transaction) throws BNDException.ValidationException {
             getTransactionType().validateAttachment(transaction);
         }
 
@@ -111,7 +111,24 @@ public interface Attachment extends Appendix {
         }
 
     };
+     EmptyAttachment HASH_PAYMENT = new EmptyAttachment() {
 
+        @Override
+        public TransactionType getTransactionType() {
+            return TransactionType.Payment.HASH_PAYMENT;
+        }
+
+    };
+      EmptyAttachment HASH_TRANSFER = new EmptyAttachment() {
+
+        @Override
+        public TransactionType getTransactionType() {
+            return TransactionType.Payment.HASH_TRANSFER;
+        }
+
+    };
+
+    // the message payload is in the Appendix
     EmptyAttachment ARBITRARY_MESSAGE = new EmptyAttachment() {
 
         @Override
@@ -126,7 +143,7 @@ public interface Attachment extends Appendix {
         private final String aliasName;
         private final String aliasURI;
 
-        MessagingAliasAssignment(ByteBuffer buffer, byte transactionVersion) throws InnerException.NotValidException {
+        MessagingAliasAssignment(ByteBuffer buffer, byte transactionVersion) throws BNDException.NotValidException {
             super(buffer, transactionVersion);
             aliasName = Convert.readString(buffer, buffer.get(), Constants.MAX_ALIAS_LENGTH).trim();
             aliasURI = Convert.readString(buffer, buffer.getShort(), Constants.MAX_ALIAS_URI_LENGTH).trim();
@@ -182,7 +199,7 @@ public interface Attachment extends Appendix {
 
         private final String aliasName;
 
-        MessagingAliasDelete(final ByteBuffer buffer, final byte transactionVersion) throws InnerException.NotValidException {
+        MessagingAliasDelete(final ByteBuffer buffer, final byte transactionVersion) throws BNDException.NotValidException {
             super(buffer, transactionVersion);
             this.aliasName = Convert.readString(buffer, buffer.get(), Constants.MAX_ALIAS_LENGTH);
         }
@@ -228,7 +245,7 @@ public interface Attachment extends Appendix {
         private final String name;
         private final String description;
 
-        MessagingAccountInfo(ByteBuffer buffer, byte transactionVersion) throws InnerException.NotValidException {
+        MessagingAccountInfo(ByteBuffer buffer, byte transactionVersion) throws BNDException.NotValidException {
             super(buffer, transactionVersion);
             this.name = Convert.readString(buffer, buffer.get(), Constants.MAX_ACCOUNT_NAME_LENGTH);
             this.description = Convert.readString(buffer, buffer.getShort(), Constants.MAX_ACCOUNT_DESCRIPTION_LENGTH);

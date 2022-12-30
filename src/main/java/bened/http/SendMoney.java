@@ -17,7 +17,7 @@
 package bened.http;
 
 import bened.Account;
-import bened.InnerException;
+import bened.BNDException;
 import org.json.simple.JSONStreamAware;
 
 import javax.servlet.http.HttpServletRequest;
@@ -31,7 +31,7 @@ public final class SendMoney extends CreateTransaction {
     }
 
     @Override
-    protected JSONStreamAware processRequest(HttpServletRequest req) throws InnerException {
+    protected JSONStreamAware processRequest(HttpServletRequest req) throws BNDException {
         long recipient = ParameterParser.getAccountId(req, "recipient", true);
         long amountNQT = ParameterParser.getAmountNQT(req);
         Account account = ParameterParser.getSenderAccount(req);

@@ -261,7 +261,7 @@ final class TransactionProcessorImpl implements TransactionProcessor {
                 }
                 try {
                     processPeerTransactions(transactionsData);
-                } catch (InnerException.ValidationException|RuntimeException e) {
+                } catch (BNDException.ValidationException|RuntimeException e) {
                     peer.blacklist(e);
                 }
             } catch (Exception e) {
@@ -402,7 +402,7 @@ final class TransactionProcessorImpl implements TransactionProcessor {
     }
 
     @Override
-    public void broadcast(Transaction transaction) throws InnerException.ValidationException {
+    public void broadcast(Transaction transaction) throws BNDException.ValidationException {
         BlockchainImpl.getInstance().writeLock();
         int height = BlockchainImpl.getInstance().getHeight();
 
@@ -448,7 +448,7 @@ final class TransactionProcessorImpl implements TransactionProcessor {
     }
 
     @Override
-    public void processPeerTransactions(JSONObject request) throws InnerException.ValidationException {
+    public void processPeerTransactions(JSONObject request) throws BNDException.ValidationException {
         JSONArray transactionsData = (JSONArray)request.get("transactions");
         processPeerTransactions(transactionsData);
     }
@@ -616,7 +616,7 @@ final class TransactionProcessorImpl implements TransactionProcessor {
                 }
                 ((TransactionImpl)transaction).unsetBlock();
                 try {
-                    SMGBlock.Transaction trx = SoftMGImpl.convert((TransactionImpl)transaction);
+                    SMGBlock.Transaction trx = SoftMG.convert((TransactionImpl)transaction);
                     if (trx.getSender() == Genesis.CREATOR_ID && !Bened.softMG().canReceive(trx)) continue;
                     waitingTransactions.add(new UnconfirmedTransaction((TransactionImpl)transaction, Math.min(currentTime, Convert.fromEpochTime(transaction.getTimestamp()))));
                 } catch (HGException ex) {
@@ -642,14 +642,14 @@ final class TransactionProcessorImpl implements TransactionProcessor {
                         processTransaction(unconfirmedTransaction);
                         iterator.remove();
                         addedUnconfirmedTransactions.add(unconfirmedTransaction.getTransaction());
-                    } catch (InnerException.ExistingTransactionException e) {
+                    } catch (BNDException.ExistingTransactionException e) {
                         iterator.remove();
-                    } catch (InnerException.NotCurrentlyValidException e) {
+                    } catch (BNDException.NotCurrentlyValidException e) {
                         if (unconfirmedTransaction.getExpiration() < currentTime
                                 || currentTime - Convert.toEpochTime(unconfirmedTransaction.getArrivalTimestamp()) > 3600) {
                             iterator.remove();
                         }
-                    } catch (InnerException.ValidationException|RuntimeException e) {
+                    } catch (BNDException.ValidationException|RuntimeException e) {
                         iterator.remove();
                     }
                 }
@@ -663,7 +663,7 @@ final class TransactionProcessorImpl implements TransactionProcessor {
     }
 
     
-    private void processPeerTransactions(JSONArray transactionsData) throws InnerException.NotValidException {
+    private void processPeerTransactions(JSONArray transactionsData) throws BNDException.NotValidException {
         if (Bened.getBlockchain().getHeight() <= Constants.LAST_KNOWN_BLOCK && !testUnconfirmedTransactions) {
             return;
         }
@@ -716,8 +716,8 @@ final class TransactionProcessorImpl implements TransactionProcessor {
                 }
                 addedUnconfirmedTransactions.add(transaction);
 
-            } catch (InnerException.NotCurrentlyValidException ignore) {
-            } catch (InnerException.ValidationException|RuntimeException e) {
+            } catch (BNDException.NotCurrentlyValidException ignore) {
+            } catch (BNDException.ValidationException|RuntimeException e) {
                 Logger.logDebugMessage(String.format("Invalid transaction from peer: %s", ((JSONObject) transactionData).toJSONString()), e);
                 exceptions.add(e);
             }
@@ -730,51 +730,52 @@ final class TransactionProcessorImpl implements TransactionProcessor {
         }
         broadcastedTransactions.removeAll(receivedTransactions);
         if (!exceptions.isEmpty()) {
-            throw new InnerException.NotValidException("Peer sends invalid transactions: " + exceptions.toString());
+            throw new BNDException.NotValidException("Peer sends invalid transactions: " + exceptions.toString());
         }
     }
 
-    private void processTransaction(UnconfirmedTransaction unconfirmedTransaction) throws InnerException.ValidationException {
+    private void processTransaction(UnconfirmedTransaction unconfirmedTransaction) throws BNDException.ValidationException {
         TransactionImpl transaction = unconfirmedTransaction.getTransaction();
         int curTime = Bened.getEpochTime();
         if  (!UnconfirmedTransaction.transactionBytesIsValid(transaction.getBytes())) {
-            throw new InnerException.NotValidException("Invalid transaction bytes");
+            throw new BNDException.NotValidException("Invalid transaction bytes");
         }
-        if (transaction.getTimestamp() > curTime + Constants.MAX_TIMEDRIFT || transaction.getExpiration() < curTime) {
-            throw new InnerException.NotCurrentlyValidException("Invalid transaction timestamp");
+        if (transaction.getTimestamp() > curTime + Constants.MAX_TIMEDRIFT+Constants.Allow_future_inVM || transaction.getExpiration() < curTime) {
+            throw new BNDException.NotCurrentlyValidException("Invalid transaction timestamp"
+                    +(Constants.Allow_future_inVM>0?", future +"+(transaction.getTimestamp()-curTime)+", allow +"+Constants.Allow_future_inVM:""));
         }
         if (transaction.getVersion() < 1) {
-            throw new InnerException.NotValidException("Invalid transaction version");
+            throw new BNDException.NotValidException("Invalid transaction version");
         }
         if (transaction.getId() == 0L) {
-            throw new InnerException.NotValidException("Invalid transaction id 0");
+            throw new BNDException.NotValidException("Invalid transaction id 0");
         }
         BlockchainImpl.getInstance().writeLock();
         try {
             try {
                 Db.db.beginTransaction();
                 if (Bened.getBlockchain().getHeight() <= Constants.LAST_KNOWN_BLOCK && !testUnconfirmedTransactions) {
-                    throw new InnerException.NotCurrentlyValidException("Blockchain not ready to accept transactions");
+                    throw new BNDException.NotCurrentlyValidException("Blockchain not ready to accept transactions");
                 }
 
                 if (getUnconfirmedTransaction(transaction.getDbKey()) != null || TransactionDb.hasTransaction(transaction.getId())) {
-                    throw new InnerException.ExistingTransactionException("Transaction already processed");
+                    throw new BNDException.ExistingTransactionException("Transaction already processed");
                 }
 
                 if (! transaction.verifySignature()) {
                     if (Account.getAccount(transaction.getSenderId()) != null) {
-                        throw new InnerException.NotValidException("Transaction signature verification failed");
+                        throw new BNDException.NotValidException("Transaction signature verification failed");
                     } else {
-                        throw new InnerException.NotCurrentlyValidException("Unknown transaction sender");
+                        throw new BNDException.NotCurrentlyValidException("Unknown transaction sender");
                     }
                 }
 
                 if (! transaction.applyUnconfirmed()) {
-                    throw new InnerException.InsufficientBalanceException("Insufficient balance");
+                    throw new BNDException.InsufficientBalanceException("Insufficient balance");
                 }
 
                 if (transaction.isUnconfirmedDuplicate(unconfirmedDuplicates)) {
-                    throw new InnerException.NotCurrentlyValidException("Duplicate unconfirmed transaction");
+                    throw new BNDException.NotCurrentlyValidException("Duplicate unconfirmed transaction");
                 }
 
                 unconfirmedTransactionTable.insert(unconfirmedTransaction);
@@ -793,13 +794,13 @@ final class TransactionProcessorImpl implements TransactionProcessor {
 
     private static final Comparator<UnconfirmedTransaction> cachedUnconfirmedTransactionComparator = (UnconfirmedTransaction t1, UnconfirmedTransaction t2) -> {
         int compare;
-       compare = Integer.compare(t1.getHeight(), t2.getHeight());
+        compare = Integer.compare(t1.getHeight(), t2.getHeight());
         if (compare != 0)
             return compare;
         compare = Long.compare(t1.getFeePerByte(), t2.getFeePerByte());
         if (compare != 0)
             return -compare;
-       compare = Long.compare(t1.getArrivalTimestamp(), t2.getArrivalTimestamp());
+        compare = Long.compare(t1.getArrivalTimestamp(), t2.getArrivalTimestamp());
         if (compare != 0)
             return compare;
         return Long.compare(t1.getId(), t2.getId());
@@ -850,7 +851,7 @@ final class TransactionProcessorImpl implements TransactionProcessor {
      * @throws  BenedException.NotValidException    Transaction is not valid
      */
     @Override
-    public List<Transaction> restorePrunableData(JSONArray transactions) throws InnerException.NotValidException {
+    public List<Transaction> restorePrunableData(JSONArray transactions) throws BNDException.NotValidException {
         List<Transaction> processed = new ArrayList<>();
         Bened.getBlockchain().readLock();
         try {

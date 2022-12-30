@@ -26,7 +26,7 @@ public final class CompareTraceFiles {
         String defaultFile = args.length > 1 ? args[1] : "bened-trace-default.csv";
         try (BufferedReader defaultReader = new BufferedReader(new FileReader(defaultFile));
                 BufferedReader testReader = new BufferedReader(new FileReader(testFile))) {
-             testReader.readLine();
+            testReader.readLine();
             String testLine = testReader.readLine();
             if (testLine == null) {
                 return;

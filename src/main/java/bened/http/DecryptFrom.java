@@ -17,7 +17,7 @@
 package bened.http;
 
 import bened.Account;
-import bened.InnerException;
+import bened.BNDException;
 import bened.crypto.EncryptedData;
 import bened.util.Convert;
 import bened.util.Logger;
@@ -38,7 +38,7 @@ public final class DecryptFrom extends APIServlet.APIRequestHandler {
     }
 
     @Override
-    protected JSONStreamAware processRequest(HttpServletRequest req) throws InnerException {
+    protected JSONStreamAware processRequest(HttpServletRequest req) throws BNDException {
 
         byte[] publicKey = Account.getPublicKey(ParameterParser.getAccountId(req, true));
         if (publicKey == null) {

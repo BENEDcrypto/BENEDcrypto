@@ -79,7 +79,8 @@ final class BlockDb {
                 return block;
             }
         }
-         try (Connection con = Db.db.getConnection();
+        // Search the database
+        try (Connection con = Db.db.getConnection();
              PreparedStatement pstmt = con.prepareStatement("SELECT * FROM block WHERE id = ?")) {
             pstmt.setLong(1, blockId);
             try (ResultSet rs = pstmt.executeQuery()) {
@@ -99,13 +100,15 @@ final class BlockDb {
     }
 
     static boolean hasBlock(long blockId, int height) {
+        // Check the block cache
         synchronized(blockCache) {
             BlockImpl block = blockCache.get(blockId);
             if (block != null) {
                 return block.getHeight() <= height;
             }
         }
-       try (Connection con = Db.db.getConnection();
+        // Search the database
+        try (Connection con = Db.db.getConnection();
              PreparedStatement pstmt = con.prepareStatement("SELECT height FROM block WHERE id = ?")) {
             pstmt.setLong(1, blockId);
             try (ResultSet rs = pstmt.executeQuery()) {
@@ -117,12 +120,14 @@ final class BlockDb {
     }
 
     static long findBlockIdAtHeight(int height) {
+        // Check the cache
         synchronized(blockCache) {
             BlockImpl block = heightMap.get(height);
             if (block != null) {
                 return block.getId();
             }
         }
+        // Search the database
         try (Connection con = Db.db.getConnection();
              PreparedStatement pstmt = con.prepareStatement("SELECT id FROM block WHERE height = ?")) {
             pstmt.setInt(1, height);
@@ -138,12 +143,14 @@ final class BlockDb {
     }
 
     static BlockImpl findBlockAtHeight(int height) {
+        // Check the cache
         synchronized(blockCache) {
             BlockImpl block = heightMap.get(height);
             if (block != null) {
                 return block;
             }
         }
+        // Search the database
         try (Connection con = Db.db.getConnection();
              PreparedStatement pstmt = con.prepareStatement("SELECT * FROM block WHERE height = ?")) {
             pstmt.setInt(1, height);
@@ -303,7 +310,8 @@ final class BlockDb {
         BlockDb.deleteBlocksFrom(blockId);
     }
 
-   static BlockImpl deleteBlocksFrom(long blockId) {
+    // relying on cascade triggers in the database to delete the transactions and public keys for all deleted blocks
+    static BlockImpl deleteBlocksFrom(long blockId) {
         if (!Db.db.isInTransaction()) {
             BlockImpl lastBlock;
             try {

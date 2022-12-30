@@ -18,7 +18,7 @@ package bened.http;
 
 import bened.Block;
 import bened.Bened;
-import bened.InnerException;
+import bened.BNDException;
 import bened.db.DbIterator;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -35,7 +35,7 @@ public final class GetAccountBlocks extends APIServlet.APIRequestHandler {
     }
 
     @Override
-    protected JSONStreamAware processRequest(HttpServletRequest req) throws InnerException {
+    protected JSONStreamAware processRequest(HttpServletRequest req) throws BNDException {
 
         long accountId = ParameterParser.getAccountId(req, true);
         int timestamp = ParameterParser.getTimestamp(req);

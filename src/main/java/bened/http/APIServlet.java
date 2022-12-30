@@ -19,7 +19,7 @@ package bened.http;
 import bened.Constants;
 import bened.Db;
 import bened.Bened;
-import bened.InnerException;
+import bened.BNDException;
 import bened.addons.AddOns;
 import bened.util.JSON;
 import bened.util.Logger;
@@ -89,9 +89,9 @@ public final class APIServlet extends HttpServlet {
             return fileParameter;
         }
 
-        protected abstract JSONStreamAware processRequest(HttpServletRequest request) throws InnerException;
+        protected abstract JSONStreamAware processRequest(HttpServletRequest request) throws BNDException;
 
-        protected JSONStreamAware processRequest(HttpServletRequest request, HttpServletResponse response) throws InnerException {
+        protected JSONStreamAware processRequest(HttpServletRequest request, HttpServletResponse response) throws BNDException {
             return processRequest(request);
         }
 
@@ -260,7 +260,7 @@ public final class APIServlet extends HttpServlet {
             }
         } catch (ParameterException e) {
             response = e.getErrorResponse();
-        } catch (InnerException | RuntimeException e) {
+        } catch (BNDException | RuntimeException e) {
             Logger.logDebugMessage("Error processing API request", e);
             JSONObject json = new JSONObject();
             JSONData.putException(json, e);

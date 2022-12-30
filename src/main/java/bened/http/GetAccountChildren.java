@@ -5,7 +5,7 @@ import org.json.simple.JSONObject;
 import org.json.simple.JSONStreamAware;
 import bened.Account;
 import bened.Bened;
-import bened.InnerException;
+import bened.BNDException;
 import bened.util.Logger;
 import bened.util.BenedTree;
 import javax.servlet.http.HttpServletRequest;
@@ -24,10 +24,10 @@ public class GetAccountChildren extends BenedTree.APIHierarchyRequestHandler {
         super(new APITag[] {APITag.ACCOUNTS}, "account", "firstIndex");
     }
 
-    public static final int         MAX_DEPTH_PER_REQUEST =                 10;   
+ //   public static final int         MAX_DEPTH_PER_REQUEST =                 10;    //// было 88
 
     @Override
-    protected JSONStreamAware processHierarchyRequest(HttpServletRequest req) throws InnerException {
+    protected JSONStreamAware processHierarchyRequest(HttpServletRequest req) throws BNDException {
         if (Bened.softMG().getConnection() == null) {
             JSONObject response = new JSONObject();
             response.put("errorDescription", "GetAccountChildren API failed to connect to the database");

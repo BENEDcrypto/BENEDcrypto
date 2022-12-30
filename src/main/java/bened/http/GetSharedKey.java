@@ -17,7 +17,7 @@
 package bened.http;
 
 import bened.Account;
-import bened.InnerException;
+import bened.BNDException;
 import bened.crypto.Crypto;
 import bened.util.Convert;
 import org.json.simple.JSONObject;
@@ -34,7 +34,7 @@ public final class GetSharedKey extends APIServlet.APIRequestHandler {
     }
 
     @Override
-    protected JSONStreamAware processRequest(HttpServletRequest req) throws InnerException {
+    protected JSONStreamAware processRequest(HttpServletRequest req) throws BNDException {
 
         String secretPhrase = ParameterParser.getSecretPhrase(req, true);
         byte[] nonce = ParameterParser.getBytes(req, "nonce", true);

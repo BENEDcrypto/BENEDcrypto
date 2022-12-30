@@ -27,10 +27,11 @@ import java.util.Map;
 public abstract class TransactionType {
 
     private static final byte TYPE_PAYMENT = 0;
+    private static final byte SUBTYPE_PAYMENT_ORDINARY_PAYMENT = 0;  
+    private static final byte SUBTYPE_PAYMENT_HASH_PAYMENT = 1;
+    private static final byte SUBTYPE_PAYMENT_HASH_TRANSFER = 2;
+    
     private static final byte TYPE_MESSAGING = 1;
-
-    private static final byte SUBTYPE_PAYMENT_ORDINARY_PAYMENT = 0;
-
     private static final byte SUBTYPE_MESSAGING_ARBITRARY_MESSAGE = 0;
     private static final byte SUBTYPE_MESSAGING_ALIAS_ASSIGNMENT = 1;
     private static final byte SUBTYPE_MESSAGING_ACCOUNT_INFO = 5;
@@ -43,6 +44,10 @@ public abstract class TransactionType {
                 switch (subtype) {
                     case SUBTYPE_PAYMENT_ORDINARY_PAYMENT:
                         return Payment.ORDINARY;
+                    case SUBTYPE_PAYMENT_HASH_PAYMENT:
+                        return Payment.HASH_PAYMENT;
+                    case SUBTYPE_PAYMENT_HASH_TRANSFER:
+                        return Payment.HASH_TRANSFER;
                     default:
                         return null;
                 }
@@ -74,11 +79,11 @@ public abstract class TransactionType {
 
     public abstract LedgerEvent getLedgerEvent();
 
-    abstract Attachment.AbstractAttachment parseAttachment(ByteBuffer buffer, byte transactionVersion) throws InnerException.NotValidException;
+    abstract Attachment.AbstractAttachment parseAttachment(ByteBuffer buffer, byte transactionVersion) throws BNDException.NotValidException;
 
-    abstract Attachment.AbstractAttachment parseAttachment(JSONObject attachmentData) throws InnerException.NotValidException;
+    abstract Attachment.AbstractAttachment parseAttachment(JSONObject attachmentData) throws BNDException.NotValidException;
 
-    abstract void validateAttachment(Transaction transaction) throws InnerException.ValidationException;
+    abstract void validateAttachment(Transaction transaction) throws BNDException.ValidationException;
 
     // return false iff double spending
     final boolean applyUnconfirmed(TransactionImpl transaction, Account senderAccount) {
@@ -254,23 +259,96 @@ public abstract class TransactionType {
             }
 
             @Override
-            Attachment.EmptyAttachment parseAttachment(ByteBuffer buffer, byte transactionVersion) throws InnerException.NotValidException {
+            Attachment.EmptyAttachment parseAttachment(ByteBuffer buffer, byte transactionVersion) throws BNDException.NotValidException {
                 return Attachment.ORDINARY_PAYMENT;
             }
 
             @Override
-            Attachment.EmptyAttachment parseAttachment(JSONObject attachmentData) throws InnerException.NotValidException {
+            Attachment.EmptyAttachment parseAttachment(JSONObject attachmentData) throws BNDException.NotValidException {
                 return Attachment.ORDINARY_PAYMENT;
             }
 
             @Override
-            void validateAttachment(Transaction transaction) throws InnerException.ValidationException {
+            void validateAttachment(Transaction transaction) throws BNDException.ValidationException {
                 if (transaction.getAmountNQT() <= 0 || transaction.getAmountNQT() >= Constants.MAX_BALANCE_centesimo) {
-                    throw new InnerException.NotValidException("Invalid ordinary payment");
+                    throw new BNDException.NotValidException("Invalid ordinary payment");
                 }
             }
 
         };
+        
+        public static final TransactionType HASH_PAYMENT = new Payment() {
+
+            @Override
+            public final byte getSubtype() {
+                return TransactionType.SUBTYPE_PAYMENT_HASH_PAYMENT;
+            }
+
+            @Override
+            public final LedgerEvent getLedgerEvent() {
+                return LedgerEvent.HASH_PAYMENT;
+            }
+
+            @Override
+            public String getName() {
+                return "HashPayment";
+            }
+
+            @Override
+            Attachment.EmptyAttachment parseAttachment(ByteBuffer buffer, byte transactionVersion) throws BNDException.NotValidException {
+                return Attachment.HASH_PAYMENT;
+            }
+
+            @Override
+            Attachment.EmptyAttachment parseAttachment(JSONObject attachmentData) throws BNDException.NotValidException {
+                return Attachment.HASH_PAYMENT;
+            }
+
+            @Override
+            void validateAttachment(Transaction transaction) throws BNDException.ValidationException {
+                if (transaction.getAmountNQT() <= 0 || transaction.getAmountNQT() >= Constants.MAX_BALANCE_centesimo) {
+                    throw new BNDException.NotValidException("Invalid hash payment");
+                }
+            }
+
+        };
+        
+         public static final TransactionType HASH_TRANSFER = new Payment() {
+
+            @Override
+            public final byte getSubtype() {
+                return TransactionType.SUBTYPE_PAYMENT_HASH_TRANSFER;
+            }
+
+            @Override
+            public final LedgerEvent getLedgerEvent() {
+                return LedgerEvent.HASH_TRANSFER;
+            }
+
+            @Override
+            public String getName() {
+                return "HashTransfer";
+            }
+
+            @Override
+            Attachment.EmptyAttachment parseAttachment(ByteBuffer buffer, byte transactionVersion) throws BNDException.NotValidException {
+                return Attachment.HASH_TRANSFER;
+            }
+
+            @Override
+            Attachment.EmptyAttachment parseAttachment(JSONObject attachmentData) throws BNDException.NotValidException {
+                return Attachment.HASH_TRANSFER;
+            }
+
+            @Override
+            void validateAttachment(Transaction transaction) throws BNDException.ValidationException {
+                if (transaction.getAmountNQT() <= 0 || transaction.getAmountNQT() >= Constants.MAX_BALANCE_centesimo) {
+                    throw new BNDException.NotValidException("Invalid hash transfer ");
+                }
+            }
+
+        };
+
 
     }
 
@@ -311,12 +389,12 @@ public abstract class TransactionType {
             }
 
             @Override
-            Attachment.EmptyAttachment parseAttachment(ByteBuffer buffer, byte transactionVersion) throws InnerException.NotValidException {
+            Attachment.EmptyAttachment parseAttachment(ByteBuffer buffer, byte transactionVersion) throws BNDException.NotValidException {
                 return Attachment.ARBITRARY_MESSAGE;
             }
 
             @Override
-            Attachment.EmptyAttachment parseAttachment(JSONObject attachmentData) throws InnerException.NotValidException {
+            Attachment.EmptyAttachment parseAttachment(JSONObject attachmentData) throws BNDException.NotValidException {
                 return Attachment.ARBITRARY_MESSAGE;
             }
 
@@ -325,13 +403,13 @@ public abstract class TransactionType {
             }
 
             @Override
-            void validateAttachment(Transaction transaction) throws InnerException.ValidationException {
+            void validateAttachment(Transaction transaction) throws BNDException.ValidationException {
                 Attachment attachment = transaction.getAttachment();
                 if (transaction.getAmountNQT() != 0) {
-                    throw new InnerException.NotValidException("Invalid arbitrary message: " + attachment.getJSONObject());
+                    throw new BNDException.NotValidException("Invalid arbitrary message: " + attachment.getJSONObject());
                 }
                 if (transaction.getRecipientId() == Genesis.CREATOR_ID) { // NO MESSAGES TO GENESIS
-                    throw new InnerException.NotValidException("Sending messages to Genesis not allowed.");
+                    throw new BNDException.NotValidException("Sending messages to Genesis not allowed.");
                 }
             }
 
@@ -383,12 +461,12 @@ public abstract class TransactionType {
             }
 
             @Override
-            Attachment.MessagingAliasAssignment parseAttachment(ByteBuffer buffer, byte transactionVersion) throws InnerException.NotValidException {
+            Attachment.MessagingAliasAssignment parseAttachment(ByteBuffer buffer, byte transactionVersion) throws BNDException.NotValidException {
                 return new Attachment.MessagingAliasAssignment(buffer, transactionVersion);
             }
 
             @Override
-            Attachment.MessagingAliasAssignment parseAttachment(JSONObject attachmentData) throws InnerException.NotValidException {
+            Attachment.MessagingAliasAssignment parseAttachment(JSONObject attachmentData) throws BNDException.NotValidException {
                return new Attachment.MessagingAliasAssignment(attachmentData);
             }
 
@@ -405,22 +483,22 @@ public abstract class TransactionType {
             }
 
             @Override
-            void validateAttachment(Transaction transaction) throws InnerException.ValidationException {
+            void validateAttachment(Transaction transaction) throws BNDException.ValidationException {
                 Attachment.MessagingAliasAssignment attachment = (Attachment.MessagingAliasAssignment) transaction.getAttachment();
                 if (attachment.getAliasName().length() == 0
                         || attachment.getAliasName().length() > Constants.MAX_ALIAS_LENGTH
                         || attachment.getAliasURI().length() > Constants.MAX_ALIAS_URI_LENGTH) {
-                    throw new InnerException.NotValidException("Invalid alias assignment: " + attachment.getJSONObject());
+                    throw new BNDException.NotValidException("Invalid alias assignment: " + attachment.getJSONObject());
                 }
                 String normalizedAlias = attachment.getAliasName().toLowerCase();
                 for (int i = 0; i < normalizedAlias.length(); i++) {
                     if (Constants.ALPHABET.indexOf(normalizedAlias.charAt(i)) < 0) {
-                        throw new InnerException.NotValidException("Invalid alias name: " + normalizedAlias);
+                        throw new BNDException.NotValidException("Invalid alias name: " + normalizedAlias);
                     }
                 }
                 Alias alias = Alias.getAlias(normalizedAlias);
                 if (alias != null && alias.getAccountId() != transaction.getSenderId()) {
-                    throw new InnerException.NotCurrentlyValidException("Alias already owned by another account: " + normalizedAlias);
+                    throw new BNDException.NotCurrentlyValidException("Alias already owned by another account: " + normalizedAlias);
                 }
             }
 
@@ -454,12 +532,12 @@ public abstract class TransactionType {
             }
 
             @Override
-            Attachment.MessagingAliasDelete parseAttachment(final ByteBuffer buffer, final byte transactionVersion) throws InnerException.NotValidException {
+            Attachment.MessagingAliasDelete parseAttachment(final ByteBuffer buffer, final byte transactionVersion) throws BNDException.NotValidException {
                 return new Attachment.MessagingAliasDelete(buffer, transactionVersion);
             }
 
             @Override
-            Attachment.MessagingAliasDelete parseAttachment(final JSONObject attachmentData) throws InnerException.NotValidException {
+            Attachment.MessagingAliasDelete parseAttachment(final JSONObject attachmentData) throws BNDException.NotValidException {
                 return new Attachment.MessagingAliasDelete(attachmentData);
             }
 
@@ -478,18 +556,18 @@ public abstract class TransactionType {
             }
 
             @Override
-            void validateAttachment(final Transaction transaction) throws InnerException.ValidationException {
+            void validateAttachment(final Transaction transaction) throws BNDException.ValidationException {
                 final Attachment.MessagingAliasDelete attachment
                         = (Attachment.MessagingAliasDelete) transaction.getAttachment();
                 final String aliasName = attachment.getAliasName();
                 if (aliasName == null || aliasName.length() == 0) {
-                    throw new InnerException.NotValidException("Missing alias name");
+                    throw new BNDException.NotValidException("Missing alias name");
                 }
                 final Alias alias = Alias.getAlias(aliasName);
                 if (alias == null) {
-                    throw new InnerException.NotCurrentlyValidException("No such alias: " + aliasName);
+                    throw new BNDException.NotCurrentlyValidException("No such alias: " + aliasName);
                 } else if (alias.getAccountId() != transaction.getSenderId()) {
-                    throw new InnerException.NotCurrentlyValidException("Alias doesn't belong to sender: " + aliasName);
+                    throw new BNDException.NotCurrentlyValidException("Alias doesn't belong to sender: " + aliasName);
                 }
             }
 
@@ -536,21 +614,21 @@ public abstract class TransactionType {
             }
 
             @Override
-            Attachment.MessagingAccountInfo parseAttachment(ByteBuffer buffer, byte transactionVersion) throws InnerException.NotValidException {
+            Attachment.MessagingAccountInfo parseAttachment(ByteBuffer buffer, byte transactionVersion) throws BNDException.NotValidException {
                 return new Attachment.MessagingAccountInfo(buffer, transactionVersion);
             }
 
             @Override
-            Attachment.MessagingAccountInfo parseAttachment(JSONObject attachmentData) throws InnerException.NotValidException {
+            Attachment.MessagingAccountInfo parseAttachment(JSONObject attachmentData) throws BNDException.NotValidException {
                 return new Attachment.MessagingAccountInfo(attachmentData);
             }
 
             @Override
-            void validateAttachment(Transaction transaction) throws InnerException.ValidationException {
+            void validateAttachment(Transaction transaction) throws BNDException.ValidationException {
                 Attachment.MessagingAccountInfo attachment = (Attachment.MessagingAccountInfo) transaction.getAttachment();
                 if (attachment.getName().length() > Constants.MAX_ACCOUNT_NAME_LENGTH
                         || attachment.getDescription().length() > Constants.MAX_ACCOUNT_DESCRIPTION_LENGTH) {
-                    throw new InnerException.NotValidException("Invalid account info issuance: " + attachment.getJSONObject());
+                    throw new BNDException.NotValidException("Invalid account info issuance: " + attachment.getJSONObject());
                 }
             }
 

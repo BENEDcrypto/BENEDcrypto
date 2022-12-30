@@ -18,25 +18,25 @@ package bened;
 
 import java.io.IOException;
 
-public abstract class InnerException extends Exception {
+public abstract class BNDException extends Exception {
 
-    protected InnerException() {
+    protected BNDException() {
         super();
     }
 
-    protected InnerException(String message) {
+    protected BNDException(String message) {
         super(message);
     }
 
-    protected InnerException(String message, Throwable cause) {
+    protected BNDException(String message, Throwable cause) {
         super(message, cause);
     }
 
-    protected InnerException(Throwable cause) {
+    protected BNDException(Throwable cause) {
         super(cause);
     }
 
-    public static abstract class ValidationException extends InnerException {
+    public static abstract class ValidationException extends BNDException {
 
         private ValidationException(String message) {
             super(message);

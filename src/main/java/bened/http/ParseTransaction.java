@@ -16,7 +16,7 @@
 
 package bened.http;
 
-import bened.InnerException;
+import bened.BNDException;
 import bened.Transaction;
 import bened.util.Convert;
 import bened.util.Logger;
@@ -34,7 +34,7 @@ public final class ParseTransaction extends APIServlet.APIRequestHandler {
     }
 
     @Override
-    protected JSONStreamAware processRequest(HttpServletRequest req) throws InnerException {
+    protected JSONStreamAware processRequest(HttpServletRequest req) throws BNDException {
 
         String transactionBytes = Convert.emptyToNull(req.getParameter("transactionBytes"));
         String transactionJSON = Convert.emptyToNull(req.getParameter("transactionJSON"));
@@ -44,7 +44,7 @@ public final class ParseTransaction extends APIServlet.APIRequestHandler {
         JSONObject response = JSONData.unconfirmedTransaction(transaction);
         try {
             transaction.validate();
-        } catch (InnerException.ValidationException|RuntimeException e) {
+        } catch (BNDException.ValidationException|RuntimeException e) {
             Logger.logDebugMessage(e.getMessage(), e);
             response.put("validate", false);
             JSONData.putException(response, e, "Invalid transaction");

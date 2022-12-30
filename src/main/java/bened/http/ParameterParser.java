@@ -22,7 +22,7 @@ import bened.Appendix;
 import bened.Constants;
 import bened.HoldingType;
 import bened.Bened;
-import bened.InnerException;
+import bened.BNDException;
 import bened.Transaction;
 import bened.crypto.Crypto;
 import bened.crypto.EncryptedData;
@@ -482,7 +482,7 @@ public final class ParameterParser {
             try {
                 JSONObject json = (JSONObject) JSONValue.parseWithException(transactionJSON);
                 return Bened.newTransactionBuilder(json);
-            } catch (InnerException.ValidationException | RuntimeException | ParseException e) {
+            } catch (BNDException.ValidationException | RuntimeException | ParseException e) {
                 Logger.logDebugMessage(e.getMessage(), e);
                 JSONObject response = new JSONObject();
                 JSONData.putException(response, e, "Incorrect transactionJSON");
@@ -493,7 +493,7 @@ public final class ParameterParser {
                 byte[] bytes = Convert.parseHexString(transactionBytes);
                 JSONObject prunableAttachments = prunableAttachmentJSON == null ? null : (JSONObject)JSONValue.parseWithException(prunableAttachmentJSON);
                 return Bened.newTransactionBuilder(bytes, prunableAttachments);
-            } catch (InnerException.ValidationException|RuntimeException | ParseException e) {
+            } catch (BNDException.ValidationException|RuntimeException | ParseException e) {
                 Logger.logDebugMessage(e.getMessage(), e);
                 JSONObject response = new JSONObject();
                 JSONData.putException(response, e, "Incorrect transactionBytes");

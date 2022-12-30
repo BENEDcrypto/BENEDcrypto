@@ -20,7 +20,7 @@ public class SMGComputator {
     public boolean add(long ID, long amount) {
         
         synchronized (elements) {
-            if (genesisBalance - amount < SoftMGImpl.MAXIMUM_softMG_AMOUNT){
+            if (genesisBalance - amount < SoftMG.MAXIMUM_softMG_AMOUNT){
                 return false;
             }
             genesisBalance -= amount;

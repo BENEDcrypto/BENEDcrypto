@@ -16,7 +16,7 @@
 
 package bened.http;
 
-import bened.InnerException;
+import bened.BNDException;
 import bened.Transaction;
 import bened.crypto.Crypto;
 import bened.util.Convert;
@@ -53,7 +53,7 @@ public final class CalculateFullHash extends APIServlet.APIRequestHandler {
             digest.update(transaction.getUnsignedBytes());
             byte[] fullHash = digest.digest(Convert.parseHexString(signatureHashString));
             response.put("fullHash", Convert.toHexString(fullHash));
-        } catch (InnerException.NotValidException e) {
+        } catch (BNDException.NotValidException e) {
             JSONData.putException(response, e, "Incorrect unsigned transaction json or bytes");
         }
         return response;

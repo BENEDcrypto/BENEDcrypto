@@ -17,7 +17,7 @@
 package bened.peer;
 
 import bened.Bened;
-import bened.InnerException;
+import bened.BNDException;
 import bened.util.JSON;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONStreamAware;
@@ -34,7 +34,7 @@ final class ProcessTransactions extends PeerServlet.PeerRequestHandler {
         try {
             Bened.getTransactionProcessor().processPeerTransactions(request);
             return JSON.emptyJSON;
-        } catch (RuntimeException | InnerException.ValidationException e) {
+        } catch (RuntimeException | BNDException.ValidationException e) {
             peer.blacklist(e);
             return PeerServlet.error(e);
         }

@@ -17,7 +17,7 @@
 package bened.http;
 
 import bened.Bened;
-import bened.InnerException;
+import bened.BNDException;
 import bened.Transaction;
 import bened.db.DbIterator;
 import org.json.simple.JSONArray;
@@ -35,7 +35,7 @@ public final class GetReferencingTransactions extends APIServlet.APIRequestHandl
     }
 
     @Override
-    protected JSONStreamAware processRequest(HttpServletRequest req) throws InnerException {
+    protected JSONStreamAware processRequest(HttpServletRequest req) throws BNDException {
 
         long transactionId = ParameterParser.getUnsignedLong(req, "transaction", true);
         int firstIndex = ParameterParser.getFirstIndex(req);

@@ -24,7 +24,8 @@ public final class Db {
     public static final String PREFIX = Constants.isTestnet ? "bened.testDb" : "bened.db";
     public static final String PREFIX_SoftMg = Constants.isTestnet ? "bened.testSoftMgDb" : "bened.dbSoftMg";
     
-    public static final String SoftMG_DB_URL = String.format("jdbc:%s:%s;%s", "h2", Bened.getDbDir("./bened_db/softMgsol"), "DB_CLOSE_ON_EXIT=FALSE;MVCC=TRUE;MV_STORE=FALSE");
+    public static final String SoftMG_DB_URL = String.format("jdbc:%s:%s;%s", "h2", Bened.getDbDir("./bened_db/softMgsol"), "DB_CLOSE_ON_EXIT=FALSE;MV_STORE=FALSE");
+    
     public static final String SoftMG_DB_USERNAME = Bened.getStringProperty(PREFIX_SoftMg + "Username");
     public static final String SoftMG_DB_PASSWORD = Bened.getStringProperty(PREFIX_SoftMg + "Password");
     
@@ -43,7 +44,7 @@ public final class Db {
     );
 
     public static void init() {
-        db.init(new InnerDbVersion());
+        db.init(new benedDbVersion());
     }
 
     static void shutdown() {

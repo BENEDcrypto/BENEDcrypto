@@ -17,7 +17,7 @@
 package bened.http;
 
 import bened.Account;
-import bened.InnerException;
+import bened.BNDException;
 import bened.util.Convert;
 import bened.util.JSON;
 import org.json.simple.JSONObject;
@@ -34,7 +34,7 @@ public final class GetAccountPublicKey extends APIServlet.APIRequestHandler {
     }
 
     @Override
-    protected JSONStreamAware processRequest(HttpServletRequest req) throws InnerException {
+    protected JSONStreamAware processRequest(HttpServletRequest req) throws BNDException {
 
         long accountId = ParameterParser.getAccountId(req, true);
         byte[] publicKey = Account.getPublicKey(accountId);

@@ -16,6 +16,7 @@
 
 package bened.http;
 
+import bened.Bened;
 import bened.Constants;
 import bened.Genesis;
 import bened.HoldingType;
@@ -24,14 +25,15 @@ import bened.crypto.HashFunction;
 import bened.peer.Peer;
 import bened.util.JSON;
 import bened.util.Logger;
+
+
+
+import java.util.Collections;
+import java.util.Map;
+import javax.servlet.http.HttpServletRequest;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONStreamAware;
-import bened.util.BenedTree;
-
-import javax.servlet.http.HttpServletRequest;
-import java.util.Collections;
-import java.util.Map;
 
 public final class GetConstants extends APIServlet.APIRequestHandler {
 
@@ -47,7 +49,7 @@ public final class GetConstants extends APIServlet.APIRequestHandler {
                 response.put("genesisBlockId", Long.toUnsignedString(Genesis.GENESIS_BLOCK_ID));
                 response.put("genesisAccountId", Long.toUnsignedString(Genesis.CREATOR_ID));
                 response.put("epochBeginning", Constants.EPOCH_BEGINNING);
-                response.put("maxBlockPayloadLength", Constants.MAX_PAYLOAD_LENGTH);
+                response.put("maxBlockPayloadLength", (Bened.getBlockchain().getHeight()<Constants.change_evendek22? Constants.MAX_PAYLOAD_LENGTH : Constants.MAX_PAYLOAD_LENGTH*10));
                 response.put("maxArbitraryMessageLength", Constants.MAX_ARBITRARY_MESSAGE_LENGTH);
                 response.put("maxPrunableMessageLength", Constants.MAX_PRUNABLE_MESSAGE_LENGTH);
 

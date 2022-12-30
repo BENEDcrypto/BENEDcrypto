@@ -18,7 +18,7 @@ package bened.http;
 
 import bened.Account;
 import bened.Bened;
-import bened.InnerException;
+import bened.BNDException;
 import org.json.simple.JSONStreamAware;
 
 import javax.servlet.http.HttpServletRequest;
@@ -32,7 +32,7 @@ public final class GetBalance extends APIServlet.APIRequestHandler {
     }
 
     @Override
-    protected JSONStreamAware processRequest(HttpServletRequest req) throws InnerException {
+    protected JSONStreamAware processRequest(HttpServletRequest req) throws BNDException {
         boolean includeEffectiveBalance = "true".equalsIgnoreCase(req.getParameter("includeEffectiveBalance"));
         long accountId = ParameterParser.getAccountId(req, true);
         int height = ParameterParser.getHeight(req);

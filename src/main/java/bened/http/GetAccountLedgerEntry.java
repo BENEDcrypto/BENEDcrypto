@@ -18,7 +18,7 @@ package bened.http;
 
 import bened.AccountLedger;
 import bened.AccountLedger.LedgerEntry;
-import bened.InnerException;
+import bened.BNDException;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONStreamAware;
 
@@ -182,10 +182,10 @@ public class GetAccountLedgerEntry extends APIServlet.APIRequestHandler {
      *
      * @param   req                 API request
      * @return                      API response
-     * @throws  InnerException        Invalid request
+     * @throws  BNDException        Invalid request
      */
     @Override
-    protected JSONStreamAware processRequest(HttpServletRequest req) throws InnerException {
+    protected JSONStreamAware processRequest(HttpServletRequest req) throws BNDException {
         //
         // Process the request parameters
         //

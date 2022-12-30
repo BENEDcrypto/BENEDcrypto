@@ -16,15 +16,19 @@
 
 package bened.http;
 
+import bened.Bened;
+import bened.util.JSON;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.io.Writer;
 import java.text.DecimalFormat;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import bened.SoftMGImpl;
-import bened.Bened;
+import org.json.simple.JSONObject;
+import org.json.simple.JSONStreamAware;
+
 
 
 
@@ -46,44 +50,54 @@ public final class ApizCirculationSupply extends HttpServlet {
 
     
     
-    
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        resp.setHeader("Cache-Control", "no-cache, no-store, must-revalidate, private");
-        resp.setHeader("Pragma", "no-cache");
-        resp.setDateHeader("Expires", 0);
-        
-
-        String body = ""+ new DecimalFormat("#0.000000").format((((Bened.softMG()._getGenesEm()*(-1D)))/1000000));
-        
-        
-        try (PrintStream out = new PrintStream(resp.getOutputStream())) {
-            out.print(header);
-            out.print(body);
-            out.print(footer);
-        }
+        process(req, resp);
     }
 
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        process(req, resp);
+    }
+    
+    
+    
+   private void process(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+       
+       if(req.getRequestURI().contains("json")){
         resp.setHeader("Cache-Control", "no-cache, no-store, must-revalidate, private");
         resp.setHeader("Pragma", "no-cache");
         resp.setDateHeader("Expires", 0);
-       
-
-        String body = ""+bened.Constants.MAX_BALANCE_BND;
-        
-        
-        
-            try (PrintStream out = new PrintStream(resp.getOutputStream())) {
-                out.print(header);
-                out.print(body);
-                out.print(footer);
+        resp.setContentType("text/plain; charset=UTF-8");
+        JSONStreamAware response = JSON.emptyJSON;
+        long startTime = System.currentTimeMillis();
+        JSONObject json = new JSONObject();
+        try{
+            json.put("CirculationSupply", ""+ new DecimalFormat("#0.000000").format((((Bened.softMG()._getGenesEm()*(-1D)))/1000000)));
+            response = JSON.prepare(json);
+            } finally {
+            if (response != null) {
+                if (response instanceof JSONObject) {
+                    ((JSONObject) response).put("requestProcessingTime", System.currentTimeMillis() - startTime);
+                }
+                try (Writer writer = resp.getWriter()) {
+                    JSON.writeJSONString(response, writer);
+                }
             }
-     
-        
-       
-        
-    }
+        }
+           
+       }else{
+        resp.setHeader("Cache-Control", "no-cache, no-store, must-revalidate, private");
+        resp.setHeader("Pragma", "no-cache");
+        resp.setDateHeader("Expires", 0);
+        String body = ""+ new DecimalFormat("#0.000000").format((((Bened.softMG()._getGenesEm()*(-1D)))/1000000));
+        try (PrintStream out = new PrintStream(resp.getOutputStream())) {
+            out.print(header);
+            out.print(body);
+            out.print(footer);
+            }
+        }
+   }
+
 
 }

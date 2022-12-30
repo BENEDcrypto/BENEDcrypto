@@ -21,7 +21,7 @@ import bened.Appendix;
 import bened.Attachment;
 import bened.Constants;
 import bened.Bened;
-import bened.InnerException;
+import bened.BNDException;
 import bened.Transaction;
 import bened.crypto.Crypto;
 import bened.util.Convert;
@@ -73,17 +73,17 @@ abstract class CreateTransaction extends APIServlet.APIRequestHandler {
     }
 
     final JSONStreamAware createTransaction(HttpServletRequest req, Account senderAccount, Attachment attachment)
-            throws InnerException {
+            throws BNDException {
         return createTransaction(req, senderAccount, 0, 0, attachment);
     }
 
     final JSONStreamAware createTransaction(HttpServletRequest req, Account senderAccount, long recipientId, long amountNQT)
-            throws InnerException {
+            throws BNDException {
         return createTransaction(req, senderAccount, recipientId, amountNQT, Attachment.ORDINARY_PAYMENT);
     }
 
     final JSONStreamAware createTransaction(HttpServletRequest req, Account senderAccount, long recipientId,
-                                            long amountNQT, Attachment attachment) throws InnerException {
+                                            long amountNQT, Attachment attachment) throws BNDException {
         String deadlineValue = req.getParameter("deadline");
         String referencedTransactionFullHash = Convert.emptyToNull(req.getParameter("referencedTransactionFullHash"));
         String secretPhrase = ParameterParser.getSecretPhrase(req, false);
@@ -172,7 +172,7 @@ abstract class CreateTransaction extends APIServlet.APIRequestHandler {
             response.put("transactionJSON", transactionJSON);
             try {
                 response.put("unsignedTransactionBytes", Convert.toHexString(transaction.getUnsignedBytes()));
-            } catch (InnerException.NotYetEncryptedException ignore) {}
+                } catch (BNDException.NotYetEncryptedException ignore) {}
             if (secretPhrase != null) {
                 response.put("transaction", transaction.getStringId());
                 response.put("fullHash", transactionJSON.get("fullHash"));
@@ -186,11 +186,11 @@ abstract class CreateTransaction extends APIServlet.APIRequestHandler {
                 transaction.validate();
                 response.put("broadcasted", false);
             }
-        } catch (InnerException.NotYetEnabledException e) {
+        } catch (BNDException.NotYetEnabledException e) {
             return FEATURE_NOT_AVAILABLE;
-        } catch (InnerException.InsufficientBalanceException e) {
+        } catch (BNDException.InsufficientBalanceException e) {
             throw e;
-        } catch (InnerException.ValidationException e) {
+        } catch (BNDException.ValidationException e) {
             if (broadcast) {
                 response.clear();
             }

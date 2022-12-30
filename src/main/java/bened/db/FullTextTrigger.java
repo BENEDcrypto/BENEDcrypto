@@ -219,6 +219,12 @@ public class FullTextTrigger implements Trigger, TransactionalDb.TransactionCall
             stmt.execute("CREATE TABLE IF NOT EXISTS FTL.INDEXES " // Fixed incompatibility with H2 1.4.199
                     + "(SCHEMA VARCHAR, \"TABLE\" VARCHAR, COLUMNS VARCHAR, PRIMARY KEY(SCHEMA, \"TABLE\"))");
             Logger.logInfoMessage("NRS fulltext schema created");
+            //
+            // Drop existing triggers and create our triggers.  H2 will initialize the trigger
+            // when it is created.  H2 has already initialized the existing triggers and they
+            // will be closed when dropped.  The H2 Lucene V3 trigger initialization will work with
+            // Lucene V5, so we are able to open the database using the Lucene V5 library files.
+            //
             try (ResultSet rs = qstmt.executeQuery("SELECT * FROM FTL.INDEXES")) {
                 while(rs.next()) {
                     String schema = rs.getString("SCHEMA");

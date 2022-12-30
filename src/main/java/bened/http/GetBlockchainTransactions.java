@@ -18,7 +18,7 @@ package bened.http;
 
 import bened.Transaction;
 import bened.Bened;
-import bened.InnerException;
+import bened.BNDException;
 import bened.Constants;
 import bened.Genesis;
 import bened.db.DbIterator;
@@ -41,7 +41,7 @@ public final class GetBlockchainTransactions extends APIServlet.APIRequestHandle
     }
 
     @Override
-    protected JSONStreamAware processRequest(HttpServletRequest req) throws InnerException {
+    protected JSONStreamAware processRequest(HttpServletRequest req) throws BNDException {
 
         long accountId = ParameterParser.getAccountId(req, true);
         if (accountId == Genesis.CREATOR_ID) {

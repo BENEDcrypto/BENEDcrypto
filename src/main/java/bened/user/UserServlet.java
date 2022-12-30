@@ -30,7 +30,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
-import bened.InnerException;
+import bened.BNDException;
 
 import static bened.user.JSONResponses.DENY_ACCESS;
 import static bened.user.JSONResponses.INCORRECT_REQUEST;
@@ -39,7 +39,7 @@ import static bened.user.JSONResponses.POST_REQUIRED;
 public final class UserServlet extends HttpServlet  {
 
     abstract static class UserRequestHandler {
-        abstract JSONStreamAware processRequest(HttpServletRequest request, User user) throws InnerException, IOException;
+        abstract JSONStreamAware processRequest(HttpServletRequest request, User user) throws BNDException, IOException;
         boolean requirePost() {
             return false;
         }
@@ -116,7 +116,7 @@ public final class UserServlet extends HttpServlet  {
                 user.enqueue(response);
             }
 
-        } catch (RuntimeException e) {
+        } catch (RuntimeException | BNDException e) {
 
             Logger.logMessage("Error processing GET request", e);
             if (user != null) {
@@ -126,9 +126,7 @@ public final class UserServlet extends HttpServlet  {
                 user.enqueue(response);
             }
 
-        } catch (InnerException ex) {
-            java.util.logging.Logger.getLogger(UserServlet.class.getName()).log(Level.SEVERE, null, ex);
-        }  finally {
+        } finally {
 
             if (user != null) {
                 user.processPendingResponses(req, resp);

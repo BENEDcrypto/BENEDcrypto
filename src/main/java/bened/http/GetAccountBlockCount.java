@@ -17,7 +17,7 @@
 package bened.http;
 
 import bened.Bened;
-import bened.InnerException;
+import bened.BNDException;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONStreamAware;
 
@@ -32,7 +32,7 @@ public final class GetAccountBlockCount extends APIServlet.APIRequestHandler {
     }
 
     @Override
-    protected JSONStreamAware processRequest(HttpServletRequest req) throws InnerException {
+    protected JSONStreamAware processRequest(HttpServletRequest req) throws BNDException {
 
         long accountId = ParameterParser.getAccountId(req, true);
         JSONObject response = new JSONObject();

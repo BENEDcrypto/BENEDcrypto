@@ -16,7 +16,7 @@
 
 package bened.http;
 
-import bened.InnerException;
+import bened.BNDException;
 import bened.http.APIServlet.APIRequestHandler;
 import bened.peer.Peer;
 import bened.peer.Peers;
@@ -38,7 +38,7 @@ public class BlacklistPeer extends APIRequestHandler {
 
     @Override
     protected JSONStreamAware processRequest(HttpServletRequest request)
-            throws InnerException {
+            throws BNDException {
         JSONObject response = new JSONObject();
         
         String peerAddress = request.getParameter("peer");

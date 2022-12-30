@@ -4,7 +4,7 @@ import org.json.simple.JSONObject;
 import org.json.simple.JSONStreamAware;
 import bened.Constants;
 import bened.Bened;
-import bened.InnerException;
+import bened.BNDException;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -17,7 +17,7 @@ public final class GetBaseTarget extends APIServlet.APIRequestHandler {
     }
 
     @Override
-    protected JSONStreamAware processRequest(HttpServletRequest req) throws InnerException {
+    protected JSONStreamAware processRequest(HttpServletRequest req) throws BNDException {
         int height = ParameterParser.getHeight(req);
         if (height < 0 || height > Bened.getBlockchain().getHeight()) {
             height = Bened.getBlockchain().getHeight();

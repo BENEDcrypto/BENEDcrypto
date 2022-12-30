@@ -16,7 +16,7 @@
 
 package bened.util;
 
-import bened.InnerException;
+import bened.BNDException;
 
 import java.io.FilterInputStream;
 import java.io.IOException;
@@ -63,10 +63,10 @@ public class CountingInputStream extends FilterInputStream {
         return count;
     }
 
-    private void incCount(long n) throws InnerException.BenedIOException {
+    private void incCount(long n) throws BNDException.BenedIOException {
         count += n;
         if (count > limit) {
-            throw new InnerException.BenedIOException("Maximum size exceeded: " + count);
+            throw new BNDException.BenedIOException("Maximum size exceeded: " + count);
         }
     }
 }

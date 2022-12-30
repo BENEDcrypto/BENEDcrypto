@@ -1,22 +1,23 @@
 package bened.http;
 
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
-import org.json.simple.JSONStreamAware;
+
 import bened.Account;
-import bened.Db;
 import bened.Bened;
-import bened.InnerException;
-import bened.util.Convert;
+import bened.BNDException;
+import bened.Constants;
 import bened.util.Logger;
 import bened.util.BenedTree;
-import javax.servlet.http.HttpServletRequest;
-import java.sql.*;
+
 import java.util.*;
 import static bened.util.BenedTree.getDirectChildrenOf;
 import static bened.util.BenedTree.getParentOf;
 import static bened.util.BenedTree.getRootAccountMinimal;
 import static bened.util.BenedTree.AccountMinimal;
+import java.sql.SQLException;
+import javax.servlet.http.HttpServletRequest;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+import org.json.simple.JSONStreamAware;
 
 public class GetAccountHierarchy extends BenedTree.APIHierarchyRequestHandler {
 
@@ -26,9 +27,9 @@ public class GetAccountHierarchy extends BenedTree.APIHierarchyRequestHandler {
         super(new APITag[] {APITag.ACCOUNTS}, "account");
     }
 
-    public static final int         MAX_DEPTH_PER_REQUEST =                 10;  
+//    public static final int         MAX_DEPTH_PER_REQUEST =                 10;    //// было 88
 
-    protected JSONStreamAware processHierarchyRequest(HttpServletRequest req) throws InnerException {
+    protected JSONStreamAware processHierarchyRequest(HttpServletRequest req) throws BNDException {
         if (Bened.softMG().getConnection() == null) {
             JSONObject response = new JSONObject();
             response.put("errorDescription", "GetAccountChildren API failed to connect to the database");
@@ -72,7 +73,7 @@ public class GetAccountHierarchy extends BenedTree.APIHierarchyRequestHandler {
                 currentDepth++;
             }
             final AccountMinimal target = layerCurrent.get(layerCurrent.size()-1);
-            if (currentDepth < MAX_DEPTH_PER_REQUEST) {
+            if (currentDepth < (Bened.getBlockchain().getHeight()<Constants.change_evendek22? Constants.affil_struct : Constants.affil_struct*100)) {
                 final List<AccountMinimal> children;
                 try {
                     children = getDirectChildrenOf(target.id, target.internalID, internalID, false, 0, false);

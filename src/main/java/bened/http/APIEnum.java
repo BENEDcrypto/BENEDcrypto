@@ -126,6 +126,7 @@ public enum APIEnum {
     DELETE_SCHEDULED_TRANSACTION("deleteScheduledTransaction", DeleteScheduledTransaction.instance),
     GET_SoftMg("getSoftMGs", GetSoftMGs.instance),
     GET_BNDActivGenerators("getBNDActivGenerators",GetBNDActivGenerators.instance);
+
     
     private static final Map<String, APIEnum> apiByName = new HashMap<>();
 

@@ -19,7 +19,7 @@ package bened.http;
 import bened.Account;
 import bened.Attachment;
 import bened.Constants;
-import bened.InnerException;
+import bened.BNDException;
 import bened.util.Convert;
 import org.json.simple.JSONStreamAware;
 
@@ -37,7 +37,7 @@ public final class SetAccountInfo extends CreateTransaction {
     }
 
     @Override
-    protected JSONStreamAware processRequest(HttpServletRequest req) throws InnerException {
+    protected JSONStreamAware processRequest(HttpServletRequest req) throws BNDException {
 
         String name = Convert.nullToEmpty(req.getParameter("name")).trim();
         String description = Convert.nullToEmpty(req.getParameter("description")).trim();
