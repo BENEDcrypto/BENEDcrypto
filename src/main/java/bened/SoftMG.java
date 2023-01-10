@@ -103,7 +103,6 @@ public class SoftMG{
    
 
     private boolean initialized = false;
-    private static int _height = -1;
     
     
     public void init() {
@@ -115,11 +114,6 @@ public class SoftMG{
             initDB();
             log(true, "DATABASE INITIALIZED");
             commit();
-            try {
-                _height= getParamLast();
-            } catch (SQLException ex) {
-                java.util.logging.Logger.getLogger(SoftMG.class.getName()).log(Level.SEVERE, null, ex);
-            }
         }
     }
 
@@ -605,8 +599,28 @@ public class SoftMG{
                 count = 0;                                    
                 request = conn.prepareStatement("delete from block where height>?");
                 request.setInt(1, currentHeight - 1);
-                count = request.executeUpdate();
-                request.close();
+                try{
+                    count = request.executeUpdate();
+                }catch(Exception e){
+                    log(false, "fatal delete block from block h>"+ (currentHeight-1) +"\n"+e);
+                    try{
+
+                        request = conn.prepareStatement("delete from force where height>?");
+                        request.setInt(1, currentHeight);
+                        count = request.executeUpdate();
+                        request = conn.prepareStatement("delete from soft where LAST_FORGED_BLOCK_HEIGHT>?");
+                        request.setInt(1, currentHeight);
+                        count = request.executeUpdate();
+                        request = conn.prepareStatement("delete from block where height>?");
+                        request.setInt(1, currentHeight);
+                        count = request.executeUpdate();
+                        ressurectDatabaseIfNeeded(currentHeight);
+                        
+                    }catch(Exception eu){
+                            log(false, "STOP! fatal delete block from block h>"+ (currentHeight-1) +"\n"+e);    
+                    } 
+                }
+                    request.close();
                 if (count != 1) {
                     if (count < 1) {
                         log(false, "popLastBlock() - No blocks deleted (must be 1) at " + currentHeight);
@@ -694,12 +708,54 @@ public class SoftMG{
         networkBooster.clear();
     }
 
+    private void deletesoftdbent(int toblock){
+                try{
+                    // DELETE FUTURE BLOCKS - EXPECTED ONLY 1 BLOCK TO BE DELETED (THE CURRENT ONE)
+                    int count = 0;
+                    PreparedStatement request = conn.prepareStatement("delete from block where height>?");
+                    request.setInt(1, toblock);
+                    try{
+                        count = request.executeUpdate();
+                    }catch(Exception e){
+                        System.out.println("fatal delete block from block h>"+ (toblock) +"\n"+e);
+                        try{
+                            
+                            request = conn.prepareStatement("delete from force where height>?");
+                            request.setInt(1, toblock);
+                            count = request.executeUpdate();
+                            request = conn.prepareStatement("delete from soft where LAST_FORGED_BLOCK_HEIGHT>?");
+                            request.setInt(1, toblock);
+                            count = request.executeUpdate();
+                            request = conn.prepareStatement("delete from block where height>?");
+                            request.setInt(1, toblock);
+                            count = request.executeUpdate();
+                            System.out.println("count="+count);
+                            ressurectDatabaseIfNeeded(toblock);
+                        }catch(Exception eu){
+                            System.out.println("STOP! fatal delete block from block h>"+ (toblock-1) +"\n"+e);
+                            
+                        }
+                    }
+                    request.close();
+                    if (count != 1) {
+                        if (count < 1) {
+                            log(false, "popLastBlock() - No blocks deleted (must be 1) at " + toblock);
+                        }
+                        if (count > 1) {
+                            log(false, "popLastBlock() - Too many blocks deleted: " + count + " (must be 1) at " + toblock);
+                        }
+                    }
+                }catch(SQLException ex){
+                    java.util.logging.Logger.getLogger(SoftMG.class.getName()).log(Level.SEVERE, null, ex);
+                }
+                
+    }
 
 
 
 private void trimDerivedTables() throws SQLException {
 
-        final int height = _height;
+        final int height = getMGHeight();
 
         if (height % CACHE_SIZE != 0){ // || !useOnlyNewRollbackAlgo)
             return;
@@ -748,7 +804,7 @@ private void trimDerivedTables() throws SQLException {
     
        
 
-    private int getParamLast() throws SQLException {       
+    private int getMGHeight() {       
         init();
         int retval = -1;
         try ( PreparedStatement request = conn.prepareStatement("select max(height) from block limit 1"); 
@@ -761,6 +817,9 @@ private void trimDerivedTables() throws SQLException {
                     retval = rs.getInt(1);
                 }
             }
+        } catch (SQLException ex) {
+          //  java.util.logging.Logger.getLogger(SoftMG.class.getName()).log(Level.SEVERE, null, ex);
+            log(false, "error - "+SoftMG.class.getName() +" - "+ex);
         }
         if (retval < 0) {
 
@@ -942,7 +1001,6 @@ private void trimDerivedTables() throws SQLException {
             statement.setInt(4, stamp);
             statement.setLong(5, creatorID);
             count = statement.executeUpdate();
-            _height = height;
         }
         if (count < 1) {
             throw new SQLException(ERROR_ALREADY);
@@ -1593,7 +1651,13 @@ private void trimDerivedTables() throws SQLException {
                     if (!ExcludesGMS.check(tx, softBlock.getHeight())) {
                         // ===================================[AUTOFUCK]=|
                         if (!( checkForce(tx) )) {
+                            int _to =softBlock.getHeight()-2;
+                            deletesoftdbent(_to);
+                            BlockchainProcessorImpl.getInstance().popOffTo(_to);
+                            
+                            System.out.println("-----------rollback to softBL:"+_to);
                                 throw new HGException((softBlock.getHeight() + ": Genesis transaction wrong: " + tx.getID() + " > " + tx.getReceiver()) + " : " + tx.getAmount() + " \n" + tx.toString(), softBlock.getHeight());  
+                                
                         }
                     }
 
@@ -1701,7 +1765,7 @@ private void trimDerivedTables() throws SQLException {
                     checkSoftMGBlockIsValid(softBlock);
                     CheckInternal checkInternalRetval = checkInternal(softBlock);
 
-                        trimDerivedTables();
+                    trimDerivedTables();
                     commit();
 
  
