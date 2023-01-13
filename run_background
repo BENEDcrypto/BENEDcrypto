@@ -5,5 +5,5 @@ else
     JAVA=java
 fi
 echo "BENED is starting..."
-${JAVA} -Xms1g -Xmx3g -cp BenedMG-1.jar:conf bened.Bened >/dev/null 2>&1 &
+${JAVA} -Xms2g -Xmx3g -cp BenedMG-1.jar:conf bened.Bened >/dev/null 2>&1 &
 

@@ -254,7 +254,7 @@ public final class API {
                 defaultServletHolder.setInitParameter("gzip", "true");
                 defaultServletHolder.setInitParameter("etags", "true");
                 apiHandler.addServlet(defaultServletHolder, "/*");
-                apiHandler.setWelcomeFiles(new String[]{Bened.getStringProperty("bened.apiWelcomeFile")});
+                apiHandler.setWelcomeFiles(new String[]{Bened.getStringProperty("bened.apiWelcomeFile")});                
             }
 
             String javadocResourceBase = Bened.getStringProperty("bened.javadocResourceBase");
@@ -333,9 +333,9 @@ public final class API {
                         if (enableAPIUPnP) {
                             Connector[] apiConnectors = apiServer.getConnectors();
                             for (Connector apiConnector : apiConnectors) {
-                                if (apiConnector instanceof ServerConnector )
-                                    UPnP.addPort(((ServerConnector)apiConnector).getPort());
-                            }
+                                if (apiConnector instanceof ServerConnector)
+                                UPnP.addPort(((ServerConnector)apiConnector).getPort());
+                        }
                         }
                         APIServlet.initClass();
                         APIProxyServlet.initClass();

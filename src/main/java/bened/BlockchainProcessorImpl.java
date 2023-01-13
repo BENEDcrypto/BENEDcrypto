@@ -1655,7 +1655,7 @@ final class BlockchainProcessorImpl implements BlockchainProcessor {
     }
 
     private int getBlockVersion(int previousBlockHeight) {
-       return Constants.CURRENT_BLOCK_VERSION;
+        return Constants.CURRENT_BLOCK_VERSION;
     }
 
     private int getTransactionVersion(int previousBlockHeight) {
@@ -1942,6 +1942,8 @@ final class BlockchainProcessorImpl implements BlockchainProcessor {
                 } catch (HGException ex) {
                     throw new BlockNotAcceptedException("Invalid Transaction in Block", block);
                 }
+                
+                
                 pmBlock.getTransactions().add(pmTransacnion);
             }
             pmBlock.setID(block.getId());

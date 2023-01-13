@@ -25,6 +25,7 @@ import org.json.simple.parser.JSONParser;
 import bened.util.Logger;
 import bened.util.BoostMap;
 import java.sql.Statement;
+import java.util.Arrays;
 import java.util.logging.Level;
 import org.json.simple.parser.ParseException;
 
@@ -101,8 +102,9 @@ public class SoftMG{
 
     private final BoostMap<Long, Boolean> networkBooster = new BoostMap<>(8192, -1);
    
-
+    
     private boolean initialized = false;
+    private static int _height = -1;
     
     
     public void init() {
@@ -114,6 +116,8 @@ public class SoftMG{
             initDB();
             log(true, "DATABASE INITIALIZED");
             commit();
+            _height= getMGHeight();
+            
         }
     }
 
@@ -191,6 +195,7 @@ public class SoftMG{
                     ex.printStackTrace();
                 }
             } finally {
+                _height= getMGHeight();
                 try {
                     if (rs != null) {
                         rs.close();
@@ -332,6 +337,7 @@ public class SoftMG{
 
                     update("commit work;");
                     commit();
+                    _height= getMGHeight();
                     log(true, "Success!");
                 } catch (SQLException exSQL) {
                     log(false, ERROR_CANT_INITIALIZE);
@@ -550,11 +556,9 @@ public class SoftMG{
                         addDiff(force.getAmount(), Genesis.CREATOR_ID, diffs);
                     }
                     try (PreparedStatement trimmer = conn.prepareStatement("delete from force where height>=?")) {
-
-
-
                         trimmer.setInt(1, currentHeight);
                         count = trimmer.executeUpdate();
+                        _height= getMGHeight();
                     }
                 }
 
@@ -599,28 +603,8 @@ public class SoftMG{
                 count = 0;                                    
                 request = conn.prepareStatement("delete from block where height>?");
                 request.setInt(1, currentHeight - 1);
-                try{
-                    count = request.executeUpdate();
-                }catch(Exception e){
-                    log(false, "fatal delete block from block h>"+ (currentHeight-1) +"\n"+e);
-                    try{
-
-                        request = conn.prepareStatement("delete from force where height>?");
-                        request.setInt(1, currentHeight);
-                        count = request.executeUpdate();
-                        request = conn.prepareStatement("delete from soft where LAST_FORGED_BLOCK_HEIGHT>?");
-                        request.setInt(1, currentHeight);
-                        count = request.executeUpdate();
-                        request = conn.prepareStatement("delete from block where height>?");
-                        request.setInt(1, currentHeight);
-                        count = request.executeUpdate();
-                        ressurectDatabaseIfNeeded(currentHeight);
-                        
-                    }catch(Exception eu){
-                            log(false, "STOP! fatal delete block from block h>"+ (currentHeight-1) +"\n"+e);    
-                    } 
-                }
-                    request.close();
+                count = request.executeUpdate();
+                request.close();
                 if (count != 1) {
                     if (count < 1) {
                         log(false, "popLastBlock() - No blocks deleted (must be 1) at " + currentHeight);
@@ -629,7 +613,7 @@ public class SoftMG{
                         log(false, "popLastBlock() - Too many blocks deleted: " + count + " (must be 1) at " + currentHeight);
                     }
                 }
-
+_height= getMGHeight();
                 String msg = currentHeight + " <- this block is popped\n\tDiffs: [" + diffs.size() + "]";
 
                 // APPLY BALANCE DIFFS
@@ -691,6 +675,7 @@ public class SoftMG{
                         count = count + request.executeUpdate();
                         request.close();
                     }
+                    _height= getMGHeight();
                 }
 
                 commit();
@@ -708,54 +693,15 @@ public class SoftMG{
         networkBooster.clear();
     }
 
-    private void deletesoftdbent(int toblock){
-                try{
-                    // DELETE FUTURE BLOCKS - EXPECTED ONLY 1 BLOCK TO BE DELETED (THE CURRENT ONE)
-                    int count = 0;
-                    PreparedStatement request = conn.prepareStatement("delete from block where height>?");
-                    request.setInt(1, toblock);
-                    try{
-                        count = request.executeUpdate();
-                    }catch(Exception e){
-                        System.out.println("fatal delete block from block h>"+ (toblock) +"\n"+e);
-                        try{
-                            
-                            request = conn.prepareStatement("delete from force where height>?");
-                            request.setInt(1, toblock);
-                            count = request.executeUpdate();
-                            request = conn.prepareStatement("delete from soft where LAST_FORGED_BLOCK_HEIGHT>?");
-                            request.setInt(1, toblock);
-                            count = request.executeUpdate();
-                            request = conn.prepareStatement("delete from block where height>?");
-                            request.setInt(1, toblock);
-                            count = request.executeUpdate();
-                            System.out.println("count="+count);
-                            ressurectDatabaseIfNeeded(toblock);
-                        }catch(Exception eu){
-                            System.out.println("STOP! fatal delete block from block h>"+ (toblock-1) +"\n"+e);
-                            
-                        }
-                    }
-                    request.close();
-                    if (count != 1) {
-                        if (count < 1) {
-                            log(false, "popLastBlock() - No blocks deleted (must be 1) at " + toblock);
-                        }
-                        if (count > 1) {
-                            log(false, "popLastBlock() - Too many blocks deleted: " + count + " (must be 1) at " + toblock);
-                        }
-                    }
-                }catch(SQLException ex){
-                    java.util.logging.Logger.getLogger(SoftMG.class.getName()).log(Level.SEVERE, null, ex);
-                }
-                
-    }
+
 
 
 
 private void trimDerivedTables() throws SQLException {
 
-        final int height = getMGHeight();
+    
+    
+        final int height = _height;
 
         if (height % CACHE_SIZE != 0){ // || !useOnlyNewRollbackAlgo)
             return;
@@ -799,6 +745,7 @@ private void trimDerivedTables() throws SQLException {
         statement.close();
         setParameter(MIN_FAST_ROLLBACK_HEIGHT, newMinRollbackHeight);
         commit();
+        _height= getMGHeight();
         log(true, "trimDerivedTables: Trimmed " + forces + " payouts, " + activations + " activations and " + holdTransfers + " hold transfers at " + height);
     }
     
@@ -1001,6 +948,9 @@ private void trimDerivedTables() throws SQLException {
             statement.setInt(4, stamp);
             statement.setLong(5, creatorID);
             count = statement.executeUpdate();
+
+                  
+            _height = height;
         }
         if (count < 1) {
             throw new SQLException(ERROR_ALREADY);
@@ -1107,9 +1057,141 @@ private void trimDerivedTables() throws SQLException {
         } catch (SQLException ex) {
             System.out.println("!!! ahtung ERROR insert force: "+ex);
         }
+        
     }
 
+ 
+ private void repairbreackblock(SMGBlock.Transaction trx, boolean otlov)throws SQLException{
+     if(otlov || knownforcevalidbxheight.contains(_height)){
+         if(_height == 650680){
+             System.out.println("h="+_height);
+         }
+//               System.out.println("h="+_height);
+               Long _stxid = null;
+               boolean _found = false;
+               if (trx.getSoftMGTxID() == null){
+                                                                                        //not tech and stxid is null and
+                   try (PreparedStatement request = conn.prepareStatement("select stxid from force where  txid is null and amount=? and to_id=? limit 1")) {
+                    request.setLong(1, trx.getAmount());
+                    request.setLong(2, trx.getReceiver());
+                    try (ResultSet rs = request.executeQuery()) {
+                    while (rs.next()) {
+                      _stxid = rs.getString(1) != null ? rs.getLong(1) : null;
+                      _found = true;
+                        }
+                        }
+                    }
 
+                   if(!_found){
+                        insertForce(trx.getSoftMGBlockID(), null, trx.getAmount(), trx.getReceiver(),  _height-1) ;
+                        
+                   }           
+                    try (PreparedStatement statement = conn.prepareStatement("update force set amount=?, tech=?, stxid=?  where  stxid=? and amount=? and to_id=? and txid is null")) {
+                        statement.setLong(1, trx.getAmount());
+                        statement.setBoolean(2, false);
+                        statement.setNull(3, Types.NULL);  //trx.getID()
+                        statement.setLong(4, _stxid!=null?_stxid : trx.getID());
+                        statement.setLong(5, trx.getAmount());
+                        statement.setLong(6, trx.getReceiver());
+                        int count = statement.executeUpdate();
+                        if(count!=1){
+                            System.out.println("upd c="+count);
+                        }
+                    }
+                     
+                   
+                   
+               }else{
+                                                                                                    // not tech and stxid is null and  == where and amount=?
+                   try (PreparedStatement request = conn.prepareStatement("select stxid from force where  txid=?  and to_id=? limit 1")) {
+                        request.setLong(1, trx.getSoftMGTxID());
+                     //   request.setLong(2, trx.getAmount());
+                        request.setLong(2, trx.getReceiver());
+                        try (ResultSet rs = request.executeQuery()) {
+                        while (rs.next()) {
+                            _stxid = rs.getString(1) != null ? rs.getLong(1) : null;
+                            _found = true;
+                        }
+                        }
+                    }
+                   if(!_found){
+                       insertForce(trx.getSoftMGBlockID(), trx.getSoftMGTxID(), trx.getAmount(), trx.getReceiver(),  _height-1) ;
+                       
+                   }           
+                    try (PreparedStatement statement = conn.prepareStatement("update force set amount=?, tech=?, stxid=?  where  txid=? and to_id=?")) {
+                        statement.setLong(1, trx.getAmount());
+                        statement.setBoolean(2, false);
+                        statement.setNull(3, Types.BIGINT);
+                        statement.setLong(4, trx.getSoftMGTxID());
+                        statement.setLong(5, trx.getReceiver());
+                        int count = statement.executeUpdate();
+//                        System.out.println("upd c="+count);
+                    }
+                    }
+                   
+               
+            }
+        
+ }
+ 
+    public boolean checkForce_sobs(SMGBlock.Transaction trx){
+        try { 
+        if (trx == null) {
+            return false;
+        }
+        int count = 0;
+        Long stxid = null;
+        boolean found = false;
+        if (trx.getType() != SMGBlock.Type.softMG) {
+            throw new SQLException(ERROR_INVALID_TRANSACTION);
+        }
+        if (trx.getSoftMGTxID() == null) {
+            try (PreparedStatement request = conn.prepareStatement("select stxid from force where not tech and txid is null and amount=? and to_id=? limit 1")) {
+                request.setLong(1, trx.getAmount());
+                request.setLong(2, trx.getReceiver());
+                try (ResultSet rs = request.executeQuery()) {
+                    while (rs.next()) {
+                        stxid = rs.getString(1) != null ? rs.getLong(1) : null;
+                        found = true;
+                    }
+                }
+            }
+            if (found && stxid == null) {
+                return true;
+            }
+            if (found && stxid != null) {
+                if (stxid == trx.getID()) {
+                    return true;
+                }
+            }
+        } else {
+            try (PreparedStatement request = conn.prepareStatement("select stxid from force where not tech and txid=? and amount=? and to_id=? limit 1")) {
+                request.setLong(1, trx.getSoftMGTxID());
+                request.setLong(2, trx.getAmount());
+                request.setLong(3, trx.getReceiver());
+                try (ResultSet rs = request.executeQuery()) {
+                    while (rs.next()) {
+                        stxid = rs.getString(1) != null ? rs.getLong(1) : null;
+                        found = true;
+                    }
+                }
+            }
+            if (found && stxid == null) {
+                return true;
+            }
+            if (found && stxid != null) {
+                if (stxid == trx.getID()) {
+                    return true;
+                }
+            }
+        }
+        
+        } catch (SQLException ex) {
+           return false;
+        }
+        return false;
+    }
+ 
     private boolean checkForce(SMGBlock.Transaction trx) throws SQLException {
         if (trx == null) {
             return false;
@@ -1172,9 +1254,29 @@ private void trimDerivedTables() throws SQLException {
                 }
             }
         }
+        if(!(count==1) && !(povtor==trx.getID()) ){
+            povtor=trx.getID();
+                   repairbreackblock(trx,false);
+                   count = checkForce(trx)?1:0;
+                falbloc.add(_height);
+                System.out.println("no -- -- --"+_height+ "softtxid="+trx.getID());
+            
+        }
         return count == 1;
     }
-
+    static long povtor = 0;
+    HashSet<Integer> falbloc =new HashSet<>();
+    
+    static HashSet<Integer> knownforcevalidbxheight = new HashSet<>(Arrays.asList(
+         -1,650196,650197, 650198,650201, 650203, 650204, 650205, 650206,650377,650378,650379, 650430, 650553, 650554, 650555
+            , 650671, 650672, 650673, 650676, 650677, 650678, 650679, 650680, 650681,650682,650683,650684,650685
+    ,650686,650694,650695
+    ,653455, 651278, 653454, 652417, 654083, 654084, 651015, 652701, 653841, 653229, 654124, 653230, 652963, 652581, 652580, 651577,
+    651961, 651960, 652088, 651327, 651326, 653875, 653874, 652085, 652084, 651959, 653001, 653000, 650698, 651978, 650700, 650956,
+    653775, 652110, 651329, 652096, 651843, 651096, 653659, 653660, 653278, 650961, 651729, 652369, 650960, 652368, 653776, 651730,
+    653778, 653780, 651095, 652631, 650985, 650984, 650987, 650988, 651372, 651375, 650977, 650978, 650983, 650982, 651001, 653561, 
+    652792, 651515, 651514, 652145, 652146, 651383, 652791));
+    
 
     private boolean checkAnnounceCanReceive(SMGBlock.Transaction trx) throws SQLException {
        if (trx.getType() != SMGBlock.Type.softMG) {
@@ -1651,13 +1753,7 @@ private void trimDerivedTables() throws SQLException {
                     if (!ExcludesGMS.check(tx, softBlock.getHeight())) {
                         // ===================================[AUTOFUCK]=|
                         if (!( checkForce(tx) )) {
-                            int _to =softBlock.getHeight()-2;
-                            deletesoftdbent(_to);
-                            BlockchainProcessorImpl.getInstance().popOffTo(_to);
-                            
-                            System.out.println("-----------rollback to softBL:"+_to);
                                 throw new HGException((softBlock.getHeight() + ": Genesis transaction wrong: " + tx.getID() + " > " + tx.getReceiver()) + " : " + tx.getAmount() + " \n" + tx.toString(), softBlock.getHeight());  
-                                
                         }
                     }
 
@@ -1765,7 +1861,7 @@ private void trimDerivedTables() throws SQLException {
                     checkSoftMGBlockIsValid(softBlock);
                     CheckInternal checkInternalRetval = checkInternal(softBlock);
 
-                    trimDerivedTables();
+                        trimDerivedTables();
                     commit();
 
  
