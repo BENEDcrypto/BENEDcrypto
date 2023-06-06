@@ -66,7 +66,7 @@ public class CountingInputStream extends FilterInputStream {
     private void incCount(long n) throws BNDException.BenedIOException {
         count += n;
         if (count > limit) {
-            throw new BNDException.BenedIOException("Maximum size exceeded: " + count);
+            throw new BNDException.BenedIOException("cs Maximum size exceeded: " + count);
         }
     }
 }

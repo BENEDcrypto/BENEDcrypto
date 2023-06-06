@@ -45,13 +45,11 @@ public final class GetAccountBlocks extends APIServlet.APIRequestHandler {
         boolean includeTransactions = "true".equalsIgnoreCase(req.getParameter("includeTransactions"));
 
         JSONArray blocks = new JSONArray();
-        try (DbIterator<? extends Block> iterator = Bened.getBlockchain().getBlocks(accountId, timestamp, firstIndex, lastIndex)) {
+        DbIterator<? extends Block> iterator = Bened.getBlockchain().getBlocks(accountId, timestamp, firstIndex, lastIndex);
             while (iterator.hasNext()) {
                 Block block = iterator.next();
                 blocks.add(JSONData.block(block, includeTransactions, false));
             }
-        }
-
         JSONObject response = new JSONObject();
         response.put("blocks", blocks);
 

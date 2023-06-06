@@ -154,14 +154,15 @@ public class BasicDb {
         if (!initialized) {
             return;
         }
-        try {
-            FullTextTrigger.setActive(false);
-            Connection con = cp.getConnection();
-            Statement stmt = con.createStatement();
-            stmt.execute("SHUTDOWN COMPACT");
+        FullTextTrigger.setActive(false);
+        try(Connection con = cp.getConnection();
+            Statement stmt = con.createStatement();){
+            stmt.execute("SHUTDOWN");
+            //stmt.execute("SHUTDOWN COMPACT");
+            //stmt.execute("SHUTDOWN DEFRAG");
             Logger.logShutdownMessage("Database shutdown completed");
         } catch (SQLException e) {
-            Logger.logShutdownMessage(e.toString(), e);
+            Logger.logShutdownMessage("shutdown db trouble:"+e.toString(), e);
         }
     }
 
@@ -180,12 +181,18 @@ public class BasicDb {
         return con;
     }
 
-    protected Connection getPooledConnection() throws SQLException {
-        Connection con = cp.getConnection();
+    protected Connection getPooledConnection() {
+        Connection con = null;
+        try{
+        con = cp.getConnection();
         int activeConnections = cp.getActiveConnections();
         if (activeConnections > maxActiveConnections) {
             maxActiveConnections = activeConnections;
             Logger.logDebugMessage("Database connection pool current size: " + activeConnections);
+            System.out.println("BasicDb getPoolcon ! -- ! -->  "+"Database connection pool current size: " + activeConnections);
+        }
+        }catch(Exception esq){
+            Logger.logErrorMessage("!! get pool db connect err:"+ esq);
         }
         return con;
     }

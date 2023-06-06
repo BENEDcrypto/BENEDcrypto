@@ -942,7 +942,7 @@ var NRS = (function (NRS, $, undefined) {
 				type = match[2];
 			}
 
-            key = key.replace(/\s+/g, "").replace(/([a-zA-Z])/g, function ($1) {
+            key = key.replace(/\s+/g, "").replace(/([A-Z])/g, function ($1) {
                 return "_" + $1.toLowerCase();
             });
 
@@ -1433,7 +1433,7 @@ var NRS = (function (NRS, $, undefined) {
 	};
 
     NRS.getTranslatedFieldName = function (name) {
-        var nameKey = String(name).replace(/NQT|QNT|RS$/, "").replace(/\s+/g, "").replace(/([a-zA-Z])/g, function ($1) {
+        var nameKey = String(name).replace(/NQT|QNT|RS$/, "").replace(/\s+/g, "").replace(/([A-Z])/g, function ($1) {
 			return "_" + $1.toLowerCase();
 		});
 

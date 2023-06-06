@@ -71,6 +71,7 @@ final class GetMilestoneBlockIds extends PeerServlet.PeerRequestHandler {
                 height = blockchainHeight;
                 jump = 10;
             } else {
+                Logger.logWarningMessage("Old getMilestoneBlockIds request: "+peer.getHost()+" blacklisted:");
                 peer.blacklist("Old getMilestoneBlockIds request");
                 response.put("error", "Old getMilestoneBlockIds protocol not supported, please upgrade");
                 return response;

@@ -28,6 +28,7 @@ import java.sql.SQLException;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.List;
 
 final class TransactionDb {
@@ -168,6 +169,7 @@ final class TransactionDb {
 
             byte type = rs.getByte("type");
             byte subtype = rs.getByte("subtype");
+            byte version = rs.getByte("version");
             int timestamp = rs.getInt("timestamp");
             short deadline = rs.getShort("deadline");
             long amountNQT = rs.getLong("amount");
@@ -180,10 +182,21 @@ final class TransactionDb {
             int height = rs.getInt("height");
             long id = rs.getLong("id");
             long senderId = rs.getLong("sender_id");
-            byte[] attachmentBytes = rs.getBytes("attachment_bytes");
+            byte[] attachmentBytes;
+            if(type==2 && subtype==0){
+                byte[] Ht_bytes = Base64.getDecoder().decode(HashTint.getHashTnt(id).getHashTntBase());
+                ByteBuffer buffer = ByteBuffer.allocate(1+4+Ht_bytes.length+1+32);
+                buffer.order(ByteOrder.LITTLE_ENDIAN);
+                buffer.put(version);
+                buffer.putInt(Ht_bytes.length | Integer.MIN_VALUE);
+                buffer.put(Ht_bytes);
+                buffer.put(rs.getBytes("attachment_bytes"));
+                attachmentBytes=buffer.array();
+            }else{
+                attachmentBytes = rs.getBytes("attachment_bytes");
+            }
             int blockTimestamp = rs.getInt("block_timestamp");
             byte[] fullHash = rs.getBytes("full_hash");
-            byte version = rs.getByte("version");
             short transactionIndex = rs.getShort("transaction_index");
 
             ByteBuffer buffer = null;
@@ -329,6 +342,9 @@ final class TransactionDb {
                     pstmt.setLong(++i, transaction.getSenderId());
                     int bytesLength = 0;
                     for (Appendix appendage : transaction.getAppendages()) {
+                        if(appendage.getClass().equals(Attachment.HashTintAssignment.class)){
+                            continue;
+                        }
                         bytesLength += appendage.getSize();
                     }
                     if (bytesLength == 0) {
@@ -337,6 +353,9 @@ final class TransactionDb {
                         ByteBuffer buffer = ByteBuffer.allocate(bytesLength);
                         buffer.order(ByteOrder.LITTLE_ENDIAN);
                         for (Appendix appendage : transaction.getAppendages()) {
+                            if(appendage.getClass().equals(Attachment.HashTintAssignment.class)){
+                                continue;
+                            }
                             appendage.putBytes(buffer);
                         }
                         pstmt.setBytes(++i, buffer.array());

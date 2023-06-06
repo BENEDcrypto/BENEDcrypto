@@ -29,7 +29,6 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.logging.Level;
 import bened.BNDException;
 
 import static bened.user.JSONResponses.DENY_ACCESS;

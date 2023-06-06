@@ -18,9 +18,7 @@ package bened.http;
 
 import bened.Account;
 import bened.BNDException;
-import bened.db.DbIterator;
 import bened.util.Convert;
-import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONStreamAware;
 

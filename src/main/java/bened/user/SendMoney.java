@@ -22,6 +22,7 @@ import bened.Constants;
 import bened.Bened;
 import bened.BNDException;
 import bened.Transaction;
+import bened.TransactionType;
 import bened.util.Convert;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONStreamAware;
@@ -59,7 +60,9 @@ public final class SendMoney extends UserServlet.UserRequestHandler {
             recipient = Convert.parseUnsignedLong(recipientValue);
             if (recipient == 0) throw new IllegalArgumentException("invalid recipient");
             amountNQT = Convert.parseBENED(amountValue.trim());
-        feeNQT=Bened.softMG().getFixedFee(amountNQT);
+//            feeNQT = Convert.parseBENED(feeValue.trim());
+            feeNQT=Bened.softMG().getFixedFee(amountNQT, TransactionType.Payment.ORDINARY); //Attachment.ORDINARY_PAYMENT
+            
             deadline = (short)(Double.parseDouble(deadlineValue) * 60);
 
         } catch (RuntimeException e) {

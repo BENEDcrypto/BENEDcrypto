@@ -16,13 +16,13 @@
 package bened;
 
 import bened.db.DbVersion;
-
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
+
 
 class benedDbVersion extends DbVersion {
 
@@ -40,7 +40,10 @@ class benedDbVersion extends DbVersion {
                         + "block_signature BINARY(64) NOT NULL, payload_hash BINARY(32) NOT NULL, generator_id BIGINT NOT NULL)");
                 bypassRescan = true;
             case 2:
+                apply("ALTER TABLE block ADD CONSTRAINT block_id UNIQUE(id)"); // my upd 2.1.214
                 apply("CREATE UNIQUE INDEX IF NOT EXISTS block_id_idx ON block (id)");
+                apply("ALTER TABLE block ADD CONSTRAINT height UNIQUE(height)");// my upd 2.1.214
+                apply("CREATE UNIQUE INDEX IF NOT EXISTS block_height_idx ON block (height)");
             case 3:
                 apply("CREATE TABLE IF NOT EXISTS transaction (db_id IDENTITY, id BIGINT NOT NULL, "
                         + "deadline SMALLINT NOT NULL, recipient_id BIGINT, "
@@ -56,7 +59,7 @@ class benedDbVersion extends DbVersion {
             case 4:
                 apply("CREATE UNIQUE INDEX IF NOT EXISTS transaction_id_idx ON transaction (id)");
             case 5:
-                apply("CREATE UNIQUE INDEX IF NOT EXISTS block_height_idx ON block (height)");
+ //               apply("CREATE UNIQUE INDEX IF NOT EXISTS block_height_idx ON block (height)");
             case 6:
                 apply(null);
             case 7:
@@ -755,7 +758,7 @@ class benedDbVersion extends DbVersion {
             case 343:
                 apply("DROP INDEX IF EXISTS account_height_idx");
             case 344:
-//                apply("CREATE INDEX IF NOT EXISTS account_height_id_idx ON account (height, id)");
+                apply("CREATE INDEX IF NOT EXISTS account_height_id_idx ON account (height, id)");
                 apply(null);
             case 345:
                 apply(null);
@@ -1042,7 +1045,9 @@ class benedDbVersion extends DbVersion {
                     apply(null);
                 } catch (SQLException e) {
                     throw new RuntimeException(e.toString(), e);
-                }
+               }
+                // tut u nas ustarevhie procedura = prosto ignorim - eto rabotalo dly h2 1.4.200 
+                // teper 2.1.214
             case 479:
                 apply(null);
             case 480:
@@ -1081,7 +1086,21 @@ class benedDbVersion extends DbVersion {
             case 496:
                 apply("DROP INDEX IF EXISTS account_height_id_idx");
                 Bened.setPerformRescan(!bypassRescan);
+// mi hash
             case 497:
+                apply("CREATE TABLE IF NOT EXISTS hashTint (db_id IDENTITY, id BIGINT NOT NULL, account_id BIGINT NOT NULL,"
+                        + "static_tag VARCHAR NOT NULL, second_tag VARCHAR NOT NULL, event_data VARCHAR NOT NULL,"
+                        + "allsee BOOLEAN NOT NULL DEFAULT FALSE, event_name VARCHAR NOT NULL, "
+                        + "event VARCHAR NOT NULL, hashtint_name VARCHAR NOT NULL, "
+                        + "height INT NOT NULL, timestamp INT NOT NULL, "
+                        + "latest BOOLEAN NOT NULL DEFAULT TRUE)");
+            case 498:
+                apply("CREATE UNIQUE INDEX IF NOT EXISTS htrx_id_idx ON hashTint (id)");
+            case 499:
+                apply("CREATE INDEX IF NOT EXISTS hashtint_owner_account_id_idx ON hashTint (account_id)");
+            case 500:
+                apply("CREATE INDEX IF NOT EXISTS hashtint_tags_idx ON hashTint (static_tag, second_tag)");
+            case 501:
                 return;
             default:
                 throw new RuntimeException("Blockchain database inconsistent with code, at update " + nextUpdate

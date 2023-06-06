@@ -94,6 +94,6 @@ public interface Blockchain {
 
     DbIterator<? extends Transaction> getReferencingTransactions(long transactionId, int from, int to);
     
-    int GetLastForgBlk(long AccouuntID, int GlubinaPoiska  );
+    int GetLastForgBlk(long AccouuntID, int GlubinaPoiska, int lsHeight  );
 
 }

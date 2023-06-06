@@ -495,12 +495,8 @@ public final class Account {
         return forgedBalanceNQT;
     }
 
-    public long getEffectiveBalanceBND() {
-        return getEffectiveBalanceBND(Bened.getBlockchain().getHeight());
-    }
 
     public long getEffectiveBalanceBND(int height) {
-        
          if ( ArrayUtils.contains(Genesis.first_RECIPIENTS , id)   ) {
                 return balanceNQT / Constants.ONE_BND;
             }
@@ -517,7 +513,7 @@ public final class Account {
             if (Arrays.binarySearch(Genesis.GENESIS_RECIPIENTS, id) >= 0) {
                 return balanceNQT / Constants.ONE_BND;
             }
-             if (ArrayUtils.contains(Genesis.first_RECIPIENTS, id)) {
+             if ( ArrayUtils.contains(Genesis.first_RECIPIENTS , id)  ) {
                 return balanceNQT / Constants.ONE_BND;
             }
             long receivedInLastBlock = 0;
@@ -528,13 +524,9 @@ public final class Account {
             }
             return (balanceNQT - receivedInLastBlock) / Constants.ONE_BND;
         }
-        Bened.getBlockchain().readLock();
-        try {
             long effectiveBalanceNQT = getGuaranteedBalanceNQT(Constants.GUARANTEED_BALANCE_CONFIRMATIONS, height);
             return (effectiveBalanceNQT < Constants.MIN_FORGING_BALANCE_NQT) ? 0 : effectiveBalanceNQT / Constants.ONE_BND;
-        } finally {
-            Bened.getBlockchain().readUnlock();
-        }
+        
     }
 
 

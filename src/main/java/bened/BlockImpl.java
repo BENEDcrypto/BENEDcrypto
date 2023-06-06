@@ -16,6 +16,7 @@
 package bened;
 
 import bened.AccountLedger.LedgerEvent;
+import static bened.Constants.LAST_KNOWN_BLOCK;
 import bened.crypto.Crypto;
 import bened.util.Convert;
 import bened.util.Logger;
@@ -54,17 +55,21 @@ final class BlockImpl implements Block {
     private volatile String stringId = null;
     private volatile long generatorId;
     private volatile byte[] bytes = null;
+    
+    public String otner_cumulativeDifficulty = "";
+    public long other_baseTarget = 0;
 
     BlockImpl(int version, int timestamp, long previousBlockId, long totalAmountNQT, long totalFeeNQT, int payloadLength, byte[] payloadHash,
             byte[] generatorPublicKey, byte[] generationSignature, byte[] previousBlockHash, List<TransactionImpl> transactions, String secretPhrase) {
         this(version, timestamp, previousBlockId, totalAmountNQT, totalFeeNQT, payloadLength, payloadHash,
-                generatorPublicKey, generationSignature, null, previousBlockHash, transactions);
+                generatorPublicKey, generationSignature, null, previousBlockHash, transactions, -100 ,"-101");
         blockSignature = Crypto.sign(bytes(), secretPhrase);
         bytes = null;
     }
 
     BlockImpl(int version, int timestamp, long previousBlockId, long totalAmountNQT, long totalFeeNQT, int payloadLength, byte[] payloadHash,
-            byte[] generatorPublicKey, byte[] generationSignature, byte[] blockSignature, byte[] previousBlockHash, List<TransactionImpl> transactions) {
+            byte[] generatorPublicKey, byte[] generationSignature, byte[] blockSignature, byte[] previousBlockHash, List<TransactionImpl> transactions, 
+            long _other_baseTarget, String _otner_cumulativeDifficulty) {
         this.version = version;
         this.timestamp = timestamp;
         this.previousBlockId = previousBlockId;
@@ -73,12 +78,14 @@ final class BlockImpl implements Block {
         this.payloadLength = payloadLength;
         this.payloadHash = payloadHash;
         this.generatorPublicKey = generatorPublicKey;
-        this.generationSignature = generationSignature;
+        this.generationSignature = Arrays.copyOfRange(generationSignature, 0, version<1?64:32) ; //  generationSignature;  // kastyl pri perehode na 2.1.214
         this.blockSignature = blockSignature;
         this.previousBlockHash = previousBlockHash;
         if (transactions != null) {
             this.blockTransactions = Collections.unmodifiableList(transactions);
         }
+        this.other_baseTarget = _other_baseTarget;
+        this.otner_cumulativeDifficulty= _otner_cumulativeDifficulty;
     }
 
     BlockImpl(int version, int timestamp, long previousBlockId, long totalAmountNQT, long totalFeeNQT, int payloadLength,
@@ -86,7 +93,7 @@ final class BlockImpl implements Block {
             byte[] previousBlockHash, BigInteger cumulativeDifficulty, long baseTarget, long nextBlockId, int height, long id,
             List<TransactionImpl> blockTransactions) {
         this(version, timestamp, previousBlockId, totalAmountNQT, totalFeeNQT, payloadLength, payloadHash,
-                null, generationSignature, blockSignature, previousBlockHash, null);
+                null, generationSignature, blockSignature, previousBlockHash, null, -200, "-201");
         this.cumulativeDifficulty = cumulativeDifficulty;
         this.baseTarget = baseTarget;
         this.nextBlockId = nextBlockId;
@@ -253,8 +260,13 @@ final class BlockImpl implements Block {
         }
         json.put("blockSignature", Convert.toHexString(blockSignature));
         JSONArray transactionsData = new JSONArray();
-        getTransactions().forEach(transaction -> transactionsData.add(transaction.getJSONObject()));
+        getTransactions().forEach(transaction ->{
+            transactionsData.add(transaction.getJSONObject());
+        });
         json.put("transactions", transactionsData);
+        //
+        json.put("baseTarget", Long.toUnsignedString(baseTarget));
+        json.put("cumulativeDifficulty", cumulativeDifficulty.toString());
         return json;
     }
 
@@ -275,8 +287,15 @@ final class BlockImpl implements Block {
             for (Object transactionData : (JSONArray) blockData.get("transactions")) {
                 blockTransactions.add(TransactionImpl.parseTransaction((JSONObject) transactionData));
             }
+            long _other_baseTarget = Long.parseLong((String) blockData.get("baseTarget"));
+            String _other_cumulativeDifficulty =(String) blockData.get("cumulativeDifficulty");
+            if(_other_baseTarget==0 || _other_cumulativeDifficulty.isBlank()){
+                System.out.println("ahtung pb !!!");
+                Logger.logErrorMessage("from node json data no parsing other Cd and BaseTarget");
+            }
+            
             BlockImpl block = new BlockImpl(version, timestamp, previousBlock, totalAmountNQT, totalFeeNQT, payloadLength, payloadHash, generatorPublicKey,
-                    generationSignature, blockSignature, previousBlockHash, blockTransactions);
+                    generationSignature, blockSignature, previousBlockHash, blockTransactions, _other_baseTarget, _other_cumulativeDifficulty);
             if (!block.checkSignature()) {
                 throw new BNDException.NotValidException("Invalid block signature");
             }
@@ -293,7 +312,8 @@ final class BlockImpl implements Block {
     }
 
     byte[] bytes() {
-        if (bytes == null) {
+        try{
+        if (bytes == null) {                                                                                          //dolzno bit 64 a tut 32  
             ByteBuffer buffer = ByteBuffer.allocate(4 + 4 + 8 + 4 + (version < 3 ? (4 + 4) : (8 + 8)) + 4 + 32 + 32 + (32 + 32) + (blockSignature != null ? 64 : 0));
             buffer.order(ByteOrder.LITTLE_ENDIAN);
             buffer.putInt(version);
@@ -310,7 +330,7 @@ final class BlockImpl implements Block {
             buffer.putInt(payloadLength);
             buffer.put(payloadHash);
             buffer.put(getGeneratorPublicKey());
-            buffer.put(generationSignature);
+            buffer.put(generationSignature); // eto po idee 64 ! denis eto slomal  - sdelal 32
             if (version > 1) {
                 buffer.put(previousBlockHash);
             }
@@ -318,6 +338,9 @@ final class BlockImpl implements Block {
                 buffer.put(blockSignature);
             }
             bytes = buffer.array();
+        }
+        }catch(Exception e){
+           Logger.logErrorMessage("BlchImpl get byte ERR:"+e);
         }
         return bytes;
     }
@@ -343,16 +366,32 @@ final class BlockImpl implements Block {
                 throw new BlockchainProcessor.BlockOutOfOrderException("Can't verify signature because previous block is missing", this);
             }
             if (version == 1 && !Crypto.verify(generationSignature, previousBlock.generationSignature, getGeneratorPublicKey(), version >= 3)) {  
-                Logger.logDebugMessage("Refused block " + height + " because of wrong signature");
+                Logger.logDebugMessage("Refused block " + (previousBlock.getHeight()+1) + " because of wrong signature");
                 return false;
             }
             Account account = Account.getAccount(getGeneratorId());
-            long effectiveBalance = account == null ? 0 : account.getEffectiveBalanceBND();
+            long effectiveBalance = account == null ? 0 : account.getEffectiveBalanceBND(Bened.getBlockchain().getHeight());
             if (effectiveBalance <= 0) {
-                Logger.logDebugMessage("Refused block " + height + " because of zero effective balance");
+                Logger.logDebugMessage("Refused block " + (previousBlock.getHeight()+1) + " because of zero effective balance");
                 return false;
             }
- 
+            
+            int currentHeight = BlockchainImpl.getInstance().getHeight();
+            
+            if (ExcludesGMS.check(getGeneratorId(), currentHeight)) {
+                Logger.logDebugMessage("Refused block " + (previousBlock.getHeight()+1) + " because it is excluded");
+                return false;
+            }
+
+            if (getTransactions() != null && !getTransactions().isEmpty()) {
+                for (TransactionImpl trx : getTransactions()) {
+                    if (ExcludesGMS.check(trx.getSenderId(), currentHeight)) {
+                        Logger.logDebugMessage("Refused block " + (previousBlock.getHeight()+1) + " because it's transaction is excluded");
+                        return false;
+                    }
+                }
+            }
+
             MessageDigest digest = Crypto.sha256();
             byte[] generationSignatureHash;
             if (version == 1) {
@@ -361,19 +400,20 @@ final class BlockImpl implements Block {
                 digest.update(previousBlock.generationSignature);
                 generationSignatureHash = digest.digest(getGeneratorPublicKey());
                 if (!Arrays.equals(generationSignature, generationSignatureHash)) {
-                    Logger.logDebugMessage("Refused block " + height + " because of wrong generation signature");
+                    Logger.logDebugMessage("Refused block " + (previousBlock.getHeight()+1) + " because of wrong generation signature");
                     return false;
                 }
             }
 
             BigInteger hit = new BigInteger(1, new byte[]{generationSignatureHash[7], generationSignatureHash[6], generationSignatureHash[5], generationSignatureHash[4], generationSignatureHash[3], generationSignatureHash[2], generationSignatureHash[1], generationSignatureHash[0]});
-            final boolean verified = SimplDimpl.verifyHit(hit, BigInteger.valueOf(effectiveBalance), previousBlock, timestamp);
-            if (!verified)
-                Logger.logDebugMessage("Refused block "+ height +" because of failed verify hit");
+            final boolean verified =  SimplDimpl.verifyHit(hit, BigInteger.valueOf(effectiveBalance), previousBlock, timestamp);
+            if (!verified){
+                Logger.logWarningMessage("Refused block "+ (previousBlock.getHeight()+1) +" because of failed verify hit");
+		}
             return verified;
         } catch (RuntimeException e) {
 
-            Logger.logMessage("Error verifying block generation signature", e);
+            Logger.logWarningMessage("Error verifying block generation signature", e);
             return false;
         }
     }
@@ -417,38 +457,74 @@ private static final long[] badBlocks = new long[]{};
         }
     }
     
+    
+    
     private void calculateBaseTarget(BlockImpl previousBlock) {
+        if(Constants.USKORITEL_GENERACII_BLOCKOV!=1)Logger.logErrorMessage("\n-------- uskoritel != 1  !!!!!  nuzno ispravit!! razrabotka!");
         long prevBaseTarget = previousBlock.baseTarget;
         BigInteger CUMULATIVE_DIFFICULTY_MULTIPLIER = Convert.two64.multiply(BigInteger.valueOf( (Bened.getBlockchain().getHeight()<Constants.change_evendek22?Constants.BLOCK_TIME:Constants.BLOCK_TIME*5) ));
         cumulativeDifficulty = previousBlock.cumulativeDifficulty.add(CUMULATIVE_DIFFICULTY_MULTIPLIER.divide( BigInteger.valueOf(prevBaseTarget).multiply(BigInteger.valueOf(this.timestamp - previousBlock.timestamp))));
-     
         int blockchainHeight = previousBlock.height;
-        if (Bened.getBlockchain().getHeight()>Constants.change_evendek22 || (blockchainHeight > 2 && blockchainHeight % 2 == 0) ) {
-            
-            int targetBlocktime = (Bened.getBlockchain().getHeight()<Constants.change_evendek22? Constants.BLOCK_TIME : Constants.BLOCK_TIME*5) / Constants.USKORITEL_GENERACII_BLOCKOV;
-            BlockImpl block = Bened.getBlockchain().getHeight()<Constants.change_evendek22? BlockDb.findBlockAtHeight(blockchainHeight-2) : previousBlock ;
-            int blocktimeAverage = (this.timestamp - block.timestamp) / 3;
-            if (blocktimeAverage > targetBlocktime) {
-                baseTarget = (prevBaseTarget * Math.min(blocktimeAverage, targetBlocktime + Constants.MAX_BLOCKTIME_DELTA)) / targetBlocktime;
-            } else {
-                baseTarget = prevBaseTarget - prevBaseTarget * ((Bened.getBlockchain().getHeight()<Constants.change_evendek22? Constants.BASE_TARGET_GAMMA:Constants.BASE_TARGET_GAMMA*5))
+        if(blockchainHeight>Constants.fix_evendek_210123){
+            int targetBlocktime =  (Constants.BLOCK_TIME*4) / Constants.USKORITEL_GENERACII_BLOCKOV;
+                BlockImpl block = BlockDb.findBlockAtHeight(blockchainHeight-2)  ;
+                int blocktimeAverage = (this.timestamp- previousBlock.timestamp); // - block.timestamp) / 3;
+                if (blocktimeAverage > targetBlocktime) {
+                    baseTarget = (prevBaseTarget * Math.min(blocktimeAverage, targetBlocktime + Constants.MAX_BLOCKTIME_DELTA)) / targetBlocktime;
+                } else {
+                    baseTarget = prevBaseTarget - prevBaseTarget * Constants.BASE_TARGET_GAMMA* (targetBlocktime - Math.max(blocktimeAverage, targetBlocktime - Constants.MIN_BLOCKTIME_DELTA)) / (100 * targetBlocktime);
+                }
+                long consMAXBS = Constants.getMAX_BASE_TARGET(height);
+                if (baseTarget < 0 || baseTarget > consMAXBS * Constants.USKORITEL_GENERACII_BLOCKOV) {
+                   baseTarget = consMAXBS * Constants.USKORITEL_GENERACII_BLOCKOV;
+                }
+                long consMINBS = Constants.getMIN_BASE_TARGET(height);
+                if (baseTarget < consMINBS * Constants.USKORITEL_GENERACII_BLOCKOV) {
+                    baseTarget = consMINBS * Constants.USKORITEL_GENERACII_BLOCKOV;
+                }
+        }else{
+            if (Bened.getBlockchain().getHeight()>Constants.change_evendek22 || (blockchainHeight > 2 && blockchainHeight % 2 == 0) ) {
+                int targetBlocktime = (Bened.getBlockchain().getHeight()<Constants.change_evendek22? Constants.BLOCK_TIME : Constants.BLOCK_TIME*5) / Constants.USKORITEL_GENERACII_BLOCKOV;
+                BlockImpl block = Bened.getBlockchain().getHeight()<Constants.change_evendek22? BlockDb.findBlockAtHeight(blockchainHeight-2) : previousBlock ;
+                int blocktimeAverage = (this.timestamp - block.timestamp) / 3;
+                if (blocktimeAverage > targetBlocktime) {
+                    baseTarget = (prevBaseTarget * Math.min(blocktimeAverage, targetBlocktime + Constants.MAX_BLOCKTIME_DELTA)) / targetBlocktime;
+                } else {
+                    baseTarget = prevBaseTarget - prevBaseTarget * ((Bened.getBlockchain().getHeight()<Constants.change_evendek22? Constants.BASE_TARGET_GAMMA:Constants.BASE_TARGET_GAMMA*5))
                         * (targetBlocktime - Math.max(blocktimeAverage, targetBlocktime - Constants.MIN_BLOCKTIME_DELTA)) / (100 * targetBlocktime);
+                }
+                long consMAXBS = Constants.getMAX_BASE_TARGET(height);
+                if (baseTarget < 0 || baseTarget > consMAXBS * Constants.USKORITEL_GENERACII_BLOCKOV) {
+                    baseTarget = consMAXBS * Constants.USKORITEL_GENERACII_BLOCKOV;
+                }
+                long consMINBS = Constants.getMIN_BASE_TARGET(height);
+                if (baseTarget < consMINBS * Constants.USKORITEL_GENERACII_BLOCKOV) {
+                    baseTarget = consMINBS * Constants.USKORITEL_GENERACII_BLOCKOV;
+                }
+            } else {
+                baseTarget = prevBaseTarget;
             }
-            long consMAXBS = Constants.getMAX_BASE_TARGET(height);
-            if (baseTarget < 0 || baseTarget > consMAXBS * Constants.USKORITEL_GENERACII_BLOCKOV) {
-                baseTarget = consMAXBS * Constants.USKORITEL_GENERACII_BLOCKOV;
-            }
-            long consMINBS = Constants.getMIN_BASE_TARGET(height);
-            if (baseTarget < consMINBS * Constants.USKORITEL_GENERACII_BLOCKOV) {
-                baseTarget = consMINBS * Constants.USKORITEL_GENERACII_BLOCKOV;
-            }
-        } else {
-            baseTarget = prevBaseTarget;
         }
-
         
         cumulativeDifficulty = previousBlock.cumulativeDifficulty.add(Convert.two64.divide(BigInteger.valueOf(baseTarget)));
-        
+    int _cdo=100;
+    try{_cdo=Integer.getInteger(this.otner_cumulativeDifficulty);}catch(Exception e){_cdo=1;}  
+    if(this.other_baseTarget>0 && _cdo>0){
+        int _theight = previousBlock.getHeight()+1;
+        if( (this.baseTarget!=this.other_baseTarget || !this.otner_cumulativeDifficulty.equals(this.cumulativeDifficulty.toString())) 
+                &&  _theight<LAST_KNOWN_BLOCK){
+            System.out.println("basetarget wrong b:"+_theight+" bs:"+this.baseTarget+" obt:"+this.other_baseTarget
+                 +", cd:"+this.cumulativeDifficulty.toString()+" ocd:"+this.otner_cumulativeDifficulty+"\ntst:"+previousBlock.getTimestamp());
+            if(Constants.verbadtime(previousBlock.getTimestamp()) ){
+                this.baseTarget = this.other_baseTarget;
+                this.cumulativeDifficulty = new BigInteger(this.otner_cumulativeDifficulty);
+                if(this.baseTarget == this.other_baseTarget && this.cumulativeDifficulty.equals(new BigInteger(this.otner_cumulativeDifficulty)) ){
+                }else{
+                    Logger.logWarningMessage("!Ahtung basetarget and Cd no repair !!!");
+                }
+            }
+        }
+    }    
     }
 
 }

@@ -304,9 +304,11 @@ public class FullTextTrigger implements Trigger, TransactionalDb.TransactionCall
             stmt.execute(String.format("INSERT INTO FTL.INDEXES (schema, \"TABLE\", columns) "
                     + "VALUES('%s', '%s', '%s')",
                     upperSchema, upperTable, columnList.toUpperCase()));
-            stmt.execute(String.format("CREATE TRIGGER FTL_%s AFTER INSERT,UPDATE,DELETE ON %s "
+            stmt.execute(String.format("CREATE TRIGGER IF NOT EXISTS FTL_%s AFTER INSERT, UPDATE, DELETE, ROLLBACK ON %s "
                     + "FOR EACH ROW CALL \"%s\"",
-                    upperTable, tableName, FullTextTrigger.class.getName()));
+                    upperTable, tableName, FullTextTrigger.class.getName())); 
+        }catch(Exception e){
+            System.out.println("createftriget err w33:"+e);
         }
         //
         // Index the table
@@ -502,7 +504,7 @@ public class FullTextTrigger implements Trigger, TransactionalDb.TransactionCall
                 while (rs.next()) {
                     String columnName = rs.getString("FIELD");
                     String columnType = rs.getString("TYPE");
-                    columnType = columnType.substring(0, columnType.indexOf('('));
+                    if(columnType.indexOf('(')>0)columnType = columnType.substring(0, columnType.indexOf('('));
                     columnNames.add(columnName);
                     columnTypes.add(columnType);
                     if (columnName.equals("DB_ID")) {
@@ -510,6 +512,8 @@ public class FullTextTrigger implements Trigger, TransactionalDb.TransactionCall
                     }
                     index++;
                 }
+            }catch(Exception e){
+                System.out.println("triget init 001 e:"+e);
             }
             if (dbColumn < 0) {
                 Logger.logErrorMessage("DB_ID column not found for table " + tableName);
@@ -528,7 +532,7 @@ public class FullTextTrigger implements Trigger, TransactionalDb.TransactionCall
                     for (String column : columns) {
                         int pos = columnNames.indexOf(column);
                         if (pos >= 0) {
-                            if (columnTypes.get(pos).equals("VARCHAR")) {
+                            if (columnTypes.get(pos).equals("VARCHAR") || columnTypes.get(pos).equals("CHARACTER VARYING") ) {
                                 indexColumns.add(pos);
                             } else {
                                 Logger.logErrorMessage("Indexed column " + column + " in table " + tableName + " is not a string");
@@ -538,6 +542,8 @@ public class FullTextTrigger implements Trigger, TransactionalDb.TransactionCall
                         }
                     }
                 }
+            }catch(Exception e){
+                System.out.println("triget init 002 e:"+e);
             }
             if (indexColumns.isEmpty()) {
                 Logger.logErrorMessage("No indexed columns found for table " + tableName);

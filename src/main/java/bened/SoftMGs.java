@@ -38,32 +38,32 @@ public class SoftMGs {
         if (balance>=1000000l && balance<=9999999999l) percent =  (Bened.getBlockchain().getHeight()<Constants.change_evendek22? 0.25d : 0.1d);
         if (balance>=10000000000l && balance<=99999999999l) percent = (Bened.getBlockchain().getHeight()<Constants.change_evendek22? 0.5d : 0.19d);
         
-        int yaForgu = Bened.getBlockchain().GetLastForgBlk(AccouuntID, Constants.GlubinaPoiska);
+        int yaForgu = Bened.getBlockchain().GetLastForgBlk(AccouuntID, Constants.GlubinaPoiska, lastForgedBlockHeight);
         if(percent>0 && yaForgu>0 ){
             percent=1d;
         }
-        if (amount>=100000000000l         && amount<=999999999999l) multi = 1.2d; 
-        if (amount>=1000000000000l        && amount<=9999999999999l) multi = 1.5d;
-        if (amount>=10000000000000l       && amount<=99999999999999l) multi = 1.8d; 
-        if (amount>=100000000000000l) multi = 2d;                                    
+        if (amount>=100000000000l         && amount<=999999999999l) multi = 1.2d; // от 100 000    до    1 000 000
+        if (amount>=1000000000000l        && amount<=9999999999999l) multi = 1.5d; // 1 000 000    до    10 000 000
+        if (amount>=10000000000000l       && amount<=99999999999999l) multi = 1.8d; // 10 000 000   до   100 000 000
+        if (amount>=100000000000000l) multi = 2d;                                   // от 100 000 000    
 
 
-        if (genesisEmission>=30000000000000000l    && genesisEmission<=44999999999999999l) stpKof = 0.85d;  
-        if (genesisEmission>=45000000000000000l    && genesisEmission<=59999999999999999l) stpKof = 0.7d; 
-        if (genesisEmission>=60000000000000000l    && genesisEmission<=74999999999999999l) stpKof = 0.55d;
-        if (genesisEmission>=75000000000000000l    && genesisEmission<=89999999999999999l) stpKof = 0.4d; 
-        if (genesisEmission>=90000000000000000l    && genesisEmission<=99999999999999999l) stpKof = 0.25d; 
+        if (genesisEmission>=30000000000000000l    && genesisEmission<=44999999999999999l) stpKof = 0.85d;  // от 30 do 45 
+        if (genesisEmission>=45000000000000000l    && genesisEmission<=59999999999999999l) stpKof = 0.7d; // от 45    до    60
+        if (genesisEmission>=60000000000000000l    && genesisEmission<=74999999999999999l) stpKof = 0.55d; // 60    до    75
+        if (genesisEmission>=75000000000000000l    && genesisEmission<=89999999999999999l) stpKof = 0.4d; // 75    до   90
+        if (genesisEmission>=90000000000000000l    && genesisEmission<=99999999999999999l) stpKof = 0.25d; // 90    до   100
         if (genesisEmission>=100000000000000000l) stpKof = 0.15d;      
         
         this.multiplier = (multi * percent * stpKof) / 100d;
         double days = (afterStamp - beforeStamp) / ORDINARY_DIVIDER;
-  
-        
+
         payout = (long) Math.floor((double) balance * (days * this.multiplier));
         
-        if (payout < 0) payout = 0;
+        
         if (payout > MAX_softMG_PAYOUT_centesimo) payout = MAX_softMG_PAYOUT_centesimo;
         if ((balance + payout) > MAX_BALANCE_Stop_mg_centesimo) payout =MAX_BALANCE_Stop_mg_centesimo - balance;
+        if (payout < 0) payout = 0;
 
         return true;
     }

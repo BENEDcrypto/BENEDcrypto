@@ -17,6 +17,7 @@ package bened;
 
 import bened.AccountLedger.LedgerEvent;
 import bened.util.Convert;
+import bened.util.Logger;
 import org.json.simple.JSONObject;
 
 import java.nio.ByteBuffer;
@@ -28,8 +29,6 @@ public abstract class TransactionType {
 
     private static final byte TYPE_PAYMENT = 0;
     private static final byte SUBTYPE_PAYMENT_ORDINARY_PAYMENT = 0;  
-    private static final byte SUBTYPE_PAYMENT_HASH_PAYMENT = 1;
-    private static final byte SUBTYPE_PAYMENT_HASH_TRANSFER = 2;
     
     private static final byte TYPE_MESSAGING = 1;
     private static final byte SUBTYPE_MESSAGING_ARBITRARY_MESSAGE = 0;
@@ -37,6 +36,11 @@ public abstract class TransactionType {
     private static final byte SUBTYPE_MESSAGING_ACCOUNT_INFO = 5;
     private static final byte SUBTYPE_MESSAGING_ALIAS_DELETE = 8;
 
+    
+    ////////////// HASH ////////////////////
+    private static final byte TYPE_HASHING = 2;
+    private static final byte SUBTYPE_HASHTINT_ASSIGNMENT = 0;
+    private static final byte SUBTYPE_HASHTINT_TRANSFER = 1;
 
     public static TransactionType findTransactionType(byte type, byte subtype) {
         switch (type) {
@@ -44,10 +48,6 @@ public abstract class TransactionType {
                 switch (subtype) {
                     case SUBTYPE_PAYMENT_ORDINARY_PAYMENT:
                         return Payment.ORDINARY;
-                    case SUBTYPE_PAYMENT_HASH_PAYMENT:
-                        return Payment.HASH_PAYMENT;
-                    case SUBTYPE_PAYMENT_HASH_TRANSFER:
-                        return Payment.HASH_TRANSFER;
                     default:
                         return null;
                 }
@@ -64,6 +64,15 @@ public abstract class TransactionType {
                     default:
                         return null;
                 }
+             case TYPE_HASHING:
+                switch (subtype) {
+                    case SUBTYPE_HASHTINT_ASSIGNMENT:
+                        return Hashing.HASHTINT_ASSIGNMENT;
+                    case SUBTYPE_HASHTINT_TRANSFER:
+                        return Hashing.HASHTINT_TRANSFER;    
+                    default:
+                        return null;
+                }    
             default:
                 return null;
         }
@@ -92,6 +101,8 @@ public abstract class TransactionType {
         long totalAmountNQT = Math.addExact(amountNQT, feeNQT);
         if (senderAccount.getUnconfirmedBalanceNQT() < totalAmountNQT
                 && !(Arrays.equals(transaction.getSenderPublicKey(), Genesis.CREATOR_PUBLIC_KEY))) {
+//ss                && !(transaction.getTimestamp() == 0 && Arrays.equals(transaction.getSenderPublicKey(), Genesis.CREATOR_PUBLIC_KEY))) {
+            Logger.logDebugMessage("applyUnconfirmed wrong ballance "+Convert.rsAccount(senderAccount.getId())+" deff:"+(senderAccount.getUnconfirmedBalanceNQT()-totalAmountNQT) );
             return false;
         }
         senderAccount.addToUnconfirmedBalanceNQT(getLedgerEvent(), transaction.getId(), -amountNQT, -feeNQT);
@@ -128,6 +139,7 @@ public abstract class TransactionType {
         return false;
     }
 
+    // isBlockDuplicate and isDuplicate share the same duplicates map, but isBlockDuplicate check is done first
     boolean isBlockDuplicate(Transaction transaction, Map<TransactionType, Map<String, Integer>> duplicates) {
         return false;
     }
@@ -277,79 +289,6 @@ public abstract class TransactionType {
 
         };
         
-        public static final TransactionType HASH_PAYMENT = new Payment() {
-
-            @Override
-            public final byte getSubtype() {
-                return TransactionType.SUBTYPE_PAYMENT_HASH_PAYMENT;
-            }
-
-            @Override
-            public final LedgerEvent getLedgerEvent() {
-                return LedgerEvent.HASH_PAYMENT;
-            }
-
-            @Override
-            public String getName() {
-                return "HashPayment";
-            }
-
-            @Override
-            Attachment.EmptyAttachment parseAttachment(ByteBuffer buffer, byte transactionVersion) throws BNDException.NotValidException {
-                return Attachment.HASH_PAYMENT;
-            }
-
-            @Override
-            Attachment.EmptyAttachment parseAttachment(JSONObject attachmentData) throws BNDException.NotValidException {
-                return Attachment.HASH_PAYMENT;
-            }
-
-            @Override
-            void validateAttachment(Transaction transaction) throws BNDException.ValidationException {
-                if (transaction.getAmountNQT() <= 0 || transaction.getAmountNQT() >= Constants.MAX_BALANCE_centesimo) {
-                    throw new BNDException.NotValidException("Invalid hash payment");
-                }
-            }
-
-        };
-        
-         public static final TransactionType HASH_TRANSFER = new Payment() {
-
-            @Override
-            public final byte getSubtype() {
-                return TransactionType.SUBTYPE_PAYMENT_HASH_TRANSFER;
-            }
-
-            @Override
-            public final LedgerEvent getLedgerEvent() {
-                return LedgerEvent.HASH_TRANSFER;
-            }
-
-            @Override
-            public String getName() {
-                return "HashTransfer";
-            }
-
-            @Override
-            Attachment.EmptyAttachment parseAttachment(ByteBuffer buffer, byte transactionVersion) throws BNDException.NotValidException {
-                return Attachment.HASH_TRANSFER;
-            }
-
-            @Override
-            Attachment.EmptyAttachment parseAttachment(JSONObject attachmentData) throws BNDException.NotValidException {
-                return Attachment.HASH_TRANSFER;
-            }
-
-            @Override
-            void validateAttachment(Transaction transaction) throws BNDException.ValidationException {
-                if (transaction.getAmountNQT() <= 0 || transaction.getAmountNQT() >= Constants.MAX_BALANCE_centesimo) {
-                    throw new BNDException.NotValidException("Invalid hash transfer ");
-                }
-            }
-
-        };
-
-
     }
 
     public static abstract class Messaging extends TransactionType {
@@ -656,4 +595,162 @@ public abstract class TransactionType {
 
         };
     }
+
+    ///// 2 Hash Transaction Section
+    //    0 CRET
+    //    1 TRANSFER
+    
+     public static abstract class Hashing extends TransactionType {
+
+        private Hashing() {
+        }
+
+        @Override
+        public final byte getType() {
+            return TransactionType.TYPE_HASHING;
+        }
+
+        @Override
+        final boolean applyAttachmentUnconfirmed(Transaction transaction, Account senderAccount) {
+            return true;
+        }
+
+        @Override
+        final void undoAttachmentUnconfirmed(Transaction transaction, Account senderAccount) {
+        }
+
+        public static final TransactionType HASHTINT_ASSIGNMENT = new Hashing() {
+
+
+            @Override
+            public final byte getSubtype() {
+                return TransactionType.SUBTYPE_HASHTINT_ASSIGNMENT;
+            }
+
+            @Override
+            public LedgerEvent getLedgerEvent() {
+                return LedgerEvent.HASHTINT_ASSIGNMENT;
+            }
+
+            @Override
+            public String getName() {
+                return "HashTintAssignment";
+            }
+
+
+            @Override
+            Attachment.HashTintAssignment parseAttachment(ByteBuffer buffer, byte transactionVersion) throws BNDException.NotValidException {
+                return new Attachment.HashTintAssignment(buffer, transactionVersion);
+            }
+
+            @Override
+            Attachment.HashTintAssignment parseAttachment(JSONObject attachmentData) throws BNDException.NotValidException {
+               return new Attachment.HashTintAssignment(attachmentData);
+            }
+
+            @Override
+            void applyAttachment(Transaction transaction, Account senderAccount, Account recipientAccount) {
+                Attachment.HashTintAssignment attachment = (Attachment.HashTintAssignment) transaction.getAttachment();
+                HashTint.addOrUpdateHashTnt(transaction, attachment);
+            }
+
+            @Override
+            boolean isDuplicate(Transaction transaction, Map<TransactionType, Map<String, Integer>> duplicates) {
+                Attachment.HashTintAssignment attachment = (Attachment.HashTintAssignment) transaction.getAttachment();
+                return isDuplicate(Hashing.HASHTINT_ASSIGNMENT, attachment.getTntName().toLowerCase(), duplicates, true);
+            }
+
+            @Override
+            void validateAttachment(Transaction transaction) throws BNDException.ValidationException {
+                Attachment.HashTintAssignment attachment = (Attachment.HashTintAssignment) transaction.getAttachment();
+                if (!attachment.testAllField()) {
+                    throw new BNDException.NotValidException("Invalid HashTint assignment: " + attachment.getTntName());
+                }
+            }
+
+            @Override
+            public boolean canHaveRecipient() {
+                return true;
+            }
+
+            @Override
+            public boolean isPhasingSafe() {
+                return false;
+            }
+
+        };
+
+        public static final TransactionType HASHTINT_TRANSFER = new Hashing() {
+
+            @Override
+            public final byte getSubtype() {
+                return TransactionType.SUBTYPE_HASHTINT_TRANSFER;
+            }
+
+            @Override
+            public LedgerEvent getLedgerEvent() {
+                return LedgerEvent.HASHTINT_TRANSFER;
+            }
+
+            @Override
+            public String getName() {
+                return "HashTransfer";
+            }
+
+            @Override
+            Attachment.HashTintTransfer parseAttachment(final ByteBuffer buffer, final byte transactionVersion) throws BNDException.NotValidException {
+                System.out.println("!!HT transfer as44 buf to by");
+                byte[] nba = new byte[32];
+                return new Attachment.HashTintTransfer(nba, transactionVersion);
+            }
+
+            @Override
+            Attachment.HashTintTransfer parseAttachment(final JSONObject attachmentData) throws BNDException.NotValidException {
+                return new Attachment.HashTintTransfer(attachmentData);
+            }
+
+            @Override
+            void applyAttachment(final Transaction transaction, final Account senderAccount, final Account recipientAccount) {
+                final Attachment.HashTintTransfer attachment
+                        = (Attachment.HashTintTransfer) transaction.getAttachment();
+                HashTint.transferHashTnt(attachment.getHashName());
+            }
+
+            @Override
+            boolean isDuplicate(final Transaction transaction, final Map<TransactionType, Map<String, Integer>> duplicates) {
+                Attachment.HashTintTransfer attachment = (Attachment.HashTintTransfer) transaction.getAttachment();
+                // not a bug, uniqueness is based on Messaging.ALIAS_ASSIGNMENT
+                return isDuplicate(Hashing.HASHTINT_ASSIGNMENT, attachment.getHashName().toLowerCase(), duplicates, true);
+            }
+
+            @Override
+            void validateAttachment(final Transaction transaction) throws BNDException.ValidationException {
+                final Attachment.HashTintTransfer attachment
+                        = (Attachment.HashTintTransfer) transaction.getAttachment();
+                final String hashName = attachment.getHashName();
+                if (hashName == null || hashName.length() == 0) {
+                    throw new BNDException.NotValidException("Missing HashName name");
+                }
+                final HashTint hashTint = HashTint.getHashTnt(hashName);
+                if (hashTint == null) {
+                    throw new BNDException.NotCurrentlyValidException("No such Hashtint: " + hashName);
+                } else if (hashTint.getOwnerAccountId() != (transaction.getRecipientId()==Genesis.CREATOR_ID?transaction.getSenderId():transaction.getRecipientId()) ) {
+                    throw new BNDException.NotCurrentlyValidException("HashTint doesn't belong to sender: " + hashName);
+                }
+            }
+
+            @Override
+            public boolean canHaveRecipient() {
+                return false;
+            }
+
+            @Override
+            public boolean isPhasingSafe() {
+                return false;
+            }
+
+        };
+
+    }
+
 }

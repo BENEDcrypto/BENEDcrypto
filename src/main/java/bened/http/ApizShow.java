@@ -59,35 +59,40 @@ public final class ApizShow extends HttpServlet {
         process(req, resp);
     }
     
-    
+    private static String trxid = ""; 
+    private static Transaction transaction = null;
     private void process(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-       
-        ///////////gettrx
+    
         String transactionIdString = req.getParameter("Trx");
-        String transactionFullHash = null;
-        long transactionId=0;
-        Transaction transaction = null;
         String retrun="";
-        String httrx = "";
-        try {
-            if (transactionIdString != null) {
-                transactionId = Convert.parseUnsignedLong(transactionIdString);
-                transaction = Bened.getBlockchain().getTransaction(transactionId);
-            } else {
-                transaction = Bened.getBlockchain().getTransactionByFullHash(transactionFullHash);
-                if (transaction == null) {
-                    retrun= "UNKNOWN TRANSACTION";
+        long transactionId=0;
+         String transactionFullHash = null;
+        if(trxid != transactionIdString){
+            try {
+                if (transactionIdString != null) {
+                    transactionId = Convert.parseUnsignedLong(transactionIdString);
+                    transaction = Bened.getBlockchain().getTransaction(transactionId);
+                } else {
+                    transaction = Bened.getBlockchain().getTransactionByFullHash(transactionFullHash);
+                    if (transaction == null) {
+                        retrun= "UNKNOWN TRANSACTION";
+                    }
                 }
-            }
-            if (transaction == null) {
-                transaction = Bened.getTransactionProcessor().getUnconfirmedTransaction(transactionId);
-            if (transaction == null) {
-                retrun= "UNKNOWN TRANSACTION";
-            }
+                if (transaction == null) {
+                    transaction = Bened.getTransactionProcessor().getUnconfirmedTransaction(transactionId);
+                    if (transaction == null) {
+                        retrun= "UNKNOWN TRANSACTION";
+                    }
+                }
+            } catch (RuntimeException e) {
+                retrun= "INCORRECT TRANSACTION";
+            }        
+            trxid=transactionIdString;
         }
-        } catch (RuntimeException e) {
-            retrun= "INCORRECT TRANSACTION";
-        }
+        
+        ///////////gettrx
+        String httrx = "";
+        
         
         ///// do
        if(req.getRequestURI().contains("json")){

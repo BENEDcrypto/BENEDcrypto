@@ -16,12 +16,7 @@
 
 package bened.http;
 
-import bened.Alias;
 import bened.BNDException;
-import bened.db.DbIterator;
-import bened.util.Convert;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
 import org.json.simple.JSONStreamAware;
 
 import javax.servlet.http.HttpServletRequest;

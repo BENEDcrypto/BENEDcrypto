@@ -27,7 +27,7 @@ public final class GetSoftMGs extends APIServlet.APIRequestHandler {
     static final GetSoftMGs instance = new GetSoftMGs();
 
     private GetSoftMGs() {
-        super(new APITag[] {APITag.SOFTMG}, "account");
+        super(new APITag[] {APITag.MGM}, "account");
     }
 
     @Override

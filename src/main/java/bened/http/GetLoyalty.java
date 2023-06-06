@@ -31,7 +31,7 @@ public class GetLoyalty extends BenedTree.APIHierarchyRequestHandler {
 
         int lastTransactionTimestamp = -1;
 
-        try (DbIterator<? extends Transaction> iterator = Bened.getBlockchain().getTransactions(child, (byte) -1, (byte) -1, 0, false)) {
+        DbIterator<? extends Transaction> iterator = Bened.getBlockchain().getTransactions(child, (byte) -1, (byte) -1, 0, false);
             while (iterator.hasNext()) {
                 Transaction transaction = iterator.next();
                 long amount = transaction.getAmountNQT();
@@ -47,8 +47,7 @@ public class GetLoyalty extends BenedTree.APIHierarchyRequestHandler {
                     }
                 }
             }
-        }
-
+        
         JSONObject response = new JSONObject();
         response.put("total", totalRecieved);
         response.put("fromParent", recievedFromParent);

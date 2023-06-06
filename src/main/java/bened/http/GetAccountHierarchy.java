@@ -1,23 +1,23 @@
 package bened.http;
 
-
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+import org.json.simple.JSONStreamAware;
 import bened.Account;
+import bened.Db;
 import bened.Bened;
 import bened.BNDException;
 import bened.Constants;
+import bened.util.Convert;
 import bened.util.Logger;
 import bened.util.BenedTree;
-
+import javax.servlet.http.HttpServletRequest;
+import java.sql.*;
 import java.util.*;
 import static bened.util.BenedTree.getDirectChildrenOf;
 import static bened.util.BenedTree.getParentOf;
 import static bened.util.BenedTree.getRootAccountMinimal;
 import static bened.util.BenedTree.AccountMinimal;
-import java.sql.SQLException;
-import javax.servlet.http.HttpServletRequest;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
-import org.json.simple.JSONStreamAware;
 
 public class GetAccountHierarchy extends BenedTree.APIHierarchyRequestHandler {
 
@@ -90,7 +90,8 @@ public class GetAccountHierarchy extends BenedTree.APIHierarchyRequestHandler {
         }
 
 
-         for (AccountMinimal a : layerAll) {
+        // Minimalistic output
+        for (AccountMinimal a : layerAll) {
 
             if(a.parentInternalID<1)continue;
             array.add(a.toString());

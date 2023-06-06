@@ -201,7 +201,6 @@ public class DesktopSystemTray {
             addDataRow(statusPanel, "Timestamp", String.valueOf(lastBlock.getTimestamp()));
             addDataRow(statusPanel, "Time", String.valueOf(new Date(Convert.fromEpochTime(lastBlock.getTimestamp()))));
             addDataRow(statusPanel, "Seconds passed", String.valueOf(Bened.getEpochTime() - lastBlock.getTimestamp()));
-
         }
 
         addEmptyRow(statusPanel);

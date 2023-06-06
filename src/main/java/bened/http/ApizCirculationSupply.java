@@ -61,8 +61,14 @@ public final class ApizCirculationSupply extends HttpServlet {
     }
     
     
-    
+   private static int _height = -1; 
+   private static String _znachenie = "no result";
    private void process(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+       int _bhg =Bened.getBlockchain().getHeight();
+    if(_height!=_bhg){
+        _height=_bhg;
+        _znachenie = ""+ new DecimalFormat("#0.000000").format((((Bened.softMG()._getGenesEm()*(-1D)))/1000000));       
+    }
        
        if(req.getRequestURI().contains("json")){
         resp.setHeader("Cache-Control", "no-cache, no-store, must-revalidate, private");
@@ -70,11 +76,13 @@ public final class ApizCirculationSupply extends HttpServlet {
         resp.setDateHeader("Expires", 0);
         resp.setContentType("text/plain; charset=UTF-8");
         JSONStreamAware response = JSON.emptyJSON;
+        
         long startTime = System.currentTimeMillis();
         JSONObject json = new JSONObject();
         try{
-            json.put("CirculationSupply", ""+ new DecimalFormat("#0.000000").format((((Bened.softMG()._getGenesEm()*(-1D)))/1000000)));
-            response = JSON.prepare(json);
+            
+            json.put("CirculationSupply", _znachenie);
+                response = JSON.prepare(json); 
             } finally {
             if (response != null) {
                 if (response instanceof JSONObject) {
@@ -90,10 +98,9 @@ public final class ApizCirculationSupply extends HttpServlet {
         resp.setHeader("Cache-Control", "no-cache, no-store, must-revalidate, private");
         resp.setHeader("Pragma", "no-cache");
         resp.setDateHeader("Expires", 0);
-        String body = ""+ new DecimalFormat("#0.000000").format((((Bened.softMG()._getGenesEm()*(-1D)))/1000000));
         try (PrintStream out = new PrintStream(resp.getOutputStream())) {
             out.print(header);
-            out.print(body);
+            out.print(_znachenie);
             out.print(footer);
             }
         }

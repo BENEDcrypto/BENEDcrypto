@@ -220,7 +220,8 @@ public final class API {
                 if (!ciphers.isEmpty()) {
                     sslContextFactory.setIncludeCipherSuites(ciphers.toArray(new String[ciphers.size()]));
                 }
-                connector = new ServerConnector(apiServer, new SslConnectionFactory(sslContextFactory, "http/1.1"), new HttpConnectionFactory(https_config));
+                connector = new ServerConnector(apiServer, new SslConnectionFactory( sslContextFactory, "http/1.1"), new HttpConnectionFactory(https_config));
+
                 connector.setPort(sslPort);
                 connector.setHost(host);
                 connector.setIdleTimeout(apiServerIdleTimeout);
@@ -333,8 +334,8 @@ public final class API {
                         if (enableAPIUPnP) {
                             Connector[] apiConnectors = apiServer.getConnectors();
                             for (Connector apiConnector : apiConnectors) {
-                                if (apiConnector instanceof ServerConnector)
-                                UPnP.addPort(((ServerConnector)apiConnector).getPort());
+                                if (apiConnector instanceof ServerConnector serverConnector)
+                                UPnP.addPort(serverConnector.getPort());
                         }
                         }
                         APIServlet.initClass();

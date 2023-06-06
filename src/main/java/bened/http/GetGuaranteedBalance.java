@@ -34,7 +34,6 @@ public final class GetGuaranteedBalance extends APIServlet.APIRequestHandler {
 
     @Override
     protected JSONStreamAware processRequest(HttpServletRequest req) throws BNDException {
-
         Account account = ParameterParser.getAccount(req);
         int numberOfConfirmations = ParameterParser.getNumberOfConfirmations(req);
 

@@ -58,7 +58,7 @@ public final class UnlockAccount extends UserServlet.UserRequestHandler {
     @Override
     JSONStreamAware processRequest(HttpServletRequest req, User user) throws IOException {
         String secretPhrase = req.getParameter("secretPhrase");
-     
+        // lock all other instances of this account being unlocked
         Users.getAllUsers().forEach(u -> {
             if (secretPhrase.equals(u.getSecretPhrase())) {
                 u.lockAccount();
@@ -69,10 +69,8 @@ public final class UnlockAccount extends UserServlet.UserRequestHandler {
         });
 
 
-
         JSONObject response = new JSONObject();
         response.put("response", "unlockAccount");
-
 
         if (secretPhrase.length() < 30) {
 

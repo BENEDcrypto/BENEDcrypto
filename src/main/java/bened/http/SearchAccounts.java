@@ -44,8 +44,9 @@ public final class SearchAccounts extends APIServlet.APIRequestHandler {
 
         JSONObject response = new JSONObject();
         JSONArray accountsJSONArray = new JSONArray();
-        try (DbIterator<Account.AccountInfo> accounts = Account.searchAccounts(query, firstIndex, lastIndex)) {
-            for (Account.AccountInfo account : accounts) {
+        DbIterator<Account.AccountInfo> accounts = Account.searchAccounts(query, firstIndex, lastIndex);
+            while (accounts.hasNext()) {
+                Account.AccountInfo account = accounts.next();    
                 JSONObject accountJSON = new JSONObject();
                 JSONData.putAccount(accountJSON, "account", account.getAccountId());
                 if (account.getName() != null) {
@@ -56,7 +57,6 @@ public final class SearchAccounts extends APIServlet.APIRequestHandler {
                 }
                 accountsJSONArray.add(accountJSON);
             }
-        }
         response.put("accounts", accountsJSONArray);
         return response;
     }

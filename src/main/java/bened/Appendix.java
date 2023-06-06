@@ -23,8 +23,6 @@ import org.json.simple.JSONObject;
 import java.nio.ByteBuffer;
 import java.security.MessageDigest;
 import java.util.Arrays;
-import java.util.Base64;
-import org.json.simple.parser.JSONParser;
 
 public interface Appendix {
 
@@ -198,7 +196,7 @@ public interface Appendix {
         Message(ByteBuffer buffer, byte transactionVersion) throws BNDException.NotValidException {
             super(buffer, transactionVersion);
             int messageLength = buffer.getInt();
-            this.isText = messageLength < 0; 
+            this.isText = messageLength < 0; // ugly hack
             if (messageLength < 0) {
                 messageLength &= Integer.MAX_VALUE;
             }
@@ -872,196 +870,6 @@ public interface Appendix {
         public EncryptedMessage(EncryptedData encryptedData, boolean isText, boolean isCompressed) {
             super(encryptedData, isText, isCompressed);
         }
-
-        @Override
-        final String getAppendixName() {
-            return appendixName;
-        }
-
-        @Override
-        void putMyJSON(JSONObject json) {
-            JSONObject encryptedMessageJSON = new JSONObject();
-            super.putMyJSON(encryptedMessageJSON);
-            json.put("encryptedMessage", encryptedMessageJSON);
-        }
-
-        @Override
-        void validate(Transaction transaction) throws BNDException.ValidationException {
-            super.validate(transaction);
-            if (transaction.getRecipientId() == 0) {
-                throw new BNDException.NotValidException("Encrypted messages cannot be attached to transactions with no recipient");
-            }
-        }
-
-    }
-
-    abstract class AbstractHashMessage extends AbstractAppendix {
-
-        private static final Fee ENCRYPTED_MESSAGE_FEE = new Fee.SizeBasedFee(Constants.ONE_BND, Constants.ONE_BND, 32) {
-            @Override
-            public int getSize(TransactionImpl transaction, Appendix appendage) {
-                return ((AbstractEncryptedMessage) appendage).getEncryptedDataLength() - 16;
-            }
-        };
-
-        private EncryptedData encryptedData;
-        private final boolean isText;
-        private final boolean isCompressed;
-
-        private AbstractHashMessage(ByteBuffer buffer, byte transactionVersion) throws BNDException.NotValidException {
-            super(buffer, transactionVersion);
-            int length = buffer.getInt();
-            this.isText = length < 0;
-            if (length < 0) {
-                length &= Integer.MAX_VALUE;
-            }
-            this.encryptedData = EncryptedData.readEncryptedData(buffer, length, 1000);
-            this.isCompressed = getVersion() != 2;
-        }
-
-        private AbstractHashMessage(JSONObject attachmentJSON, JSONObject encryptedMessageJSON) {
-            super(attachmentJSON);
-            byte[] data = Convert.parseHexString((String) encryptedMessageJSON.get("data"));
-            byte[] nonce = Convert.parseHexString((String) encryptedMessageJSON.get("nonce"));
-            this.encryptedData = new EncryptedData(data, nonce);
-            this.isText = Boolean.TRUE.equals(encryptedMessageJSON.get("isText"));
-            Object isCompressed = encryptedMessageJSON.get("isCompressed");
-            this.isCompressed = isCompressed == null || Boolean.TRUE.equals(isCompressed);
-        }
-
-        
-
-        @Override
-        int getMySize() {
-            return 4 + encryptedData.getSize();
-        }
-
-        @Override
-        void putMyBytes(ByteBuffer buffer) {
-            buffer.putInt(isText ? (encryptedData.getData().length | Integer.MIN_VALUE) : encryptedData.getData().length);
-            buffer.put(encryptedData.getData());
-            buffer.put(encryptedData.getNonce());
-        }
-
-        @Override
-        void putMyJSON(JSONObject json) {
-            json.put("data", Convert.toHexString(encryptedData.getData()));
-            json.put("nonce", Convert.toHexString(encryptedData.getNonce()));
-            json.put("isText", isText);
-            json.put("isCompressed", isCompressed);
-        }
-
-        @Override
-        public Fee getBaselineFee(Transaction transaction) {
-            return ENCRYPTED_MESSAGE_FEE;
-        }
-
-        @Override
-        void validate(Transaction transaction) throws BNDException.ValidationException {
-//ss            if (Bened.getBlockchain().getHeight() > Constants.SHUFFLING_BLOCK && getEncryptedDataLength() > Constants.MAX_ENCRYPTED_MESSAGE_LENGTH) {
-            if (Bened.getBlockchain().getHeight() > Constants.ADVANCED_MESSAGING_VALIDATION && getEncryptedDataLength() > Constants.MAX_ENCRYPTED_MESSAGE_LENGTH) {
-                throw new BNDException.NotValidException("Max encrypted message length exceeded");
-            }
-            if (encryptedData != null) {
-                if ((encryptedData.getNonce().length != 32 && encryptedData.getData().length > 0)
-                        || (encryptedData.getNonce().length != 0 && encryptedData.getData().length == 0)) {
-                    throw new BNDException.NotValidException("Invalid nonce length " + encryptedData.getNonce().length);
-                }
-            }
-            if ((getVersion() != 2 && !isCompressed) || (getVersion() == 2 && isCompressed)) {
-                throw new BNDException.NotValidException("Version mismatch - version " + getVersion() + ", isCompressed " + isCompressed);
-            }
-        }
-
-        @Override
-        final boolean verifyVersion(byte transactionVersion) {
-            return transactionVersion == 0 ? getVersion() == 0 : (getVersion() == 1 || getVersion() == 2);
-        }
-
-        @Override
-        void apply(Transaction transaction, Account senderAccount, Account recipientAccount) {}
-
-        public final EncryptedData getEncryptedData() {
-            return encryptedData;
-        }
-
-        final void setEncryptedData(EncryptedData encryptedData) {
-            this.encryptedData = encryptedData;
-        }
-
-        int getEncryptedDataLength() {
-            return encryptedData.getData().length;
-        }
-
-        public final boolean isText() {
-            return isText;
-        }
-
-        public final boolean isCompressed() {
-            return isCompressed;
-        }
-    }
-
-    class MessageHash extends AbstractHashMessage {
-
-        private static final String appendixName = "MessageHash";
-        
-        private static int version_MessageHash;
-        private static int version_PublicKeyAnnouncement;
-        private static byte[] recipientPublicKey ;
-        private static int  version_Hash ;
-//        private static int  version_OrdinaryPayment;
-        private static JSONObject  openHashMesage;
-        private static JSONObject mutableHashMesage;
-        private static byte[] HashMesageData;
-                                                
-
-        static MessageHash parse(JSONObject attachmentData) throws BNDException.NotValidException {
-            if (!hasAppendix(appendixName, attachmentData)) {
-                //throw new BNDException.NotValidException("No valid version mesage_hash a22");
-                // System.out.println("NEW HASH MESAGE A@21");
-                return null;
-            }  
-            version_MessageHash = ((Long)attachmentData.get("version.MessageHash")).intValue();
-            version_PublicKeyAnnouncement = ((Long)attachmentData.get("version.MessageHash")).intValue();
-            recipientPublicKey = Convert.parseHexString((String)attachmentData.get("recipientPublicKey"));
-            version_Hash = ((Long)attachmentData.get("version.Hash")).intValue();
-            
-            JSONObject mesageHash = (JSONObject) attachmentData.get("MessageHash")  ;
-            String data = (String) mesageHash.get("data")  ;
-            boolean MessageHash_isCompressed = (boolean) mesageHash.get("isCompressed")  ;
-            if (mesageHash == null || data==null) {
-                //throw new BNDException.NotValidException("No mesage_hash data a22");
-                //System.out.println("NEW HASH MESAGE A@22");
-                return null;
-            }
-
-            try {
-                HashMesageData = Base64.getDecoder().decode(data);
-                openHashMesage = (JSONObject) new JSONParser().parse(new String(Convert.uncompress(HashMesageData)));
-                mutableHashMesage =(JSONObject) openHashMesage.get("event");
-                if(!(boolean)openHashMesage.get("_event_allsee")){
-                    String _data = (String) mutableHashMesage.get("_data");
-                    String _nonce = (String) mutableHashMesage.get("_nonce");
-                }
-            } catch (Exception ex) {
-//            Logger.getLogger(BroadcastTransaction.class.getName()).log(Level.SEVERE, null, ex);
-            }
-
-            return new MessageHash(attachmentData);
-        }
-
-        MessageHash(ByteBuffer buffer, byte transactionVersion) throws BNDException.NotValidException {
-            super(buffer, transactionVersion);
-        }
-
-        MessageHash(JSONObject attachmentData) {
-            super(attachmentData, (JSONObject) attachmentData.get("MessageHash"));
-        }
-
-//        public MessageHash(EncryptedData encryptedData, boolean isText, boolean isCompressed) {
-//            super(encryptedData, isText, isCompressed);
-//        }
 
         @Override
         final String getAppendixName() {

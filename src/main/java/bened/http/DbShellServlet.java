@@ -30,6 +30,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.net.URLEncoder;
+import java.sql.Connection;
 import java.sql.SQLException;
 
 public final class DbShellServlet extends HttpServlet {
@@ -177,7 +178,9 @@ public final class DbShellServlet extends HttpServlet {
                 Shell shell = new Shell();
                 shell.setErr(out);
                 shell.setOut(out);
-                shell.runTool(Db.db.getConnection(), "-sql", line);
+                try(Connection conn = Db.db.getConnection()){
+                    shell.runTool(conn, "-sql", line);
+                }
             } catch (SQLException e) {
                 out.println(e.toString());
             }

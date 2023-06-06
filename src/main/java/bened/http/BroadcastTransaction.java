@@ -20,6 +20,7 @@ import bened.Bened;
 import bened.BNDException;
 import bened.Transaction;
 import bened.util.Convert;
+import bened.util.Logger;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONStreamAware;
 
@@ -64,10 +65,19 @@ public final class BroadcastTransaction extends APIServlet.APIRequestHandler {
         try {
             Transaction.Builder builder = ParameterParser.parseTransaction(transactionJSON, transactionBytes, prunableAttachmentJSON);
             Transaction transaction = builder.build();
+            if (transaction.getFeeNQT() != Bened.softMG().getFixedFee(transaction)) {
+                String _err = "Incorrect transaction fee curent: "+transaction.getFeeNQT()+" need:"+Bened.softMG().getFixedFee(transaction);
+                JSONObject j_err = new JSONObject();
+                j_err.put("_error", _err);
+                Logger.logWarningMessage(_err);
+                JSONData.putException(response, new ParameterException(j_err), "Incorrect transaction fee");
+                return response;
+            }
             Bened.getTransactionProcessor().broadcast(transaction);
             response.put("transaction", transaction.getStringId());
             response.put("fullHash", transaction.getFullHash());
         } catch (BNDException.ValidationException|RuntimeException e) {
+            Logger.logErrorMessage("Failed to broadcast transaction(st#001)", e);
             JSONData.putException(response, e, "Failed to broadcast transaction");
         }
         return response;

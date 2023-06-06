@@ -29,60 +29,43 @@ public abstract class DbVersion {
 
     void init(BasicDb db) {
         this.db = db;
-        Connection con = null;
-        Statement stmt = null;
-        try {
-            con = db.getConnection();
-            stmt = con.createStatement();
-            int nextUpdate = 1;
-            try {
-                ResultSet rs = stmt.executeQuery("SELECT next_update FROM version");
-                if (! rs.next()) {
-                    throw new RuntimeException("Invalid version table");
-                }
-                nextUpdate = rs.getInt("next_update");
-                if (! rs.isLast()) {
-                    throw new RuntimeException("Invalid version table");
-                }
-                rs.close();
-                Logger.logMessage("Database update may take a while if needed, current db version " + (nextUpdate - 1) + "...");
-            } catch (SQLException e) {
-                Logger.logMessage("Initializing an empty database");
+        int nextUpdate = 1;
+        try(Connection con = db.getConnection();
+            Statement  stmt = con.createStatement(); 
+            ResultSet rs = stmt.executeQuery("SELECT next_update FROM version");) {
+            if (! rs.next()) {
+                throw new RuntimeException("Invalid version table");
+            }
+            nextUpdate = rs.getInt("next_update");
+            if (! rs.isLast()) {
+                throw new RuntimeException("Invalid version table");
+            }
+            Logger.logMessage("Database update may take a while if needed, current db version " + (nextUpdate - 1) + "...");
+        } catch (SQLException e) {
+             Logger.logMessage("Initializing an empty database");
+             try(Connection con = db.getConnection();
+                Statement  stmt = con.createStatement(); ){
                 stmt.executeUpdate("CREATE TABLE version (next_update INT NOT NULL)");
                 stmt.executeUpdate("INSERT INTO version VALUES (1)");
                 con.commit();
-            }
-            update(nextUpdate);
-        } catch (SQLException e) {
-            DbUtils.rollback(con);
-            throw new RuntimeException(e.toString(), e);
-        } finally {
-            DbUtils.close(stmt, con);
+                update(nextUpdate);
+             }catch(Exception en){
+               throw new RuntimeException(e.toString()+":"+en.toString(), e);  
+             }
         }
-
     }
 
     protected void apply(String sql) {
-        Connection con = null;
-        Statement stmt = null;
-        try {
-            con = db.getConnection();
-            stmt = con.createStatement();
-            try {
-                if (sql != null) {
-                    Logger.logDebugMessage("Will apply sql:\n" + sql);
-                    stmt.executeUpdate(sql);
-                }
-                stmt.executeUpdate("UPDATE version SET next_update = next_update + 1");
-                con.commit();
-            } catch (Exception e) {
-                DbUtils.rollback(con);
-                throw e;
+        try(Connection con = db.getConnection();
+            Statement stmt = con.createStatement();) {
+            if (sql != null) {
+                Logger.logDebugMessage("Will apply sql:\n" + sql);
+                stmt.executeUpdate(sql);
             }
+            stmt.executeUpdate("UPDATE version SET next_update = next_update + 1");
+            con.commit();
         } catch (SQLException e) {
             throw new RuntimeException("Database error executing " + sql, e);
-        } finally {
-            DbUtils.close(stmt, con);
         }
     }
 

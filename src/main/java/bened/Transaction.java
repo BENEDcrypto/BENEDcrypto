@@ -32,9 +32,7 @@ public interface Transaction {
         Builder appendix(Appendix.Message message);
 
         Builder appendix(Appendix.EncryptedMessage encryptedMessage);
-
-        Builder appendix(Appendix.MessageHash MessageHash);        
-                
+        
         Builder appendix(Appendix.EncryptToSelfMessage encryptToSelfMessage);
 
         Builder appendix(Appendix.PublicKeyAnnouncement publicKeyAnnouncement);

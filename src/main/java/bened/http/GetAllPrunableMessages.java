@@ -43,15 +43,15 @@ public final class GetAllPrunableMessages extends APIServlet.APIRequestHandler {
         JSONArray jsonArray = new JSONArray();
         response.put("prunableMessages", jsonArray);
 
-        try (DbIterator<PrunableMessage> messages = PrunableMessage.getAll(firstIndex, lastIndex)) {
+        DbIterator<PrunableMessage> messages = PrunableMessage.getAll(firstIndex, lastIndex);
             while (messages.hasNext()) {
                 PrunableMessage prunableMessage = messages.next();
                 if (prunableMessage.getBlockTimestamp() < timestamp) {
+		    messages.close();
                     break;
                 }
                 jsonArray.add(JSONData.prunableMessage(prunableMessage, null, null));
             }
-        }
         return response;
     }
 

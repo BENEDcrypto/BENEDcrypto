@@ -26,6 +26,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -33,9 +34,10 @@ import java.util.Map;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import java.util.logging.Level;
 import org.json.simple.JSONObject;
 
-final class BlockDb {
+public final class BlockDb {
 
     /** Block cache */
     static final int BLOCK_CACHE_SIZE = 10;
@@ -73,6 +75,7 @@ final class BlockDb {
     }
 
     static BlockImpl findBlock(long blockId) {
+        // Check the block cache
         synchronized (blockCache) {
             BlockImpl block = blockCache.get(blockId);
             if (block != null) {
@@ -81,7 +84,7 @@ final class BlockDb {
         }
         // Search the database
         try (Connection con = Db.db.getConnection();
-             PreparedStatement pstmt = con.prepareStatement("SELECT * FROM block WHERE id = ?")) {
+             PreparedStatement pstmt = con.prepareStatement("SELECT * FROM block WHERE id = ? limit 1")) {
             pstmt.setLong(1, blockId);
             try (ResultSet rs = pstmt.executeQuery()) {
                 BlockImpl block = null;
@@ -109,7 +112,7 @@ final class BlockDb {
         }
         // Search the database
         try (Connection con = Db.db.getConnection();
-             PreparedStatement pstmt = con.prepareStatement("SELECT height FROM block WHERE id = ?")) {
+             PreparedStatement pstmt = con.prepareStatement("SELECT height FROM block WHERE id = ? limit 1")) {
             pstmt.setLong(1, blockId);
             try (ResultSet rs = pstmt.executeQuery()) {
                 return rs.next() && rs.getInt("height") <= height;
@@ -199,23 +202,117 @@ final class BlockDb {
         }
     }
 
-    static Set<Long> getBlockGenerators(int startHeight) {
+    static JSONObject getBlockGenerators(int startHeight, JSONObject _jsonlist, int key) {
         Set<Long> generators = new HashSet<>();
+        JSONObject json_end = new JSONObject();
+        
         try (Connection con = Db.db.getConnection();
                 PreparedStatement pstmt = con.prepareStatement(
-                        "SELECT generator_id, COUNT(generator_id) AS count FROM block WHERE height >= ? GROUP BY generator_id")) {
+                        "SELECT DISTINCT generator_id FROM block WHERE height >= ?")) {
             pstmt.setInt(1, startHeight);
             try (ResultSet rs = pstmt.executeQuery()) {
                 while (rs.next()) {
-                    if (rs.getInt("count") > 1) {
-                        generators.add(rs.getLong("generator_id"));
-                    }
+                    generators.add(rs.getLong("generator_id"));
                 }
             }
         } catch (SQLException e) {
-            throw new RuntimeException(e.toString(), e);
+            json_end = new JSONObject();
+            json_end.put("rs", "CRASH get gen act:"+e ); 
+            json_end.put("id", "--");
+            json_end.put("effectBalans", "--");
+            json_end.put("dedline", "--");
+            _jsonlist.put(++key,json_end ); 
+            return _jsonlist;
         }
-        return generators;
+        if( generators.size()<1){
+            json_end = new JSONObject();
+            json_end.put("rs", "blockchain empty" ); 
+            json_end.put("id", "--");
+            json_end.put("effectBalans", "--");
+            json_end.put("dedline", "--");
+            _jsonlist.put(++key,json_end ); 
+            return _jsonlist;
+        }
+        //
+        json_end = new JSONObject();
+            json_end.put("rs", "found generators:"+generators.size() ); 
+            json_end.put("id", "--");
+            json_end.put("effectBalans", "--");
+            json_end.put("dedline", "--");
+            _jsonlist.put(++key,json_end ); 
+        ///////////////
+        Map<Long, Long> tMapIbal = new TreeMap<>(Collections.reverseOrder());
+        
+        getBlncIIdfromAcSoft(generators, tMapIbal);
+        //
+        json_end = new JSONObject();
+            json_end.put("rs", "found balances:"+tMapIbal.size() ); 
+            json_end.put("id", "--");
+            json_end.put("effectBalans", "--");
+            json_end.put("dedline", "--");
+            _jsonlist.put(++key,json_end ); 
+        ///////////////
+
+        JSONObject json_ = new JSONObject();
+        //k-bl, v id
+        
+//        Map<Long, JSONObject> lMapIbal = new TreeMap<>(); //Collections.reverseOrder()
+        for (Map.Entry<Long, Long> entry : tMapIbal.entrySet()) {
+            long _effectBL = entry.getKey()/1000000;
+            if(_effectBL<1)continue;
+            json_ = new JSONObject();
+            json_.put("effectBalans", _effectBL);
+            Long ac_ID = entry.getValue();
+            String rs = Convert.rsAccount(ac_ID);
+            json_.put("rs", rs); 
+//            byte[] _pk = pkid.get(ac_ID);
+            json_.put("id", ac_ID);
+//            if(_pk!=null){
+//                long _deadline = Math.max(( getHitTime(BigInteger.valueOf(Math.max(_effectBL, 0)), getHit(_pk, lastBlock), lastBlock)) - lastBlock.getTimestamp(), 0);
+//                json_.put("dedline", _deadline);
+//                lMapIbal.put(_deadline, json_);
+//            }else{
+                json_.put("dedline", "-look in your ems box-");
+//            }
+            _jsonlist.put(++key, json_ );
+             if(key>50)break;
+        }   
+//        for (Map.Entry<Long, JSONObject> entry : lMapIbal.entrySet()) { 
+//            _jsonlist.put(++a, entry.getValue() );
+//        }       
+            json_end = new JSONObject();
+            json_end.put("rs", tMapIbal.size()>50?"and "+(tMapIbal.size()-50)+" more generators...":"all local generators "+tMapIbal.size() ); 
+            json_end.put("id", "");
+            json_end.put("effectBalans", "");
+            json_end.put("dedline", "");
+            _jsonlist.put(++key,json_end );
+        return _jsonlist;
+    }
+    
+    public static void getBlncIIdfromAcSoft(Set<Long> generators, Map<Long, Long> tMapIbal ){
+        try (Connection con = Db.db.getConnection();
+             PreparedStatement pstmt = con.prepareStatement("SELECT balance,id FROM account WHERE id IN ("+ getLineOfQs(generators.size())+") And latest IS TRUE");) {
+            int ind=0;
+            for (Iterator<Long> iterator = generators.iterator(); iterator.hasNext();) {
+                pstmt.setLong(++ind, iterator.next() );
+            }
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    tMapIbal.put(rs.getLong("balance"), rs.getLong("id")) ;
+                }
+            }
+        } catch (SQLException ex) {
+            java.util.logging.Logger.getLogger(BlockDb.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+    
+    static String getLineOfQs(int num) {
+    // Joiner and Iterables from the Guava library
+    String n = "?";
+        for (int i = 0; i < num-1; i++) {
+            n=n+",?";
+        }
+    return n;
     }
 
     static BlockImpl loadBlock(Connection con, ResultSet rs) {

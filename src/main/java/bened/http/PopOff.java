@@ -24,7 +24,6 @@ import org.json.simple.JSONStreamAware;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.List;
-import bened.Constants;
 
 public final class PopOff extends APIServlet.APIRequestHandler {
 

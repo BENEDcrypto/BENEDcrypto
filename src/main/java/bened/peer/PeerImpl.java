@@ -21,6 +21,7 @@ import bened.BlockchainProcessor;
 import bened.Constants;
 import bened.Bened;
 import bened.BNDException;
+import static bened.Constants.sleemlog;
 import bened.http.API;
 import bened.http.APIEnum;
 import bened.util.Convert;
@@ -459,8 +460,11 @@ final class PeerImpl implements Peer {
 
     @Override
     public JSONObject send(final JSONStreamAware request, int maxResponseSize) {
+        if(Peers.connectTimeout>10000 || Peers.webSocketIdleTimeout>10000 ){
+            Logger.logDebugMessage("-!-\n WARNING timeouts to long so match ! slowest nodes ma it weri slowest");
+        }
         JSONObject response = null;
-        String log = null;
+        String log = "--";
         boolean showLog = false;
         HttpURLConnection connection = null;
         int communicationLoggingMask = Peers.communicationLoggingMask;
@@ -469,10 +473,9 @@ final class PeerImpl implements Peer {
             // Create a new WebSocket session if we don't have one
             //
             if (useWebSocket && !webSocket.isOpen()){
-                log="create ws:"+ host + ":" + getPort() + "/xsrv";
                 useWebSocket = webSocket.startClient(URI.create("ws://" + host + ":" + getPort() + "/xsrv"));
             }
-            if(log!=null&& !log.isBlank())Logger.logMessage(log + "\n");
+            
             //
             // Send the request and process the response
             //
@@ -483,7 +486,9 @@ final class PeerImpl implements Peer {
                 StringWriter wsWriter = new StringWriter(1000);
                 request.writeJSONString(wsWriter);
                 String wsRequest = wsWriter.toString();
-                if (communicationLoggingMask != 0)       log = "WebSocket " + host + ": " + wsRequest;
+                int wsrlen= wsRequest.length();
+                if (communicationLoggingMask != 0)       log = "WebSocket " + host + ": "+"reqlenght:"+wsrlen+" " 
+                        + (sleemlog&&wsrlen>250?wsRequest.substring(0,100)+"..."+wsRequest.substring(wsrlen-100,wsrlen) :wsRequest);
                 String wsResponse = webSocket.doPost(wsRequest);
                updateUploadedVolume(wsRequest.length());
                 if (maxResponseSize > 0) {
@@ -491,8 +496,10 @@ final class PeerImpl implements Peer {
                         log += " useSocket >>> " + wsResponse;
                         showLog = true;
                     }
-                    if (wsResponse.length() > maxResponseSize)
-                        throw new BNDException.BenedIOException("Maximum size exceeded: " + wsResponse.length());
+                    if (wsResponse.length() > maxResponseSize){
+                        System.out.println("---max size:"+wsResponse.substring(0, 255)+".....\npi Maximum size exceeded: "+maxResponseSize+" resived:" + wsResponse.length());
+                        throw new BNDException.BenedIOException("pi Maximum size exceeded: "+maxResponseSize+" resived:" + wsResponse.length());
+                    }
                     response = (JSONObject)JSONValue.parseWithException(wsResponse);
                     updateDownloadedVolume(wsResponse.length());
                 }
@@ -500,9 +507,11 @@ final class PeerImpl implements Peer {
                 //
                 // Send the request using HTTP
                 //
-                log="create http://"+ host + ":" + getPort() + "/xsrv";
                 URL url = new URL("http://" + host + ":" + getPort() + "/xsrv");
-                if (communicationLoggingMask != 0) log = "HttpConnect\"" + url.toString() + "\": " + JSON.toString(request);
+                String restr =JSON.toString(request);
+                int restrilen = restr.length();
+                if (communicationLoggingMask != 0) log = "HttpConnect\"" + url.toString() + "\": "+"reqlenght:"+restrilen
+                        + (sleemlog&&restrilen>250?restr.substring(0,100)+"..."+restr.substring(restrilen-100,restrilen) :restr);
                 connection = (HttpURLConnection) url.openConnection();
                 connection.setRequestMethod("POST");
                 connection.setDoOutput(true);
@@ -581,13 +590,14 @@ final class PeerImpl implements Peer {
                 connection.disconnect();
             }
         } catch (RuntimeException|ParseException|IOException e) {
+            
             if (!(e instanceof UnknownHostException || e instanceof SocketTimeoutException ||
                                         e instanceof SocketException || Errors.END_OF_FILE.equals(e.getMessage()))) {
                 Logger.logDebugMessage(String.format("Error sending request to peer %s: %s",
                                        host, e.getMessage()!=null ? e.getMessage() : e.toString()));
             }
             if ((communicationLoggingMask & Peers.LOGGING_MASK_EXCEPTIONS) != 0) {
-                log += " catch >>> " + e.toString();
+                log += "#send0 catch >>> " + e.toString();
                 showLog = true;
             }
             deactivate();

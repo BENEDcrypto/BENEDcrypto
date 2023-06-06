@@ -29,7 +29,7 @@ class HttpClientFactory {
                 "SSL_DHE_RSA_EXPORT_WITH_DES40_CBC_SHA", "SSL_DHE_DSS_EXPORT_WITH_DES40_CBC_SHA");
         sslContextFactory.addExcludeProtocols("SSLv3");
         sslContextFactory.setTrustAll(true);
-        HttpClient httpClient = new HttpClient((HttpClientTransport) sslContextFactory);
+        HttpClient httpClient = new HttpClient( (HttpClientTransport) sslContextFactory);
         httpClient.setAddressResolutionTimeout(300 * 1000); // On my Windows workstation, first time, DNS resolution can take a while
         return httpClient;
     }

@@ -108,6 +108,6 @@ public class CountingInputReader extends FilterReader {
     private void incCount(long c) throws BenedIOException {
         count += c;
         if (count > limit)
-            throw new BenedIOException("Maximum size exceeded: " + count);
+            throw new BenedIOException("cr Maximum size exceeded: " + count+" limit="+limit);
     }
 }

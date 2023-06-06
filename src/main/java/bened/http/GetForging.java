@@ -34,8 +34,6 @@ public final class GetForging extends APIServlet.APIRequestHandler {
     protected JSONStreamAware processRequest(HttpServletRequest req) throws ParameterException {
 
          throw new RuntimeException("this is a light version of the program, hard mining is not available" );
-        
-
     }
 
     @Override

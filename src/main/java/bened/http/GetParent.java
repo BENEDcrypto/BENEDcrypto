@@ -7,6 +7,7 @@ import bened.Bened;
 import bened.BNDException;
 import bened.util.Convert;
 import bened.util.BenedTree;
+import bened.util.Logger;
 
 import javax.servlet.http.HttpServletRequest;
 import java.sql.PreparedStatement;
@@ -18,8 +19,7 @@ public class GetParent extends BenedTree.APIHierarchyRequestHandler {
     static final GetParent instance = new GetParent();
     private GetParent () {
        
-        super (new APITag[] {APITag.ACCOUNTS}, "account");
-        
+        super (new APITag[] {APITag.ACCOUNTS}, "account");      
     }
     @Override
     protected JSONStreamAware processHierarchyRequest(HttpServletRequest request) throws BNDException {
@@ -30,13 +30,10 @@ public class GetParent extends BenedTree.APIHierarchyRequestHandler {
             return BenedTree.createErrorResponse("Invalid \"account\"!", 9999);
 
         JSONObject response = new JSONObject();
-      
-        PreparedStatement statement;
-        ResultSet rs;
-        try {
-            statement = Bened.softMG().getConnection().prepareStatement("select parent_id from soft where id=?");
+        
+        try(PreparedStatement statement = Bened.softMG().getConnection().prepareStatement("select parent_id from soft where id=?");){
             statement.setLong(1, account);
-            rs = statement.executeQuery();
+            try(ResultSet rs = statement.executeQuery();){
             long solvedParent = 0l;
             while (rs.next()) {
                 solvedParent = rs.getLong(1);
@@ -47,12 +44,12 @@ public class GetParent extends BenedTree.APIHierarchyRequestHandler {
             response.put("parentRS", (solvedParent==0?"":rsParent) );
             response.put("parent", (solvedParent==0?"":Convert.parseAccountId(rsParent)) );
             
-            rs.close();
-            statement.close();
+            }//rs.close();
+        } catch (SQLException ex) {
+            Logger.logErrorMessage("err:"+GetParent.class.getName()+":"+ ex);
+        }//statement.close();
             
             return response;
-        } catch (SQLException e) {
-            throw new BNDException.NotValidException (e.getMessage(), e.getCause());
-        }
+        
     }
 }

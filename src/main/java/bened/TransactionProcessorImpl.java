@@ -144,6 +144,7 @@ final class TransactionProcessorImpl implements TransactionProcessor {
             }
             if (size() > maxUnconfirmedTransactions) {
                 UnconfirmedTransaction removed = remove();
+                //Logger.logDebugMessage("Dropped unconfirmed transaction " + removed.getJSONObject().toJSONString());
             }
             return true;
         }
@@ -161,13 +162,12 @@ final class TransactionProcessorImpl implements TransactionProcessor {
                     return;
                 }
                 List<UnconfirmedTransaction> expiredTransactions = new ArrayList<>();
-                try (DbIterator<UnconfirmedTransaction> iterator = unconfirmedTransactionTable.getManyBy(
-                        new DbClause.IntClause("expiration", DbClause.Op.LT, Bened.getEpochTime()), 0, -1, "")) {
-                    while (iterator.hasNext()) {
-                        expiredTransactions.add(iterator.next());
-                    }
+                DbIterator<UnconfirmedTransaction> iterator = unconfirmedTransactionTable.getManyBy(
+                        new DbClause.IntClause("expiration", DbClause.Op.LT, Bened.getEpochTime()), 0, -1, "");
+                while (iterator.hasNext()) {
+                    expiredTransactions.add(iterator.next());
                 }
-                if (expiredTransactions.size() > 0) {
+                if (!expiredTransactions.isEmpty()) {
                     BlockchainImpl.getInstance().writeLock();
                     try {
                         try {
@@ -196,7 +196,6 @@ final class TransactionProcessorImpl implements TransactionProcessor {
             }
         } catch (Throwable t) {
             Logger.logErrorMessage("CRITICAL ERROR. PLEASE REPORT TO THE DEVELOPERS.\n" + t.toString());
-            t.printStackTrace();
             System.exit(1);
         }
 
@@ -235,7 +234,6 @@ final class TransactionProcessorImpl implements TransactionProcessor {
     };
 
     private final Runnable processTransactionsThread = () -> {
-
         try {
             try {
                 if (Bened.getBlockchainProcessor().isDownloading() && ! testUnconfirmedTransactions) {
@@ -262,6 +260,7 @@ final class TransactionProcessorImpl implements TransactionProcessor {
                 try {
                     processPeerTransactions(transactionsData);
                 } catch (BNDException.ValidationException|RuntimeException e) {
+                     Logger.logWarningMessage("processTransactionsThread: "+peer.getHost()+" blacklisted:"+e);
                     peer.blacklist(e);
                 }
             } catch (Exception e) {
@@ -298,12 +297,12 @@ final class TransactionProcessorImpl implements TransactionProcessor {
     private TransactionProcessorImpl() {
         if (!Constants.isLightClient) {
             if (!Constants.isOffline) {
-        ThreadPool.scheduleThread("ProcessTransactions", processTransactionsThread, 5);
+        ThreadPool.scheduleThread("ProcessTransactions", processTransactionsThread, 40); //bilo 10
         ThreadPool.runAfterStart(this::rebroadcastAllUnconfirmedTransactions);
-        ThreadPool.scheduleThread("RebroadcastTransactions", rebroadcastTransactionsThread, 23);
+        ThreadPool.scheduleThread("RebroadcastTransactions", rebroadcastTransactionsThread, 45); // bilo 30
             }
-            ThreadPool.scheduleThread("RemoveUnconfirmedTransactions", removeUnconfirmedTransactionsThread, 20);
-            ThreadPool.scheduleThread("ProcessWaitingTransactions", processWaitingTransactionsThread, 1);
+            ThreadPool.scheduleThread("RemoveUnconfirmedTransactions", removeUnconfirmedTransactionsThread, 40);
+            ThreadPool.scheduleThread("ProcessWaitingTransactions", processWaitingTransactionsThread, 45); //bilo 10
         }
     }
 
@@ -404,14 +403,11 @@ final class TransactionProcessorImpl implements TransactionProcessor {
     @Override
     public void broadcast(Transaction transaction) throws BNDException.ValidationException {
         BlockchainImpl.getInstance().writeLock();
-        int height = BlockchainImpl.getInstance().getHeight();
-
-        if (transaction.getSenderId() == transaction.getRecipientId()) {
-            Logger.logMessage("Transaction " + transaction.getStringId() + " to self: " + transaction.getSenderId());
-            BlockchainImpl.getInstance().writeUnlock();
-            return;
-        }
         try {
+            if (transaction.getSenderId() == transaction.getRecipientId()) {
+                Logger.logMessage("Transaction " + transaction.getStringId() + " to self: " + transaction.getSenderId());
+                return;
+            }
             if (TransactionDb.hasTransaction(transaction.getId())) {
                 Logger.logMessage("Transaction " + transaction.getStringId() + " already in blockchain, will not broadcast again");
                 return;
@@ -436,7 +432,9 @@ final class TransactionProcessorImpl implements TransactionProcessor {
                 processTransaction(unconfirmedTransaction);
                 Logger.logDebugMessage("Accepted new transaction " + transaction.getStringId());
                 List<Transaction> acceptedTransactions = Collections.singletonList(transaction);
-                Peers.sendToSomePeers(acceptedTransactions);
+                if (acceptedTransactions.size() > 0) {
+                    Peers.sendToSomePeers(acceptedTransactions);
+                }
                 transactionListeners.notify(acceptedTransactions, Event.ADDED_UNCONFIRMED_TRANSACTIONS);
                 if (enableTransactionRebroadcasting) {
                     broadcastedTransactions.add((TransactionImpl) transaction);
@@ -460,11 +458,11 @@ final class TransactionProcessorImpl implements TransactionProcessor {
             List<Transaction> removed = new ArrayList<>();
             try {
                 Db.db.beginTransaction();
-                try (DbIterator<UnconfirmedTransaction> unconfirmedTransactions = getAllUnconfirmedTransactions()) {
-                    for (UnconfirmedTransaction unconfirmedTransaction : unconfirmedTransactions) {
-                        unconfirmedTransaction.getTransaction().undoUnconfirmed();
-                        removed.add(unconfirmedTransaction.getTransaction());
-                    }
+                DbIterator<UnconfirmedTransaction> unconfirmedTransactions = getAllUnconfirmedTransactions();
+                while (unconfirmedTransactions.hasNext()) {
+                    UnconfirmedTransaction unconfirmedTransaction = unconfirmedTransactions.next();
+                    unconfirmedTransaction.getTransaction().undoUnconfirmed();
+                    removed.add(unconfirmedTransaction.getTransaction());
                 }
                 unconfirmedTransactionTable.truncate();
                 Db.db.commitTransaction();
@@ -491,13 +489,13 @@ final class TransactionProcessorImpl implements TransactionProcessor {
             List<TransactionImpl> toRemove = new ArrayList<>();
             try {
                 Db.db.beginTransaction();
-                try (DbIterator<UnconfirmedTransaction> unconfirmedTransactions = getAllUnconfirmedTransactions()) {
-                    for (UnconfirmedTransaction unconfirmedTransaction : unconfirmedTransactions) {
+                DbIterator<UnconfirmedTransaction> unconfirmedTransactions = getAllUnconfirmedTransactions();
+                    while (unconfirmedTransactions.hasNext()) {
+                        UnconfirmedTransaction unconfirmedTransaction = unconfirmedTransactions.next();
                         if (unconfirmedTransaction.getSenderId() == unconfirmedTransaction.getRecipientId()) {
                             toRemove.add(unconfirmedTransaction.getTransaction());
                         }
                     }
-                }
                 if (toRemove.size() > 0) {
                     for (TransactionImpl transaction : toRemove) {
                         removeUnconfirmedTransaction(transaction);
@@ -538,15 +536,16 @@ final class TransactionProcessorImpl implements TransactionProcessor {
                 return;
             }
             List<Transaction> removed = new ArrayList<>();
-            try (DbIterator<UnconfirmedTransaction> unconfirmedTransactions = getAllUnconfirmedTransactions()) {
-                for (UnconfirmedTransaction unconfirmedTransaction : unconfirmedTransactions) {
+            DbIterator<UnconfirmedTransaction> unconfirmedTransactions = getAllUnconfirmedTransactions();
+                while (unconfirmedTransactions.hasNext()) {
+                    UnconfirmedTransaction unconfirmedTransaction = unconfirmedTransactions.next();
                     unconfirmedTransaction.getTransaction().undoUnconfirmed();
                     if (removed.size() < maxUnconfirmedTransactions) {
                         removed.add(unconfirmedTransaction.getTransaction());
                     }
                     waitingTransactions.add(unconfirmedTransaction);
                 }
-            }
+            
             unconfirmedTransactionTable.truncate();
             unconfirmedDuplicates.clear();
             transactionCache.clear();
@@ -560,15 +559,16 @@ final class TransactionProcessorImpl implements TransactionProcessor {
     public void rebroadcastAllUnconfirmedTransactions() {
         BlockchainImpl.getInstance().writeLock();
         try {
-            try (DbIterator<UnconfirmedTransaction> oldNonBroadcastedTransactions = getAllUnconfirmedTransactions()) {
-                for (UnconfirmedTransaction unconfirmedTransaction : oldNonBroadcastedTransactions) {
+            DbIterator<UnconfirmedTransaction> oldNonBroadcastedTransactions = getAllUnconfirmedTransactions();
+                while (oldNonBroadcastedTransactions.hasNext()) {
+                    UnconfirmedTransaction unconfirmedTransaction = oldNonBroadcastedTransactions.next();
                     if (unconfirmedTransaction.getTransaction().isUnconfirmedDuplicate(unconfirmedDuplicates)) {
                         Logger.logDebugMessage("Skipping duplicate unconfirmed transaction " + unconfirmedTransaction.getTransaction().getJSONObject().toString());
                     } else if (enableTransactionRebroadcasting) {
                         broadcastedTransactions.add(unconfirmedTransaction.getTransaction());
                     }
                 }
-            }
+            
         } finally {
             BlockchainImpl.getInstance().writeUnlock();
         }
@@ -683,7 +683,7 @@ final class TransactionProcessorImpl implements TransactionProcessor {
 
                 if (trxn != null && trxn.getHeight() != transaction.getHeight()) continue;
 
-                if (transaction.getType().getType() > 1 && BlockchainImpl.getInstance().getHeight() > Constants.CONTROL_TRX_TO_ORDINARY
+                if (transaction.getType().getType() > 2 && BlockchainImpl.getInstance().getHeight() > Constants.CONTROL_TRX_TO_ORDINARY
                 || transaction.getType().getType() == 1 && (transaction.getType().getSubtype() == 1 || transaction.getType().getSubtype() == 8) && BlockchainImpl.getInstance().getHeight() > Constants.LAST_ALIASES_BLOCK)
                     continue;
 
@@ -693,7 +693,7 @@ final class TransactionProcessorImpl implements TransactionProcessor {
                     if (transaction.getAmountNQT() < 0l) {
                         continue;
                     }
-                    if (transaction.getFeeNQT() < Bened.softMG().getFixedFee(transaction.getAmountNQT())) {
+                    if (transaction.getFeeNQT() < Bened.softMG().getFixedFee(transaction)) {
                         continue;
                     }
                     if (transaction.getSenderId() == transaction.getRecipientId()) {
@@ -794,15 +794,19 @@ final class TransactionProcessorImpl implements TransactionProcessor {
 
     private static final Comparator<UnconfirmedTransaction> cachedUnconfirmedTransactionComparator = (UnconfirmedTransaction t1, UnconfirmedTransaction t2) -> {
         int compare;
+        // Sort by transaction_height ASC
         compare = Integer.compare(t1.getHeight(), t2.getHeight());
         if (compare != 0)
             return compare;
+        // Sort by fee_per_byte DESC
         compare = Long.compare(t1.getFeePerByte(), t2.getFeePerByte());
         if (compare != 0)
             return -compare;
+        // Sort by arrival_timestamp ASC
         compare = Long.compare(t1.getArrivalTimestamp(), t2.getArrivalTimestamp());
         if (compare != 0)
             return compare;
+        // Sort by transaction ID ASC
         return Long.compare(t1.getId(), t2.getId());
     };
 

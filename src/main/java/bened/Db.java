@@ -22,10 +22,10 @@ import bened.db.TransactionalDb;
 public final class Db {
     
     public static final String PREFIX = Constants.isTestnet ? "bened.testDb" : "bened.db";
-    public static final String PREFIX_SoftMg = Constants.isTestnet ? "bened.testSoftMgDb" : "bened.dbSoftMg";
+    public static final String PREFIX_SoftMg = Constants.isTestnet ? "bened.dbSoftMg" : "bened.dbSoftMg"; //bened.testSoftMgDb
     
-    public static final String SoftMG_DB_URL = String.format("jdbc:%s:%s;%s", "h2", Bened.getDbDir("./bened_db/softMgsol"), "DB_CLOSE_ON_EXIT=FALSE;MV_STORE=FALSE");
-    
+    public static final String SoftMG_DB_URL = String.format("jdbc:%s:%s;%s", "h2", Bened.getDbDir("./"+( Constants.isTestnet?"bened_test_db":"bened_db")+"/softMgsol"), "DB_CLOSE_ON_EXIT=FALSE;MV_STORE=FALSE");
+   
     public static final String SoftMG_DB_USERNAME = Bened.getStringProperty(PREFIX_SoftMg + "Username");
     public static final String SoftMG_DB_PASSWORD = Bened.getStringProperty(PREFIX_SoftMg + "Password");
     

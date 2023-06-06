@@ -28,7 +28,7 @@ public final class Demo implements AddOn {
     public void init() {
         Bened.getBlockchainProcessor().addListener(block -> Logger.logInfoMessage("Block " + block.getStringId()
                 + " has been forged by account " + Convert.rsAccount(block.getGeneratorId()) + " having effective balance of "
-                + Account.getAccount(block.getGeneratorId()).getEffectiveBalanceBND()),
+                + Account.getAccount(block.getGeneratorId()).getEffectiveBalanceBND(Bened.getBlockchain().getHeight())),
                 BlockchainProcessor.Event.BEFORE_BLOCK_APPLY);
     }
 

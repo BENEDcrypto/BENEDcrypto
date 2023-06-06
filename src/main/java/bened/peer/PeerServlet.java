@@ -168,7 +168,7 @@ public final class PeerServlet extends WebSocketServlet {
             if (peer != null) {
                 peer.updateUploadedVolume(writer.getCount());
             }
-        } catch (RuntimeException | IOException e) {
+        } catch (Exception e) {
             if (peer != null) {
                 if ((Peers.communicationLoggingMask & Peers.LOGGING_MASK_EXCEPTIONS) != 0) {
                     if (e instanceof RuntimeException) {
@@ -180,6 +180,7 @@ public final class PeerServlet extends WebSocketServlet {
                 }
                 peer.blacklist(e);
             }
+            Logger.logErrorMessage("-----!!-----\nPeerservlet->dopost->\nreq:"+req.getQueryString()+"\nresp:"+resp.toString()+"\nerr:"+e);
             throw e;
         }
     }
@@ -289,7 +290,7 @@ public final class PeerServlet extends WebSocketServlet {
             }
             return peerRequestHandler.processRequest(request, peer);
         } catch (RuntimeException|ParseException|IOException e) {
-            Logger.logDebugMessage("Error processing POST request: " + e.toString());
+            Logger.logWarningMessage("Error Peer servlet  processing host:"+peer.getHost()+", POST request: " + e.toString());
             peer.blacklist(e);
             return error(e);
         }

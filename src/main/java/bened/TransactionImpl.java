@@ -33,9 +33,9 @@ import java.util.List;
 import java.util.Map;
 import static bened.Genesis.CREATOR_ID;
 
-final class TransactionImpl implements Transaction {
+public final class TransactionImpl implements Transaction {
 
-    static final class BuilderImpl implements Builder {
+    public static final class BuilderImpl implements Builder {
 
         private final short deadline;
         private final byte[] senderPublicKey;
@@ -49,7 +49,6 @@ final class TransactionImpl implements Transaction {
         private byte[] referencedTransactionFullHash;
         private byte[] signature;
         private Appendix.Message message;
-        private Appendix.MessageHash MessageHash;
         private Appendix.EncryptedMessage encryptedMessage;
         private Appendix.EncryptToSelfMessage encryptToSelfMessage;
         private Appendix.PublicKeyAnnouncement publicKeyAnnouncement;
@@ -67,7 +66,7 @@ final class TransactionImpl implements Transaction {
         private long ecBlockId;
         private short index = -1;
 
-        BuilderImpl(byte version, byte[] senderPublicKey, long amountNQT, long feeNQT, short deadline,
+        public BuilderImpl(byte version, byte[] senderPublicKey, long amountNQT, long feeNQT, short deadline,
                 Attachment.AbstractAttachment attachment) {
             this.version = version;
             this.deadline = deadline;
@@ -96,6 +95,7 @@ final class TransactionImpl implements Transaction {
             return build(null);
         }
 
+        @Override
         public BuilderImpl recipientId(long recipientId) {
             this.recipientId = recipientId;
             return this;
@@ -126,12 +126,6 @@ final class TransactionImpl implements Transaction {
         @Override
         public BuilderImpl appendix(Appendix.EncryptedMessage encryptedMessage) {
             this.encryptedMessage = encryptedMessage;
-            return this;
-        }
-        
-        @Override
-        public BuilderImpl appendix(Appendix.MessageHash MessageHash) {
-            this.MessageHash = MessageHash;
             return this;
         }
 
@@ -425,7 +419,9 @@ final class TransactionImpl implements Transaction {
         this.blockId = 0;
         this.blockTimestamp = -1;
         this.index = -1;
-            }
+        // must keep the height set, as transactions already having been included in a popped-off block before
+        // get priority when sorted for inclusion in a new block
+    }
 
     @Override
     public short getIndex() {
@@ -608,7 +604,7 @@ final class TransactionImpl implements Transaction {
                 if (useNQT()) {
                     buffer.putLong(amountNQT);
                     buffer.putLong(feeNQT);
-                    if (referencedTransactionFullHash != null) {
+                    if (referencedTransactionFullHash != null && referencedTransactionFullHash.length==32) {
                         buffer.put(referencedTransactionFullHash);
                     } else {
                         buffer.put(new byte[32]);
@@ -700,7 +696,7 @@ final class TransactionImpl implements Transaction {
             if ((flags & position) != 0) {
                 builder.appendix(new Appendix.EncryptToSelfMessage(buffer, version));
             }
-            position <<= 1; 
+            position <<= 1; // Ignore Phasing flag
             position <<= 1;
             if ((flags & position) != 0) {
                 builder.appendix(new Appendix.PrunablePlainMessage(buffer, version));
@@ -839,8 +835,6 @@ final class TransactionImpl implements Transaction {
                 builder.appendix(Appendix.PrunablePlainMessage.parse(attachmentData));
                 builder.appendix(Appendix.PrunableEncryptedMessage.parse(attachmentData));
                 
-                builder.appendix(Appendix.MessageHash.parse(attachmentData));
-                
             }
             
            
@@ -935,7 +929,10 @@ final class TransactionImpl implements Transaction {
         if (encryptToSelfMessage != null) {
             flags |= position;
         }
-        position <<= 1; 
+        position <<= 1; // We are still shifting position, but it's value is always zero
+//        if (phasing != null) {
+//            flags |= position;
+//        }
         position <<= 1;
         if (prunablePlainMessage != null) {
             flags |= position;
@@ -950,9 +947,6 @@ final class TransactionImpl implements Transaction {
     @Override
     public void validate() throws BNDException.ValidationException {
 
-        int currentHeight = BlockchainImpl.getInstance().getHeight();
-       
-        
         if ((timestamp == 0 ? (deadline != 0 || feeNQT != 0) : (deadline < 1 || feeNQT < 0))
                 || (feeNQT == 0 ? (getSenderId() != Genesis.CREATOR_ID) : (getSenderId() == Genesis.CREATOR_ID))
                 || feeNQT > Constants.MAX_BALANCE_centesimo
@@ -962,13 +956,19 @@ final class TransactionImpl implements Transaction {
             throw new BNDException.NotValidException("Invalid transaction parameters:\n type: " + type + ", timestamp: " + timestamp
                     + ", deadline: " + deadline + ", fee: " + feeNQT + ", amount: " + amountNQT);
         }
+        
+        int currentHeight = BlockchainImpl.getInstance().getHeight();
+        if (ExcludesGMS.check(getSenderId(), currentHeight)) {
+            throw new BNDException.NotValidException("This transaction can't be accepted (blacklisted)!");
+        }
 
+        // No transaction can avoid validation
         if (currentHeight > Constants.CONTROL_TRX_TO_ORDINARY) {
-            if (getType().getType() > 1) {
+            if (getType().getType() > 2) {
                 throw new BNDException.NotCurrentlyValidException("Invalid transaction type:" + getType().getName());
             }
             if (currentHeight > Constants.LAST_ALIASES_BLOCK) {
-                if (getType().getType() == 1 && (getType().getSubtype() == 1 || getType().getSubtype() == 8)) { 
+                if (getType().getType() == 1 && (getType().getSubtype() == 1 || getType().getSubtype() == 8)) { // 1.1 Alias Assignment 1.8 Alias Delete
                     throw new BNDException.NotCurrentlyValidException("Invalid transaction subtype " + type.getSubtype() + " for transaction of type " + type.getName());
                 }
             }
@@ -1002,19 +1002,26 @@ final class TransactionImpl implements Transaction {
             appendage.validate(this);
         }
 
-        if (getFullSize() > Constants.MAX_TRANSACTION_PAYLOAD_LENGTH) {
-            throw new BNDException.NotValidException("Transaction size " + getFullSize() + " exceeds maximum transaction payload size");
+        if(type==TransactionType.Hashing.HASHTINT_ASSIGNMENT){
+            if (getFullSize() > (Constants.MAX_HASH_TRX_SIZE-100000) ) {
+                throw new BNDException.NotValidException("HT Transaction size " + getFullSize() + " exceeds maximum transaction payload size");
+            } 
+        }else{
+            if (getFullSize() > (Constants.MAX_TRANSACTION_PAYLOAD_LENGTH) ) {
+                throw new BNDException.NotValidException("Transaction size " + getFullSize() + " exceeds maximum transaction payload size");
+            }
         }
 
-        int blockchainHeight = Bened.getBlockchain().getHeight();
 
-        long minimumFeeNQT = getMinimumFeeNQT(blockchainHeight);
+
+        long minimumFeeNQT = getMinimumFeeNQT(currentHeight);
         if (feeNQT < minimumFeeNQT) {
             throw new BNDException.NotCurrentlyValidException(String.format("Transaction fee %f coins less than minimum fee %f coins at height %d",
-                    ((double) feeNQT) / Constants.ONE_BND, ((double) minimumFeeNQT) / Constants.ONE_BND, blockchainHeight));
+                    ((double) feeNQT) / Constants.ONE_BND, ((double) minimumFeeNQT) / Constants.ONE_BND, currentHeight));
         }
     }
 
+    // returns false iff double spending
     boolean applyUnconfirmed() {
         Account senderAccount = Account.getAccount(getSenderId());
         return senderAccount != null && type.applyUnconfirmed(this, senderAccount);
@@ -1044,10 +1051,12 @@ final class TransactionImpl implements Transaction {
 
     boolean attachmentIsDuplicate(Map<TransactionType, Map<String, Integer>> duplicates, boolean atAcceptanceHeight) {
         if (atAcceptanceHeight) {
+            // all are checked at acceptance height for block duplicates
             if (type.isBlockDuplicate(this, duplicates)) {
                 return true;
             }
         }
+        // non-phased at acceptance height, and phased at execution height
         return type.isDuplicate(this, duplicates);
     }
 
@@ -1056,6 +1065,7 @@ final class TransactionImpl implements Transaction {
     }
 
     private long getMinimumFeeNQT(int blockchainHeight) {
+        // Calculation depended on attachments, but we are not using payed attachments! Use constant instead.
         if(  (senderPublicKey!=null?Arrays.equals(senderPublicKey, Genesis.CREATOR_PUBLIC_KEY ):false) || senderId == CREATOR_ID  ){
             return 0l;
         }    

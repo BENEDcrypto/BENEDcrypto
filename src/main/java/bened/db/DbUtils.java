@@ -33,7 +33,8 @@ public final class DbUtils {
             if (closeable != null) {
                 try {
                     closeable.close();
-                } catch (Exception ignore) {}
+                } catch (Exception ignore) {
+                }
             }
         }
     }
@@ -103,6 +104,9 @@ public final class DbUtils {
 
     public static <T> T[] getArray(ResultSet rs, String columnName, Class<? extends T[]> cls, T[] ifNull) throws SQLException {
         Array array = rs.getArray(columnName);
+        //auuy
+        rs.close();
+        System.out.println("AHTUNG!!! rsclose 00ooiiu auuy");
         if (array != null) {
             Object[] objects = (Object[]) array.getArray();
             return Arrays.copyOf(objects, objects.length, cls);

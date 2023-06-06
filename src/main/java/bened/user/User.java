@@ -69,10 +69,8 @@ final class User {
     }
 
     void lockAccount() {
-
         secretPhrase = null;
     }
-
 
 
     synchronized void processPendingResponses(HttpServletRequest req, HttpServletResponse resp) throws IOException {

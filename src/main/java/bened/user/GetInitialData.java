@@ -45,10 +45,9 @@ public final class GetInitialData extends UserServlet.UserRequestHandler {
         JSONArray activePeers = new JSONArray(), knownPeers = new JSONArray(), blacklistedPeers = new JSONArray();
         JSONArray recentBlocks = new JSONArray();
 
-        try (DbIterator<? extends Transaction> transactions = Bened.getTransactionProcessor().getAllUnconfirmedTransactions()) {
+        DbIterator<? extends Transaction> transactions = Bened.getTransactionProcessor().getAllUnconfirmedTransactions();
             while (transactions.hasNext()) {
                 Transaction transaction = transactions.next();
-
                 JSONObject unconfirmedTransaction = new JSONObject();
                 unconfirmedTransaction.put("index", Users.getIndex(transaction));
                 unconfirmedTransaction.put("timestamp", transaction.getTimestamp());
@@ -58,33 +57,24 @@ public final class GetInitialData extends UserServlet.UserRequestHandler {
                 unconfirmedTransaction.put("feeNQT", transaction.getFeeNQT());
                 unconfirmedTransaction.put("sender", Long.toUnsignedString(transaction.getSenderId()));
                 unconfirmedTransaction.put("id", transaction.getStringId());
-
                 unconfirmedTransactions.add(unconfirmedTransaction);
             }
-        }
-
         for (Peer peer : Peers.getAllPeers()) {
-
             if (peer.isBlacklisted()) {
-
                 JSONObject blacklistedPeer = new JSONObject();
                 blacklistedPeer.put("index", Users.getIndex(peer));
                 blacklistedPeer.put("address", peer.getHost());
                 blacklistedPeer.put("announcedAddress", Convert.truncate(peer.getAnnouncedAddress(), "-", 25, true));
                 blacklistedPeer.put("software", peer.getSoftware());
                 blacklistedPeers.add(blacklistedPeer);
-
             } else if (peer.getState() == Peer.State.NON_CONNECTED) {
-
                 JSONObject knownPeer = new JSONObject();
                 knownPeer.put("index", Users.getIndex(peer));
                 knownPeer.put("address", peer.getHost());
                 knownPeer.put("announcedAddress", Convert.truncate(peer.getAnnouncedAddress(), "-", 25, true));
                 knownPeer.put("software", peer.getSoftware());
                 knownPeers.add(knownPeer);
-
             } else {
-
                 JSONObject activePeer = new JSONObject();
                 activePeer.put("index", Users.getIndex(peer));
                 if (peer.getState() == Peer.State.DISCONNECTED) {
@@ -100,8 +90,9 @@ public final class GetInitialData extends UserServlet.UserRequestHandler {
             }
         }
 
-        try (DbIterator<? extends Block> lastBlocks = Bened.getBlockchain().getBlocks(0, 59)) {
-            for (Block block : lastBlocks) {
+        DbIterator<? extends Block> lastBlocks = Bened.getBlockchain().getBlocks(0, 59);
+            while (lastBlocks.hasNext()) {
+                Block block = lastBlocks.next(); 
                 JSONObject recentBlock = new JSONObject();
                 recentBlock.put("index", Users.getIndex(block));
                 recentBlock.put("timestamp", block.getTimestamp());
@@ -115,10 +106,8 @@ public final class GetInitialData extends UserServlet.UserRequestHandler {
                 recentBlock.put("block", block.getStringId());
                 recentBlock.put("baseTarget", BigInteger.valueOf(block.getBaseTarget()).multiply(BigInteger.valueOf(100000))
                         .divide(BigInteger.valueOf(Constants.getINITIAL_BASE_TARGET(block.getHeight()))));
-
                 recentBlocks.add(recentBlock);
             }
-        }
 
         JSONObject response = new JSONObject();
         response.put("response", "processInitialData");

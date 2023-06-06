@@ -36,9 +36,10 @@ public final class GetBlockchainStatus extends APIServlet.APIRequestHandler {
         super(new APITag[] {APITag.BLOCKS, APITag.INFO});
     }
 
+
     @Override
     protected JSONObject processRequest(HttpServletRequest req) {
-        JSONObject response = new JSONObject();
+        JSONObject response =new JSONObject();
         response.put("application", Bened.APPLICATION);
         response.put("version", Bened.VERSION);
         response.put("time", Bened.getEpochTime());

@@ -16,7 +16,6 @@
 
 package bened.db;
 
-import bened.Blockchain;
 import bened.Constants;
 import bened.Bened;
 import bened.util.Logger;
@@ -167,11 +166,12 @@ public abstract class EntityDbTable<T> extends DerivedDbTable {
 
     private T get(Connection con, PreparedStatement pstmt, boolean cache) throws SQLException {
         final boolean doCache = cache && db.isInTransaction();
+        T t = null;
         try (ResultSet rs = pstmt.executeQuery()) {
             if (!rs.next()) {
                 return null;
             }
-            T t = null;
+            
             DbKey dbKey = null;
             if (doCache) {
                 dbKey = dbKeyFactory.newKey(rs);
@@ -186,8 +186,8 @@ public abstract class EntityDbTable<T> extends DerivedDbTable {
             if (rs.next()) {
                 throw new RuntimeException("Multiple records found");
             }
-            return t;
         }
+        return t;
     }
 
     public final DbIterator<T> getManyBy(DbClause dbClause, int from, int to) {
@@ -195,18 +195,17 @@ public abstract class EntityDbTable<T> extends DerivedDbTable {
     }
 
     public final DbIterator<T> getManyBy(DbClause dbClause, int from, int to, String sort) {
-        Connection con = null;
-        try {
-            con = db.getConnection();
+         try{
+            Connection con = db.getConnection(); //this autoclose dbitewrator
             PreparedStatement pstmt = con.prepareStatement("SELECT * FROM " + table
                     + " WHERE " + dbClause.getClause() + (multiversion ? " AND latest = TRUE " : " ") + sort
-                    + DbUtils.limitsClause(from, to));
+                    + DbUtils.limitsClause(from, to)); 
             int i = 0;
             i = dbClause.set(pstmt, ++i);
             i = DbUtils.setLimits(i, pstmt, from, to);
             return getManyBy(con, pstmt, true);
         } catch (SQLException e) {
-            DbUtils.close(con);
+            Logger.logErrorMessage("--EntityDbTable-- getManyBy error t55#2 e:"+e);
             throw new RuntimeException(e.toString(), e);
         }
     }
@@ -220,9 +219,8 @@ public abstract class EntityDbTable<T> extends DerivedDbTable {
             return getManyBy(dbClause, from, to, sort);
         }
         checkAvailable(height);
-        Connection con = null;
-        try {
-            con = db.getConnection();
+        try{
+            Connection con = db.getConnection(); //this autoclose dbiterator
             PreparedStatement pstmt = con.prepareStatement("SELECT * FROM " + table + " AS a WHERE " + dbClause.getClause()
                     + "AND a.height <= ?" + (multiversion ? " AND (a.latest = TRUE OR (a.latest = FALSE "
                     + "AND EXISTS (SELECT 1 FROM " + table + " AS b WHERE " + dbKeyFactory.getSelfJoinClause() + " AND b.height > ?) "
@@ -240,7 +238,6 @@ public abstract class EntityDbTable<T> extends DerivedDbTable {
             i = DbUtils.setLimits(++i, pstmt, from, to);
             return getManyBy(con, pstmt, false);
         } catch (SQLException e) {
-            DbUtils.close(con);
             throw new RuntimeException(e.toString(), e);
         }
     }
@@ -269,9 +266,8 @@ public abstract class EntityDbTable<T> extends DerivedDbTable {
     }
 
     public final DbIterator<T> search(String query, DbClause dbClause, int from, int to, String sort) {
-        Connection con = null;
-        try {
-            con = db.getConnection();
+        try{
+            Connection con = db.getConnection(); // this autoclose dbiterator
             PreparedStatement pstmt = con.prepareStatement("SELECT " + table + ".*, ft.score FROM " + table +
                     ", ftl_search('PUBLIC', '" + table + "', ?, 2147483647, 0) ft "
                     + " WHERE " + table + ".db_id = ft.keys[0] "
@@ -284,7 +280,6 @@ public abstract class EntityDbTable<T> extends DerivedDbTable {
             i = DbUtils.setLimits(i, pstmt, from, to);
             return getManyBy(con, pstmt, true);
         } catch (SQLException e) {
-            DbUtils.close(con);
             throw new RuntimeException(e.toString(), e);
         }
     }
@@ -294,16 +289,14 @@ public abstract class EntityDbTable<T> extends DerivedDbTable {
     }
 
     public final DbIterator<T> getAll(int from, int to, String sort) {
-        Connection con = null;
-        try {
-            con = db.getConnection();
+        try{
+            Connection con = db.getConnection(); //this autoclose dbiterator
             PreparedStatement pstmt = con.prepareStatement("SELECT * FROM " + table
                      + (multiversion ? " WHERE latest = TRUE " : " ") + sort
-                    + DbUtils.limitsClause(from, to));
+                    + DbUtils.limitsClause(from, to));            
             DbUtils.setLimits(1, pstmt, from, to);
             return getManyBy(con, pstmt, true);
         } catch (SQLException e) {
-            DbUtils.close(con);
             throw new RuntimeException(e.toString(), e);
         }
     }
@@ -317,15 +310,14 @@ public abstract class EntityDbTable<T> extends DerivedDbTable {
             return getAll(from, to, sort);
         }
         checkAvailable(height);
-        Connection con = null;
-        try {
-            con = db.getConnection();
+        try{
+           Connection con = db.getConnection();//thisautoclose dbiterator
             PreparedStatement pstmt = con.prepareStatement("SELECT * FROM " + table + " AS a WHERE height <= ?"
                     + (multiversion ? " AND (latest = TRUE OR (latest = FALSE "
                     + "AND EXISTS (SELECT 1 FROM " + table + " AS b WHERE b.height > ? AND " + dbKeyFactory.getSelfJoinClause()
                     + ") AND NOT EXISTS (SELECT 1 FROM " + table + " AS b WHERE b.height <= ? AND " + dbKeyFactory.getSelfJoinClause()
                     + " AND b.height > a.height))) " : " ") + sort
-                    + DbUtils.limitsClause(from, to));
+                    + DbUtils.limitsClause(from, to)); 
             int i = 0;
             pstmt.setInt(++i, height);
             if (multiversion) {
@@ -335,7 +327,6 @@ public abstract class EntityDbTable<T> extends DerivedDbTable {
             i = DbUtils.setLimits(++i, pstmt, from, to);
             return getManyBy(con, pstmt, false);
         } catch (SQLException e) {
-            DbUtils.close(con);
             throw new RuntimeException(e.toString(), e);
         }
     }
@@ -366,15 +357,13 @@ public abstract class EntityDbTable<T> extends DerivedDbTable {
             return getCount(dbClause);
         }
         checkAvailable(height);
-        Connection con = null;
-        try {
-            con = db.getConnection();
+        try(Connection con = db.getConnection();
             PreparedStatement pstmt = con.prepareStatement("SELECT COUNT(*) FROM " + table + " AS a WHERE " + dbClause.getClause()
                     + "AND a.height <= ?" + (multiversion ? " AND (a.latest = TRUE OR (a.latest = FALSE "
                     + "AND EXISTS (SELECT 1 FROM " + table + " AS b WHERE " + dbKeyFactory.getSelfJoinClause() + " AND b.height > ?) "
                     + "AND NOT EXISTS (SELECT 1 FROM " + table + " AS b WHERE " + dbKeyFactory.getSelfJoinClause()
                     + " AND b.height <= ? AND b.height > a.height))) "
-                    : " "));
+                    : " "));) {
             int i = 0;
             i = dbClause.set(pstmt, ++i);
             pstmt.setInt(i, height);
@@ -384,7 +373,6 @@ public abstract class EntityDbTable<T> extends DerivedDbTable {
             }
             return getCount(pstmt);
         } catch (SQLException e) {
-            DbUtils.close(con);
             throw new RuntimeException(e.toString(), e);
         }
     }
@@ -401,6 +389,7 @@ public abstract class EntityDbTable<T> extends DerivedDbTable {
     private int getCount(PreparedStatement pstmt) throws SQLException {
         try (ResultSet rs = pstmt.executeQuery()) {
             rs.next();
+            DbUtils.close(pstmt);
             return rs.getInt(1);
         }
     }

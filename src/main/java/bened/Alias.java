@@ -19,7 +19,6 @@ package bened;
 import bened.db.DbClause;
 import bened.db.DbIterator;
 import bened.db.DbKey;
-import bened.db.DbUtils;
 import bened.db.VersionedEntityDbTable;
 
 import java.sql.Connection;

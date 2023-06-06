@@ -5,6 +5,8 @@
  */
 package bened;
 
+import bened.Attachment.HashTintAssignment;
+import bened.crypto.Crypto;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -25,9 +27,11 @@ import org.json.simple.parser.JSONParser;
 import bened.util.Logger;
 import bened.util.BoostMap;
 import java.sql.Statement;
-import java.util.Arrays;
-import java.util.logging.Level;
+import java.util.Iterator;
 import org.json.simple.parser.ParseException;
+import static bened.Constants.knowcurveblockheight;
+import java.sql.BatchUpdateException;
+import java.util.logging.Level;
 
 
 public class SoftMG{
@@ -37,7 +41,7 @@ public class SoftMG{
     public static final int CACHE_SIZE = 820;
     public static final int CACHE_DEEP = 1450;
     
-//    public static final Map<String, Long> sele_ctrass = new HashMap<>();
+    public static boolean otlovforcerepair = false;
 
     public static final String
             FAST_ROLLBACK_ENABLED_HEIGHT = "fast_rollback_enabled_height",
@@ -79,7 +83,7 @@ public class SoftMG{
     public static final String ERROR_INVALID_TRANSACTION = "Invalid transaction!";
     public static final String ERROR_CANT_UPDATE_PARAMETER = "Can't update parameter!";
     public static final String ERROR_CANT_GET_BLOCK_FROM_BLOCKCHAIN = "Can't get block from BlockChain!";
-    private static boolean zeroblockFixed = false;
+    private static boolean zeroblockFixed = true;
 
     static boolean show = false;
     private static void log(boolean good, String message) {
@@ -104,8 +108,6 @@ public class SoftMG{
    
     
     private boolean initialized = false;
-    private static int _height = -1;
-    
     
     public void init() {
         synchronized (LOCK_OBJECT) { 
@@ -116,7 +118,6 @@ public class SoftMG{
             initDB();
             log(true, "DATABASE INITIALIZED");
             commit();
-            _height= getMGHeight();
             
         }
     }
@@ -133,223 +134,93 @@ public class SoftMG{
             pre.executeUpdate();
         }
     }
-
-    private void initDBcreateIndices() throws SQLException {
-        update("alter table force add foreign key (block_id) references block(id);");
-        update("create unique index soft_pk on soft(id);");
-        update("alter table soft add foreign key (parent_id) references soft(id);");
-        update("create unique index block_pk on block(id);");
-        update("create unique index block_height on block(height);");
-        update("create unique index force_master on force(txid, to_id);");
-        update("create index force_height on force(height);");
-        update("create unique index force_stxid on force(stxid);");
-        update("create index force_tech on force(tech);");
-        update("create index hold_transfer_account_id on hold_transfer(height desc)");
-    }
-
  
-    private void initDB() {
+   private void initDB() {
         try {
             Class.forName("org.h2.Driver");
             long maxCacheSize = Bened.getIntProperty("bened.dbCacheKB");
             if (maxCacheSize == 0) {
                 maxCacheSize = Math.min(256, Math.max(16, (Runtime.getRuntime().maxMemory() / (1024 * 1024) - 128)/2)) * 1024;
             }
-            JDBC += ";CACHE_SIZE=" + maxCacheSize;
+            JDBC += ";CACHE_SIZE=" + maxCacheSize; // + ";TRACE_LEVEL_FILE=1";
             
             this.conn = DriverManager.getConnection(JDBC, login, password);
             this.conn.setAutoCommit(false);
             update("begin work;");
-
-            PreparedStatement pre = conn.prepareStatement("select * from soft where id=-1 limit 1");
-            ResultSet rs = pre.executeQuery();
-            rs.close();
-            pre.close();
-
-            final int height = BlockchainImpl.getInstance().getHeight();
-
-            try {
-
-                pre = conn.prepareStatement("select last from force where block_id=-1 limit 1");
-                rs = pre.executeQuery();
-                rs.close();
-                pre.close();
-            } catch (SQLException ex) {
-                if (ex.toString().contains("LAST") || ex.toString().contains("ACTIVATION")) {
-                    if (height > 0) {
-                        log(true, "Updating softMGbase...");
-                    }
-                    update("alter table force add column last int;");
-                    update("alter table force add column tech boolean not null default false;");
-                    update("create index force_tech on force(tech);");
-                    update("create table activation (soft_id bigint primary key, height int not null)");
-                    update("alter table activation add foreign key (soft_id) references soft(id) on delete cascade;");
-                    setParameter(SoftMGBASE_FAST_ROLLBACK_UPDATE_HEIGHT, height);
-                    setParameter(MIN_FAST_ROLLBACK_HEIGHT, height + 100);
-                    setParameter(FAST_ROLLBACK_ENABLED_HEIGHT, height + CACHE_SIZE);
-                    if (height > 0) {
-                        log(true, "SoftMGbase update completed! Fast rollback will be enabled at " + (height + CACHE_SIZE));
-                    }
-                    commit();
-                } else {
-                    ex.printStackTrace();
-                }
-            } finally {
-                _height= getMGHeight();
-                try {
-                    if (rs != null) {
-                        rs.close();
-                    }
-                    if (pre != null) {
-                        pre.close();
-                    }
-                } catch (SQLException consumed) {
-                }
+            try( Statement stmt = this.conn.createStatement()) {
+                stmt.executeUpdate("SET DEFAULT_LOCK_TIMEOUT " + (Bened.getIntProperty("bened.dbDefaultLockTimeout") * 1000));
+                stmt.executeUpdate("SET MAX_MEMORY_ROWS " + Bened.getIntProperty("bened.dbMaxMemoryRows"));
+            }
+            commit();
+            ///////////
+            String query="SHOW force";
+            
+            try(Statement stmt = this.conn.createStatement();
+                ResultSet rs=stmt.executeQuery("select * FROM force limit 1");){
+                rs.next();
+            }catch(SQLException exc){
+                log(true, "Initialize softMG database...");
+                    
+            update("create table IF NOT EXISTS soft (id bigint not null, parent_id bigint, amount bigint not null default 0, "
+                    + "balance bigint not null default 0, hold bigint not null default 0, last int not null,"
+                    + " last_forged_block_height int not null default 0)");
+            update("create unique index soft_pk on soft(id);");
+            update("ALTER TABLE soft ADD CONSTRAINT parent_id UNIQUE(id)");//<<--mi!!2.1.214
+            update("alter table soft add foreign key (parent_id) references soft(id);");
+                    
+            
+            update("create table IF NOT EXISTS activation (soft_id bigint primary key, height int not null)");
+            update("alter table activation add foreign key (soft_id) references soft(id) on delete cascade;");
+            
+            update("create table IF NOT EXISTS block (id bigint not null, height int not null, fee bigint not null default 0,"
+                    + " stamp int not null default 0, accepted boolean not null default false,"
+                    + " creator_id long not null);");
+            update("create unique index block_pk on block(id);");
+            update("ALTER TABLE block ADD CONSTRAINT block_id UNIQUE(id)");//<<--mi!!2.1.214
+            update("create unique index block_height on block(height);");
+                    
+            update("create table IF NOT EXISTS force (block_id bigint not null, txid bigint, amount bigint not null, to_id bigint not null,"
+                    + " announced boolean not null default false, stxid bigint, height int not null, last int, "
+                    + "tech boolean not null default false);");
+            update("create unique index force_master on force(txid, to_id);");
+//            update("create index force_master on force(txid, to_id);");
+            update("create index force_height on force(height);");
+//            update("create unique index force_stxid on force(stxid);");
+            update("create index force_stxid on force(stxid);");
+            update("create index force_tech on force(tech);");        
+            
+            update("alter table force add foreign key (block_id) references block(id);");
+            
+            
+            update("create table IF NOT EXISTS hold_transfer (id bigint not null, amount bigint not null, height int not null);");
+            update("create index hold_transfer_account_id on hold_transfer(height desc)");
+                            
+                    
+            update("create table IF NOT EXISTS parameters (_key varchar(80)  PRIMARY KEY, _value varchar)");
             }
 
-            try {
                 
-                pre = conn.prepareStatement("select hold from soft limit 1");
-                rs = pre.executeQuery();
-                rs.close();
-                pre.close();
-            } catch (SQLException ex) {
-                if (ex.toString().contains("HOLD")) {
-                    log(true, "Database update started, please wait");
-                    log(true, "Altering tables...");
-                    update("alter table soft add column last_forged_block_height int not null default 0;");
-                    update("alter table soft add column hold bigint not null default 0 after balance;");
-                    update("create table hold_transfer (id bigint not null, amount bigint not null, height int not null);");
-                    update("create index hold_transfer_account_id on hold_transfer(height desc)");
-                    setParameter(HOLD_UPDATE_HEIGHT, height);
-                    int startHeight = Constants.HOLD_ENABLE_HEIGHT - Constants.HOLD_RANGE;
-                    log(true, "Rescanning last blocks from height " + startHeight + "...");
-                    if (height > startHeight || height == 0) {
-                        Map<Long, Integer> blockCreators = new HashMap<>();
-                      
-                        try (PreparedStatement ps = conn.prepareStatement("select creator_id,height from block where height>=?")) {
-                            ps.setInt(1, startHeight);
-                            try (ResultSet scanRs = ps.executeQuery()) {
-                                while (scanRs.next()) {
-                                    long creatorId = scanRs.getLong(1);
-                                    int forgedHeight = scanRs.getInt(2);
-                                    if (!blockCreators.containsKey(creatorId)) {
-                                        blockCreators.put(creatorId, forgedHeight);
-                                    } else if (blockCreators.get(creatorId) < forgedHeight) {
-                                        blockCreators.put(creatorId, forgedHeight);
-                                    }
-                                }
-                            }
-                        }
-                        log(true, "Updating " + blockCreators.size() + " forging accounts...");
-                        for (Long account : blockCreators.keySet()) {
-                            setLastForgedBlockHeight(account, blockCreators.get(account));
-                        }
-                    }
-                    log(true, "SoftMGbase update completed!");
-                    commit();
-                } else {
-                    ex.printStackTrace();
-                }
-            } finally {
-                try {
-                    if (rs != null) {
-                        rs.close();
-                    }
-                    if (pre != null) {
-                        pre.close();
-                    }
-                } catch (SQLException consumed) {
-                }
-            }
+            int height = Bened.getBlockchain().getHeight();
+            
+            setParameter(ZEROBLOCK_FIXED, 0);
+            setParameter(SoftMGBASE_FAST_ROLLBACK_UPDATE_HEIGHT, height);
+            setParameter(MIN_FAST_ROLLBACK_HEIGHT, height + 100);
+            setParameter(FAST_ROLLBACK_ENABLED_HEIGHT, height + CACHE_SIZE);
+            setParameter(HOLD_UPDATE_HEIGHT, height);
+            setParameter(HOLD_INTEGRITY_VALIDATED, height);
+            
+            update("commit work;");
+            commit();
+            log(true, "Success!");
+                    ///////////
+            
 
-
-            long badHoldsCounts = 0L;
-            if (getParameter(HOLD_INTEGRITY_VALIDATED) == null) { // Do not validate twice (it takes couple of minutes)
-                try {
-                    log(true, "Starting database validation");
-                  
-                    pre = conn.prepareStatement("select count(hold) from soft where hold<0");
-                    rs = pre.executeQuery();
-                    while (rs.next()) {
-                        badHoldsCounts = rs.getLong(1);
-                    }
-                    rs.close();
-                    pre.close();
-
-                } catch (SQLException ex) {
-                    ex.printStackTrace();
-                } finally {
-                    try {
-                        if (rs != null) {
-                            rs.close();
-                        }
-                        if (pre != null) {
-                            pre.close();
-                        }
-                    } catch (SQLException consumed) {
-                    }
-                }
-                if (badHoldsCounts <= 0) {
-                    log(true, "Database validation: OK");
-                    setParameter(HOLD_INTEGRITY_VALIDATED, height);
-                } else {
-                    for (int i = 0; i < 5; i++) {
-                        log(true, "Database validation: ERROR - INTEGRITY COMPROMISED");
-                        log(true, "CRITICAL ERROR - Blockchain integrity validation failed");
-                        log(true, "Database validation: ERROR - DAMAGED BLOCKCHAIN");
-                        log(true, "CRITICAL ERROR - Re-sync from scratch is required to continue");
-                    }
-                    log(true, "Database validation failed, detected " + badHoldsCounts + " unrecoverable error(s)");
-                    log(true, "BenedCore is going to shutdown because blockchain data is corrupted");
-                    log(true, "Please, delete the \"bened_db\" directory before restart");
-                    System.exit(1);
-                }
-            } else {
-                log(true, "Bypassing database validation (already validated earlier)");
-            }
-
-        } catch (SQLException ex) {
-            if (ex.toString().contains("SOFT")) {
-                try {
-                    log(true, "Initialize softMG database...");
-                    update("create table lock (id bigint not null default -1);");
-                    update("insert into lock(id) values (-1);");
-
-                    update("create table soft (id bigint not null, parent_id bigint, amount bigint not null default 0, balance bigint not null default 0, hold bigint not null default 0, last int not null, last_forged_block_height int not null default 0)");
-                    update("create table block (id bigint not null, height int not null, fee bigint not null default 0, stamp int not null default 0, accepted boolean not null default false, creator_id long not null);");
-                    update("create table force (block_id bigint not null, txid bigint, amount bigint not null, to_id bigint not null, announced boolean not null default false, stxid bigint, height int not null, last int, tech boolean not null default false);");
-                    update("create table activation (soft_id bigint primary key, height int not null)");
-                    update("create table hold_transfer (id bigint not null, amount bigint not null, height int not null);");
-                    update("alter table activation add foreign key (soft_id) references soft(id) on delete cascade;");
-
-                    initDBcreateIndices();
-
-                    update("create table parameters (key varchar(80) primary key, value varchar);");
-
-                    setParameter(SoftMGBASE_FAST_ROLLBACK_UPDATE_HEIGHT, 0);
-                    setParameter(MIN_FAST_ROLLBACK_HEIGHT, 0);
-                    setParameter(FAST_ROLLBACK_ENABLED_HEIGHT, 0);
-                    setParameter(HOLD_UPDATE_HEIGHT, 0);
-                    setParameter(ZEROBLOCK_FIXED, 0);
-
-                    log(true, "Using new rollback algorithm from Genesis block");
-
-                    update("commit work;");
-                    commit();
-                    _height= getMGHeight();
-                    log(true, "Success!");
-                } catch (SQLException exSQL) {
-                    log(false, ERROR_CANT_INITIALIZE);
-                }
-            } else {
-                ex.printStackTrace();
-            }
-        } catch (ClassNotFoundException ex) {
-            log(false, ERROR_ERROR);
+        }catch(Exception e){
+            System.out.println("DBinit wrong e:"+e);
         }
     }
-
+   
+   
     private SMGBlock getBlockFromBlockchainWithNoTransactions(int height) {
        BlockImpl block;
         try {
@@ -368,7 +239,7 @@ public class SoftMG{
         softBlock.setStamp(block.getTimestamp());
 
         if (block.getTransactions() != null) {
-            for (TransactionImpl blockTransaction : block.getTransactions()) {
+            for(TransactionImpl blockTransaction : block.getTransactions()) {
                 try {
                     SMGBlock.Transaction trx = SoftMG.convert(blockTransaction, block.getHeight());
                     softBlock.getTransactions().add(trx);
@@ -401,7 +272,7 @@ public class SoftMG{
         Integer value = null;
         try {
           
-            try (PreparedStatement ps = conn.prepareStatement("select value from parameters where key=?")) {
+            try (PreparedStatement ps = conn.prepareStatement("select _value from parameters where _key=?")) {
                 ps.setString(1, key);
                 try (ResultSet rs = ps.executeQuery()) {
                     while (rs.next()) {
@@ -451,7 +322,7 @@ public class SoftMG{
             try {
                             
                 if (lastBlock.getTransactions() != null && !lastBlock.getTransactions().isEmpty()) {
-                    for (Transaction t : lastBlock.getTransactions()) {
+                    for(Transaction t : lastBlock.getTransactions()) {
                         senders.add(t.getSenderId());
                         final boolean hasRecipient = t.getRecipientId() != 0L;
                         final boolean issoftMG = hasRecipient && t.getSenderId() == Genesis.CREATOR_ID;
@@ -474,9 +345,9 @@ public class SoftMG{
 
                 List<SMGBlock.Payout> forces = new ArrayList<>();
                
-                PreparedStatement request = conn.prepareStatement("select to_id,amount,height,last from force where height=?");
+                try(PreparedStatement request = conn.prepareStatement("select to_id,amount,height,last from force where height=?");){
                 request.setLong(1, currentHeight);
-                ResultSet rs = request.executeQuery();
+                try(ResultSet rs = request.executeQuery();){
                 while (rs.next()) {
                     SMGBlock.Payout force = new SMGBlock.Payout();
                     force.setToID(rs.getLong(1));
@@ -485,58 +356,65 @@ public class SoftMG{
                     force.setLast(rs.getInt(4));
                     forces.add(force);
                 }
-                rs.close();
-                request.close();
+                }
+                }
 
                 if (shouldSetLastForgedBlockHeight) {
                     int lastForgedBlockHeight = 0;
 
-                    request = conn.prepareStatement("select max(height) from block where creator_id=? and height<? limit 1");
+                    try(PreparedStatement request = conn.prepareStatement("select max(height) from block where creator_id=? and height<? ");){
                     request.setLong(1, lastBlock.getGeneratorId());
                     request.setInt(2, currentHeight);
-                    rs = request.executeQuery();
+                    try(ResultSet rs = request.executeQuery();){
                     while (rs.next()) {
                         lastForgedBlockHeight = rs.getInt(1);
                     }
-                    rs.close();
-                    request.close();
+                    }
+                    }
 
-                    request = conn.prepareStatement("update soft set last_forged_block_height=? where id=?");
+                    try(PreparedStatement request = conn.prepareStatement("update soft set last_forged_block_height=? where id=?");){
                     request.setInt(1, lastForgedBlockHeight);
                     request.setLong(2, lastBlock.getGeneratorId());
                     request.executeUpdate();
-                    request.close();
+                    }
                 }
 
                 Map<Long, Long> holdTransfers = new HashMap<>();
                 if (holdEnabled) {
                       
-                    request = conn.prepareStatement("select id,amount from hold_transfer where height=?");
+                    try(PreparedStatement request = conn.prepareStatement("select id,amount from hold_transfer where height=?");){
                     request.setInt(1, currentHeight);
-                    rs = request.executeQuery();
+                    try(ResultSet rs = request.executeQuery();){
                     while (rs.next()) {
                         holdTransfers.put(rs.getLong(1), rs.getLong(2));
                     }
-                    rs.close();
-                    request.close();
+                    }
+                    }
 
                     // FIRST DELETE TRANSFERS
-                    request = conn.prepareStatement("delete from hold_transfer where height=?");
+                    try(PreparedStatement request = conn.prepareStatement("delete from hold_transfer where height=?");){
                     request.setInt(1, currentHeight);
                     request.executeUpdate();
-                    request.close();
+                    }
 
                     // AND THEN PUT THEM ONTO BALANCE
-                    for (Long account : holdTransfers.keySet()) {
-                        if (account == null) {
-                            continue;
+                    try(PreparedStatement pstmt = conn.prepareStatement("update soft set hold=? where id=?") ){
+                        for (Long account : holdTransfers.keySet()) {
+                            if (account == null) {
+                                continue;
+                            }
+                            addDiff(-holdTransfers.get(account), account, diffs);
+                            pstmt.setLong(1, holdTransfers.get(account));
+                            pstmt.setLong(2, account);
+                            pstmt.addBatch();    
                         }
-                        addDiff(-holdTransfers.get(account), account, diffs);
-                        request = conn.prepareStatement("update soft set hold=? where id=?");
-                        request.setLong(1, holdTransfers.get(account));
-                        request.setLong(2, account);
-                        request.executeUpdate();
-                        request.close();
+                        try {
+                            int[] result = pstmt.executeBatch(); //(4)
+                            conn.commit();
+                        } catch (BatchUpdateException ex) {
+                            Logger.logErrorMessage("SoftMG AnP poplastblk batch erdo000:"+ex);
+                            conn.rollback();
+                        }
                     }
                 }
 
@@ -545,32 +423,51 @@ public class SoftMG{
                 // REVERT 'LAST' PARAMETERS AND DELETE FORCES
                 int count = 0;
                 if (!forces.isEmpty()) {
-                    for (SMGBlock.Payout force : forces) {
-                        request = conn.prepareStatement("update soft set last=? where id=?");
-                        request.setLong(1, force.getLast());
-                        request.setLong(2, force.getToID());
-                        request.executeUpdate();
-                        request.close();
-                        count++;
-                        addDiff(0L - force.getAmount(), force.getToID(), diffs);
-                        addDiff(force.getAmount(), Genesis.CREATOR_ID, diffs);
-                    }
-                    try (PreparedStatement trimmer = conn.prepareStatement("delete from force where height>=?")) {
-                        trimmer.setInt(1, currentHeight);
-                        count = trimmer.executeUpdate();
-                        _height= getMGHeight();
-                    }
+                    try(PreparedStatement pstmt = conn.prepareStatement("update soft set last=? where id=?")){
+                        for(SMGBlock.Payout force : forces) {
+                            pstmt.setLong(1, force.getLast());
+                            pstmt.setLong(2, force.getToID());
+                            pstmt.addBatch();
+                            count++;
+                            addDiff(0L - force.getAmount(), force.getToID(), diffs);
+                            addDiff(force.getAmount(), Genesis.CREATOR_ID, diffs);
+                        }
+                        try {
+                            int[] result = pstmt.executeBatch(); //(4)
+                            conn.commit();
+                        } catch (BatchUpdateException ex) {
+                            Logger.logErrorMessage("SoftMG poplastblk batch er0001:"+ex);
+                            conn.rollback();
+                        }
+                        try (PreparedStatement trimmer = conn.prepareStatement("delete from force where height>=?")) {
+                            trimmer.setInt(1, currentHeight);
+                            count = trimmer.executeUpdate();
+                        }       
+                    }      
+//                    for (SMGBlock.Payout force : forces) {
+//                        request = conn.prepareStatement("update soft set last=? where id=?");
+//                        request.setLong(1, force.getLast());
+//                        request.setLong(2, force.getToID());
+//                        request.executeUpdate();
+//                        request.close();
+//                        count++;
+//                        addDiff(0L - force.getAmount(), force.getToID(), diffs);
+//                        addDiff(force.getAmount(), Genesis.CREATOR_ID, diffs);
+//                    }
+//                    try (PreparedStatement trimmer = conn.prepareStatement("delete from force where height>=?")) {
+//                        trimmer.setInt(1, currentHeight);
+//                        count = trimmer.executeUpdate();
+//                    }
                 }
 
                 // RE-OPEN SATISFIED FORCES IN PREVIOUS BLOCKS
                 if (!revertedsoftMGTransactions.isEmpty()) {
-                    count = 0;
-                    for (Long stxid : revertedsoftMGTransactions) {
-                        count++;
-                          
-                        request = conn.prepareStatement("select height from force where stxid=?");
-                        request.setLong(1, stxid);
-                        rs = request.executeQuery();
+                    try(PreparedStatement pstmt = conn.prepareStatement("select height from force where stxid IN ("+ getLineOfQs(revertedsoftMGTransactions.size())+")" )) {
+                        int ind=0;
+                        for(Long stxid : revertedsoftMGTransactions) {
+                            pstmt.setLong(++ind, stxid );
+                        }
+                        try(ResultSet rs = pstmt.executeQuery();){
                         while (rs.next()) {
                             Integer height = rs.getInt(1);
                             if ( height > 0) {
@@ -578,104 +475,176 @@ public class SoftMG{
                             } else {
                             }
                         }
-                        rs.close();
-                        request.close();
-                        request = conn.prepareStatement("update force set stxid=? where stxid=?");
-                        request.setNull(1, Types.BIGINT);
-                        request.setLong(2, stxid);
-                        request.executeUpdate();
-                        request.close();
+                        }
                     }
-
+                    try(PreparedStatement pstmt =  conn.prepareStatement("update force set stxid=? where stxid=?")){
+                        for(Long stxid : revertedsoftMGTransactions) {
+                            pstmt.setNull(1, Types.BIGINT);
+                            pstmt.setLong(2, stxid);
+                            pstmt.addBatch();
+                        }
+                        try {
+                            int[] result = pstmt.executeBatch(); //(4)
+                            conn.commit();
+                        } catch (BatchUpdateException ex) {
+                            Logger.logErrorMessage("SoftMG poplastblk batch er0002:"+ex);
+                            conn.rollback();
+                        }
+                             
+                    }                     
+//                    for (Long stxid : revertedsoftMGTransactions) {
+//                                             
+//                        request = conn.prepareStatement("select height from force where stxid=?");
+//                        request.setLong(1, stxid);
+//                        rs = request.executeQuery();
+//                        while (rs.next()) {
+//                            Integer height = rs.getInt(1);
+//                            if ( height > 0) {
+//                                blockHeights.add(height);
+//                            } else {
+//                            }
+//                        }
+//                        rs.close();
+//                        request.close();
+//                        request = conn.prepareStatement("update force set stxid=? where stxid=? limit 1");
+//                        request.setNull(1, Types.BIGINT);
+//                        request.setLong(2, stxid);
+//                        request.executeUpdate();
+//                        request.close();
+//                    }
                 }
 
                 // SET PREVIOUS softmgBLOCKS AS UNACCEPTED
                 if (!blockHeights.isEmpty()) {
-                    for (Integer notAcceptedHeight : blockHeights) {                    
-                        request = conn.prepareStatement("update block set accepted=false where height=? and accepted=true");
-                        request.setInt(1, notAcceptedHeight);
-                        request.executeUpdate();
-                        request.close();
-                    }
+                    try(PreparedStatement pstmt =  conn.prepareStatement("update block set accepted=false where height=? and accepted=true")){
+                        for(Integer notAcceptedHeight : blockHeights) {
+                            pstmt.setInt(1, notAcceptedHeight);
+                            pstmt.addBatch();
+                        }
+                        try {
+                            int[] result = pstmt.executeBatch(); //(4)
+                            conn.commit();
+                        } catch (BatchUpdateException ex) {
+                            Logger.logErrorMessage("SoftMG poplastblk batch er0003:"+ex);
+                            conn.rollback();
+                        }           
+                    }  
+//                    for (Integer notAcceptedHeight : blockHeights) {                    
+//                        request = conn.prepareStatement("update block set accepted=false where height=? and accepted=true");
+//                        request.setInt(1, notAcceptedHeight);
+//                        request.executeUpdate();
+//                        request.close();
+//                    }
                 }
 
                 // DELETE FUTURE BLOCKS - EXPECTED ONLY 1 BLOCK TO BE DELETED (THE CURRENT ONE)
                 count = 0;                                    
-                request = conn.prepareStatement("delete from block where height>?");
-                request.setInt(1, currentHeight - 1);
-                count = request.executeUpdate();
-                request.close();
+                try(PreparedStatement request = conn.prepareStatement("delete from block where height>?");){
+                    request.setInt(1, currentHeight - 1);
+                    count = request.executeUpdate();
+                }
                 if (count != 1) {
                     if (count < 1) {
-                        log(false, "popLastBlock() - No blocks deleted (must be 1) at " + currentHeight);
+                        log(false, "popLastBlock() e001 - No blocks deleted (must be 1) at " + currentHeight);
                     }
                     if (count > 1) {
-                        log(false, "popLastBlock() - Too many blocks deleted: " + count + " (must be 1) at " + currentHeight);
+                        log(false, "popLastBlock() e002 - Too many blocks deleted: " + count + " (must be 1) at " + currentHeight);
+                        //--del onli 1
+                        count = 0;                                    
+                        try(PreparedStatement request = conn.prepareStatement("delete from block where height>?");){
+                            request.setInt(1, currentHeight);
+                            count = request.executeUpdate();
+                        }
+                        //
                     }
                 }
-_height= getMGHeight();
                 String msg = currentHeight + " <- this block is popped\n\tDiffs: [" + diffs.size() + "]";
 
                 // APPLY BALANCE DIFFS
                 if (!diffs.isEmpty()) {
                     if (holdEnabled) {
-                        for (Long accountId : diffs.keySet()) {
+                        //
+                        try(PreparedStatement pstmt = conn.prepareStatement("select balance,last_forged_block_height,hold,id from soft where id IN ("+ getLineOfQs(diffs.keySet().size())+")" )) {
+                            int ind=0;
+                            for(Long accountId : diffs.keySet()) {
+                                pstmt.setLong(++ind, accountId);
+                            }
+                            try(ResultSet rst = pstmt.executeQuery()){
                             int height = 0;
                             long balance = 0l;
-                            long hold = 0l;                              
-                            request = conn.prepareStatement("select balance,last_forged_block_height,hold from soft where id=?");
-                            request.setLong(1, accountId);
-                            rs = request.executeQuery();
-                            while (rs.next()) {
-                                balance = rs.getLong(1);
-                                height = rs.getInt(2);
-                                hold = rs.getLong(3);
-                            }
-                            rs.close();
-                            request.close();
-                            long balanceBeforeBlock = balance + diffs.get(accountId);
-                            boolean isEnterHoldFromLowerBalance = hold == 0L && diffs.get(accountId) < 0 && balanceBeforeBlock < Constants.HOLD_BALANCE_MIN;
-                            boolean isOnHold = height >= currentHeight - Constants.HOLD_RANGE
+                            long hold = 0l;
+                            Long accountId =0l;
+                            ArrayList<Long> accounts = new ArrayList<>();
+                            while (rst.next()) {
+                                balance = rst.getLong(1);
+                                height = rst.getInt(2);
+                                hold = rst.getLong(3);
+                                accountId =  rst.getLong(4);
+                                
+                                long balanceBeforeBlock = balance + diffs.get(accountId);
+                                boolean isEnterHoldFromLowerBalance = hold == 0L && diffs.get(accountId) < 0 && balanceBeforeBlock < Constants.HOLD_BALANCE_MIN;
+                                boolean isOnHold = height >= currentHeight - Constants.HOLD_RANGE
                                     && balance >= Constants.HOLD_BALANCE_MIN
                                     && balance <= Constants.HOLD_BALANCE_MAX;
-                            if (isOnHold
+                                if (isOnHold
                                     && (!senders.contains(accountId))
                                     && (!isEnterHoldFromLowerBalance)) {
-                                updateHold(accountId, diffs.get(accountId));
-                            } else {
-                                update(accountId, diffs.get(accountId), null);
+                                    updateHold(accountId, diffs.get(accountId));
+                                } else {
+                                    accounts.add(accountId);
+                                    //update(accountId, diffs.get(accountId), null);
+                                }
+                            }
+                            _update(accounts, diffs, null);
                             }
                         }
                     } else {
+                        ArrayList<Long> accounts = new ArrayList<>();
                         for (Long accountId : diffs.keySet()) {
                             msg = msg + ", " + accountId + " " + diffs.get(accountId);
-                            update(accountId, diffs.get(accountId), null);
+//                            update(accountId, diffs.get(accountId), null);
+                            accounts.add(accountId);
                         }
+                        _update(accounts, diffs, null);
                     }
                 }
 
                 // FIND ACCOUNTS TO DELETE                 
-                request = conn.prepareStatement("select soft_id from activation where height=?");
+                try(PreparedStatement request = conn.prepareStatement("select soft_id from activation where height=?");){
                 request.setInt(1, currentHeight);
-                rs = request.executeQuery();
+                try(ResultSet rs = request.executeQuery();){
                 while (rs.next()) {
                     accountsToDelete.add(rs.getLong(1));
                 }
-                rs.close();
-                request.close();
+                }
+                }
 
                 // DELETE ACTIVATED IN THIS BLOCK ACCOUNTS
                 count = 0;
                 msg = "\tDeleted accounts: [" + accountsToDelete.size() + "]";
                 if (!accountsToDelete.isEmpty()) {
-                    for (Long id : accountsToDelete) {
-                        msg = msg + ", " + id;
-                        request = conn.prepareStatement("delete from soft where id=?");
-                        request.setLong(1, id);
-                        count = count + request.executeUpdate();
-                        request.close();
-                    }
-                    _height= getMGHeight();
+                    try(PreparedStatement pstmt =  conn.prepareStatement("delete from soft where id=?")){
+                        for(Long id : accountsToDelete) {
+                            msg = msg + ", " + id;
+                            pstmt.setLong(1, id);
+                            pstmt.addBatch();
+                        }
+                        try {
+                            int[] result = pstmt.executeBatch(); //(4)
+                            conn.commit();
+                        } catch (BatchUpdateException ex) {
+                            Logger.logErrorMessage("SoftMG poplastblk batch er0004:"+ex);
+                            conn.rollback();
+                        }           
+                    } 
+                    
+//                    for(Long id : accountsToDelete) {
+//                        msg = msg + ", " + id;
+//                        request = conn.prepareStatement("delete from soft where id=?");
+//                        request.setLong(1, id);
+//                        count = count + request.executeUpdate();
+//                        request.close();
+//                    }
                 }
 
                 commit();
@@ -696,12 +665,9 @@ _height= getMGHeight();
 
 
 
+private void trimDerivedTables(){
 
-private void trimDerivedTables() throws SQLException {
-
-    
-    
-        final int height = _height;
+        final int height = getMGHeight();
 
         if (height % CACHE_SIZE != 0){ // || !useOnlyNewRollbackAlgo)
             return;
@@ -716,6 +682,7 @@ private void trimDerivedTables() throws SQLException {
             log(true, "trimDerivedTables: Postponed trimming for " + (nextTrimHeight-height) + " more blocks");
             return;
         }
+    try{
         final int newMinRollbackHeight = height - CACHE_SIZE; // preserve last 820 blocks
         int forces = 0, activations = 0, holdTransfers = 0;
         PreparedStatement statement = conn.prepareStatement("delete from force where height<? and ((stxid is not null) or (stxid is null and tech)) limit " + Constants.BATCH_COMMIT_SIZE);
@@ -745,8 +712,10 @@ private void trimDerivedTables() throws SQLException {
         statement.close();
         setParameter(MIN_FAST_ROLLBACK_HEIGHT, newMinRollbackHeight);
         commit();
-        _height= getMGHeight();
         log(true, "trimDerivedTables: Trimmed " + forces + " payouts, " + activations + " activations and " + holdTransfers + " hold transfers at " + height);
+      }catch (SQLException ex) {       
+            Logger.logErrorMessage(SoftMG.class.getName()+"++1", ex);
+      }       
     }
     
        
@@ -754,7 +723,7 @@ private void trimDerivedTables() throws SQLException {
     private int getMGHeight() {       
         init();
         int retval = -1;
-        try ( PreparedStatement request = conn.prepareStatement("select max(height) from block limit 1"); 
+        try ( PreparedStatement request = conn.prepareStatement("select max(height) from block "); 
                 ResultSet rs = request.executeQuery()) {
             if (rs == null) {
                 throw new SQLException(ERROR_CANT_UPDATE_PARAMETER + " [select]");
@@ -801,12 +770,7 @@ private void trimDerivedTables() throws SQLException {
         }
     }
 
-    private static void updateFix(Connection conn, Conc conc, long amount) throws SQLException {
-        try (PreparedStatement updater = conn.prepareStatement(conc.query())) {
-            updater.setLong(1, amount);
-            updater.executeUpdate();
-        }
-    }
+
 
     private void createAccount(long accountID, Long senderID, int stamp, int height) throws SQLException {
         if (senderID == null) {
@@ -816,18 +780,79 @@ private void trimDerivedTables() throws SQLException {
                 statement.executeUpdate();
             }
         } else {
-            try (PreparedStatement statement = conn.prepareStatement("insert into soft(id, parent_id, last) values (?,?,?)")) {
-                statement.setLong(1, accountID);
-                statement.setLong(2, senderID);
-                statement.setInt(3, stamp);
-                statement.executeUpdate();
+            try (PreparedStatement _stmt = conn.prepareStatement("select * from soft where id=? And parent_id=? limit 1")) {
+                _stmt.setLong(1, accountID);
+                _stmt.setLong(2, senderID);
+               // _stmt.setInt(3, stamp);
+                try(ResultSet rs = _stmt.executeQuery();){
+                    if(!rs.next()){
+                    try (PreparedStatement statement = conn.prepareStatement("insert into soft(id, parent_id, last) values (?,?,?)")) {
+                        statement.setLong(1, accountID);
+                        statement.setLong(2, senderID);
+                        statement.setInt(3, stamp);
+                        statement.executeUpdate();
+                    }catch(Exception e){
+                        Logger.logDebugMessage("\nMG_CREATE_ACCOUNT ERR -SOFT- NEBILO I NETU!!!");
+                        //NEBILO\" insert into soft(id, parent_id, last) values (?,?,?)\"\n I NE VSTAVIOS "
+                        if(otlovforcerepair){
+                            Logger.logWarningMessage("\nMG_CREATE_ACCOUNT ERR(offblock) insert soft uR_err:"+e);
+                            Bened.getBlockchainProcessor().popOffTo(height-1);
+                        }
+                    }
+                }else{
+                    Logger.logDebugMessage("\nMG_CREATE_ACCOUNT ERR -- PREbilo!!! Updatetlas  !!!");
+                    ///uze bil\"insert into soft(id, parent_id, last) values (?,?,?)\"");
+                    Logger.logDebugMessage("gms uze est l:"+rs.getNString("last")+" setlast:"+stamp);
+                    if(otlovforcerepair){
+                        Bened.getBlockchainProcessor().popOffTo(height-1);
+                    }
+                } 
+                }
+       
             }
+            
         }
-        try (PreparedStatement activation = conn.prepareStatement("insert into activation(soft_id, height) values (?,?)")) {
-            activation.setLong(1, accountID);
-            activation.setInt(2, height);
-            activation.executeUpdate();
-        }
+        //act
+        try (PreparedStatement _stmt = conn.prepareStatement("select * from activation where soft_id=? And height=? limit 1")) {
+                _stmt.setLong(1, accountID);
+                _stmt.setInt(2, height);
+                try(ResultSet rs = _stmt.executeQuery();){
+                    if(!rs.next()){
+                    try (PreparedStatement activation = conn.prepareStatement("insert into activation(soft_id, height) values (?,?)")) {
+                        activation.setLong(1, accountID);
+                        activation.setInt(2, height);
+                        activation.executeUpdate();
+                    }catch(Exception e){
+                        Logger.logDebugMessage("\nMG_CREATE_ACCOUNT ERR -ACTIVATION- NEBILO I NETU!!!");
+                                //"\n!!!NEBILO\" \"select * from activation where soft_id=? And height=? limit 1\"\n I NE VSTAVIOS ");
+                        if(otlovforcerepair){
+                            Logger.logDebugMessage("udalim avtivation accountid:"+accountID+" parentid:"+senderID);
+                            try (PreparedStatement statement = conn.prepareStatement("DELETE from activation where soft_id=? ")) {
+                                statement.setLong(1, accountID);
+//                                statement.setInt(2, height);
+                                int deleted = statement.executeUpdate();
+                                Logger.logDebugMessage("deeted activation :"+deleted);
+                            }catch(Exception re){
+                                 Logger.logDebugMessage("deeted activation err:"+re);
+                            }
+                        }
+                    }
+                }else{
+                     Logger.logDebugMessage("\nMG_CREATE_ACCOUNT ERR -ACTIVATION- pre Est");
+                     Logger.logDebugMessage("activation pre est acid:"+accountID+" h:"+height);
+                    if(otlovforcerepair){
+                       Logger.logDebugMessage("\nMG_CREATE_ACCOUNT ERR -ACTIVATION- Otlowe:"+otlovforcerepair+" wtf?");
+                    }
+                }
+                }
+                        
+            }
+        //--
+//        try (PreparedStatement activation = conn.prepareStatement("insert into activation(soft_id, height) values (?,?)")) {
+//            activation.setLong(1, accountID);
+//            activation.setInt(2, height);
+//            activation.executeUpdate();
+//        }
     }
 
 
@@ -940,7 +965,7 @@ private void trimDerivedTables() throws SQLException {
             }
             return retval;
         }
-        int count;
+        int count=-1;
         try (PreparedStatement statement = conn.prepareStatement("insert into block (id, height, fee, stamp, creator_id" + (withFinishedState ? ", accepted" : "") + ") values (?,?,?,?,?" + (withFinishedState ? ",true" : "") + ")")) {
             statement.setLong(1, blockID);
             statement.setLong(2, height);
@@ -948,9 +973,11 @@ private void trimDerivedTables() throws SQLException {
             statement.setInt(4, stamp);
             statement.setLong(5, creatorID);
             count = statement.executeUpdate();
-
-                  
-            _height = height;
+        }catch(Exception e){
+            Logger.logErrorMessage("insert SMblock i:11d#1 er:"+e);
+            popLastrepairBlock(height);
+            throw new SQLException("insert SMblock i:11c#1 er:"+e);
+            
         }
         if (count < 1) {
             throw new SQLException(ERROR_ALREADY);
@@ -995,22 +1022,24 @@ private void trimDerivedTables() throws SQLException {
         query.close();
         if (hasTransaction) {
             List<SMGBlock.Payout> retval = new ArrayList<>();
-            for (Entry<Long, Integer> block : blocksForSelect.entrySet()) {
-                try (PreparedStatement request = conn.prepareStatement("select block_id,txid,amount,to_id from force where not tech and block_id=? and stxid is null")) {
-                    request.setLong(1, block.getKey());
-                    try (ResultSet reqres = request.executeQuery()) {
-                        while (reqres.next()) {
-                            SMGBlock.Payout payout = new SMGBlock.Payout();
-                            payout.setBlockID(reqres.getLong(1));
-                            payout.setTxID(reqres.getString(2) != null ? reqres.getLong(2) : null);
-                            payout.setHeight(block.getValue());
-                            payout.setAmount(reqres.getLong(3));
-                            payout.setToID(reqres.getLong(4));
-                            retval.add(payout);
+                                           //conn.prepareStatement("select height                       from force where stxid IN ("+ getLineOfQs(revertedsoftMGTransactions.size())+")" )) {
+            try(PreparedStatement pstmt =  conn.prepareStatement("select block_id,txid,amount,to_id,height from force where not tech and block_id  IN ("+ getLineOfQs(blocksForSelect.entrySet().size())+") and stxid is null")) {
+                        int ind=0;
+                        for(Entry<Long, Integer> block : blocksForSelect.entrySet()) {
+                            pstmt.setLong(++ind, block.getKey());
+                        }
+                        try (ResultSet reqres = pstmt.executeQuery()) {
+                            while (reqres.next()) {
+                                SMGBlock.Payout payout = new SMGBlock.Payout();
+                                payout.setBlockID(reqres.getLong(1));
+                                payout.setTxID(reqres.getString(2) != null ? reqres.getLong(2) : null);
+                                payout.setAmount(reqres.getLong(3));
+                                payout.setToID(reqres.getLong(4));
+                                payout.setHeight(reqres.getInt(5));
+                                retval.add(payout);
+                            }
                         }
                     }
-                }
-            }
             if (retval.size() > limit) {
                 List<SMGBlock.Payout> retvalLimited = new ArrayList<>();
                 retvalLimited.addAll(retval.subList(0, limit));
@@ -1025,17 +1054,18 @@ private void trimDerivedTables() throws SQLException {
     private void insertForce(long blockID, Long txID, long amount, long toID, int height) {
         try {
             int last = -1;
-            PreparedStatement statement = conn.prepareStatement("select last from soft where id=? limit 1");
-            statement.setLong(1, toID);
-            ResultSet rs = statement.executeQuery();
-            while (rs.next()) {
-                last = rs.getInt(1);
-            }
-            rs.close();
-            statement.close();
-            statement = conn.prepareStatement(amount > 0
+            try( PreparedStatement statement = conn.prepareStatement("select last from soft where id=? limit 1");){
+                statement.setLong(1, toID);
+                try(ResultSet rs = statement.executeQuery();){
+                    while (rs.next()) {
+                        last = rs.getInt(1);
+                    }
+                }//rs.close();
+            }//statement.close();
+            int count =0;
+            try( PreparedStatement statement = conn.prepareStatement(amount > 0
                     ? "insert into force (block_id, txid, amount, to_id, height, last ) values (?,?,?,?,?,?)"
-                    : "insert into force (block_id, txid, amount, to_id, height, last, tech) values (?,?,?,?,?,?,?)");
+                    : "insert into force (block_id, txid, amount, to_id, height, last, tech) values (?,?,?,?,?,?,?)");){
             statement.setLong(1, blockID);
             if (txID != null) {
                 statement.setLong(2, txID);
@@ -1049,24 +1079,20 @@ private void trimDerivedTables() throws SQLException {
             if (amount == 0) {
                 statement.setBoolean(7, true);
             }
-            int count = statement.executeUpdate();
-            statement.close();
+            count = statement.executeUpdate();
+            }
             if (count < 1) {
                 throw new SQLException(ERROR_ALREADY);
             }
         } catch (SQLException ex) {
             System.out.println("!!! ahtung ERROR insert force: "+ex);
         }
-        
     }
 
  
- private void repairbreackblock(SMGBlock.Transaction trx, boolean otlov)throws SQLException{
-     if(otlov || knownforcevalidbxheight.contains(_height)){
-         if(_height == 650680){
-             System.out.println("h="+_height);
-         }
-//               System.out.println("h="+_height);
+ private boolean repairbreackblock(SMGBlock.Transaction trx, int _height, boolean otlov)throws SQLException{
+     if(otlov || knowcurveblockheight.contains(_height)){
+
                Long _stxid = null;
                boolean _found = false;
                if (trx.getSoftMGTxID() == null){
@@ -1095,7 +1121,20 @@ private void trimDerivedTables() throws SQLException {
                         statement.setLong(6, trx.getReceiver());
                         int count = statement.executeUpdate();
                         if(count!=1){
-                            System.out.println("upd c="+count);
+                            Logger.logDebugMessage("AHTUNG NO REPAIR !!! upd c="+count);
+                            System.out.println("AHTUNG NO REPAIR !!! upd c="+count+" SoftMGTxID==nulll");
+                            if(count>1){
+                                try (PreparedStatement stmtd = conn.prepareStatement("delete from force where amount=? and to_id=? and txid is null and stxid is null limit 1")) {
+                                    stmtd.setLong(1, trx.getAmount());
+                                    stmtd.setLong(2, trx.getReceiver());
+                                    count = stmtd.executeUpdate();
+                                    System.out.println(" delete meny 1 trx t0 if full count:"+count);
+                                    povtor=0;
+                                    return count==1;
+                                }catch(Exception e){
+                                    System.out.println("err ft5 e:"+e);
+                                }
+                            }
                         }
                     }
                      
@@ -1126,12 +1165,25 @@ private void trimDerivedTables() throws SQLException {
                         statement.setLong(5, trx.getReceiver());
                         int count = statement.executeUpdate();
 //                        System.out.println("upd c="+count);
+                        if(count>1){
+                                try (PreparedStatement stmtd = conn.prepareStatement("delete from force where  txid=? and to_id=? limit 1")) {
+                                    stmtd.setLong(1, trx.getSoftMGTxID());
+                                    stmtd.setLong(2, trx.getReceiver());
+                                    count = stmtd.executeUpdate();
+                                    System.out.println(" delete meny 1 trx t1 if full count:"+count);
+                                    povtor=0;
+                                    return count==1;
+                                }
+                            }
                     }
                     }
-                   
-               
+            Logger.logDebugMessage("repaired"); 
+            System.out.println( "SoftMGTxID="+trx.getSoftMGBlockID()+" REPAIRED");
+            return true;
             }
-        
+      Logger.logDebugMessage("No repaired");
+      System.out.println("!! no reair !!");
+     return false;
  }
  
     public boolean checkForce_sobs(SMGBlock.Transaction trx){
@@ -1192,6 +1244,13 @@ private void trimDerivedTables() throws SQLException {
         return false;
     }
  
+//    public boolean checkForce(SMGBlock.Transaction trx, boolean newer){
+//        try{
+//            return checkForce(trx);
+//        }catch(Exception e){
+//            return false;
+//        }
+//    }
     private boolean checkForce(SMGBlock.Transaction trx) throws SQLException {
         if (trx == null) {
             return false;
@@ -1208,12 +1267,12 @@ private void trimDerivedTables() throws SQLException {
                 request.setLong(2, trx.getReceiver());
                 try (ResultSet rs = request.executeQuery()) {
                     while (rs.next()) {
-                        stxid = rs.getString(1) != null ? rs.getLong(1) : null;
+                        stxid = rs.getLong(1); //rs.getString(1) != null ? rs.getLong(1) : null;
                         found = true;
                     }
                 }
             }
-            if (found && stxid == null) {
+            if (found && (stxid == 0 || stxid== null)) { 
                 try (PreparedStatement statement = conn.prepareStatement("update force set stxid=? where not tech and stxid is null and txid is null and amount=? and to_id=?")) {
                     statement.setLong(1, trx.getID());
                     statement.setLong(2, trx.getAmount());
@@ -1222,24 +1281,24 @@ private void trimDerivedTables() throws SQLException {
                 }
 
             }
-            if (found && stxid != null) {
+            if (found && (stxid != 0 && stxid!= null)) {
                 if (stxid == trx.getID()) {
                     count = 1;
                 }
             }
-        } else {
+        } else { //trx.getSoftMGTxID() != null
             try (PreparedStatement request = conn.prepareStatement("select stxid from force where not tech and txid=? and amount=? and to_id=? limit 1")) {
                 request.setLong(1, trx.getSoftMGTxID());
                 request.setLong(2, trx.getAmount());
                 request.setLong(3, trx.getReceiver());
                 try (ResultSet rs = request.executeQuery()) {
                     while (rs.next()) {
-                        stxid = rs.getString(1) != null ? rs.getLong(1) : null;
+                        stxid = rs.getLong(1); //rs.getString(1) != null ? rs.getLong(1) : null;
                         found = true;
                     }
                 }
             }
-            if (found && stxid == null) {
+            if (found &&  (stxid == 0 || stxid== null)) { // == null
                 try (PreparedStatement statement = conn.prepareStatement("update force set stxid=? where not tech and stxid is null and txid=? and amount=? and to_id=?")) {
                     statement.setLong(1, trx.getID());
                     statement.setLong(2, trx.getSoftMGTxID());
@@ -1248,34 +1307,36 @@ private void trimDerivedTables() throws SQLException {
                     count = statement.executeUpdate();
                 }
             }
-            if (found && stxid != null) {
+            if (found &&  (stxid != 0 && stxid != null)) {
                 if (stxid == trx.getID()) {
                     count = 1;
                 }
             }
         }
+        if(count!=1){
+            Logger.logDebugMessage("---vmgcheckerr height="+getMGHeight());
+        }
         if(!(count==1) && !(povtor==trx.getID()) ){
             povtor=trx.getID();
-                   repairbreackblock(trx,false);
-                   count = checkForce(trx)?1:0;
-                falbloc.add(_height);
-                System.out.println("no -- -- --"+_height+ "softtxid="+trx.getID());
-            
+            int _height =getMGHeight();
+//            if(!otlovtrx.containsKey(trx.getID())){
+//                otlovtrx.put(trx.getID(),0);
+//            }
+            if(repairbreackblock(trx, _height,  (otlovforcerepair || true) ) ){
+                count = checkForce(trx)?1:0;
+//                falbloc.add(_height);
+//                otlovtrx.remove(trx.getID());
+                Logger.logDebugMessage("\n------\ncheck repair! count:"+count+" h:"+_height+"  trx="+povtor+ "  softtxid="+trx.getID()+" ot:"+Crypto.rsEncode( trx.getSender())+" dlya:"+Crypto.rsEncode(trx.getReceiver()));
+            }else{
+//                otlovtrx.put(trx.getID(),otlovtrx.get(trx.getID())+1);
+            }
         }
         return count == 1;
     }
     static long povtor = 0;
     HashSet<Integer> falbloc =new HashSet<>();
     
-    static HashSet<Integer> knownforcevalidbxheight = new HashSet<>(Arrays.asList(
-         -1,650196,650197, 650198,650201, 650203, 650204, 650205, 650206,650377,650378,650379, 650430, 650553, 650554, 650555
-            , 650671, 650672, 650673, 650676, 650677, 650678, 650679, 650680, 650681,650682,650683,650684,650685
-    ,650686,650694,650695
-    ,653455, 651278, 653454, 652417, 654083, 654084, 651015, 652701, 653841, 653229, 654124, 653230, 652963, 652581, 652580, 651577,
-    651961, 651960, 652088, 651327, 651326, 653875, 653874, 652085, 652084, 651959, 653001, 653000, 650698, 651978, 650700, 650956,
-    653775, 652110, 651329, 652096, 651843, 651096, 653659, 653660, 653278, 650961, 651729, 652369, 650960, 652368, 653776, 651730,
-    653778, 653780, 651095, 652631, 650985, 650984, 650987, 650988, 651372, 651375, 650977, 650978, 650983, 650982, 651001, 653561, 
-    652792, 651515, 651514, 652145, 652146, 651383, 652791));
+    
     
 
     private boolean checkAnnounceCanReceive(SMGBlock.Transaction trx) throws SQLException {
@@ -1304,27 +1365,32 @@ private void trimDerivedTables() throws SQLException {
     }
 
 
-    private void checkBlockIsSuccess(long blockID) throws SQLException {
-        PreparedStatement statement = conn.prepareStatement("select count(*) from force where not tech and block_id=? and stxid is null limit 1");
-        statement.setLong(1, blockID);
-
-        ResultSet rs = statement.executeQuery();
-
-        int opensoftMGTransactions = 0;
-
-        while (rs.next()) {
-            opensoftMGTransactions = rs.getInt(1);
+    private void checkBlockIsSuccess(Set<Long> blockIDs) throws SQLException {
+        //Set<Long> updId= new HashSet<>();
+        try(PreparedStatement pstmt = conn.prepareStatement("select DISTINCT block_id from force where not tech and block_id IN ("+ getLineOfQs(blockIDs.size())+") and stxid is null") ){
+            int ind=0;
+            for(Long ID : blockIDs) {    
+                pstmt.setLong(++ind, ID);
+            }
+            try(ResultSet rs = pstmt.executeQuery() ){
+                
+                while (rs.next()) {
+                    blockIDs.remove(rs.getLong(1));
+                }   
+            }catch(Exception e){
+                System.out.println("e:"+e);
+            }
         }
-        rs.close();
-        statement.close();
+        if(!blockIDs.isEmpty()){
+            try(PreparedStatement pstmt = conn.prepareStatement("update block set accepted=true where id IN ("+ getLineOfQs(blockIDs.size())+") and accepted=false"); ){
+                int ind=0;
+                for(Long ID : blockIDs) {    
+                    pstmt.setLong(++ind, ID);
+                }
+                pstmt.executeUpdate();
+            }
+        }      
 
-        if (opensoftMGTransactions > 0) {
-            return;
-        }
-        statement = conn.prepareStatement("update block set accepted=true where id=? and accepted=false");
-        statement.setLong(1, blockID);
-        statement.executeUpdate();
-        statement.close();
     }
 
 
@@ -1360,16 +1426,11 @@ private void trimDerivedTables() throws SQLException {
             throw ex;
         }
     }
-
-    private void update(long ID, long diff, Integer stamp) throws Exception {
+     private void _update(ArrayList<Long> IDs, TreeMap<Long, Long> DIFFs, HashMap<Long, Integer> STAMPs) throws Exception {
         List<HeapStore> heaps = new ArrayList<>();
 
-        try {
-            try (PreparedStatement values = conn.prepareStatement("set @value1 = ?")) {
-                values.setLong(1, ID);
-                values.executeUpdate();
-                try (PreparedStatement statement = conn.prepareStatement("WITH LINK(ID, PARENT_ID, LEVEL) AS (\n"
-                        + "    SELECT ID, PARENT_ID, 0 FROM SOFT WHERE ID = @value1\n"
+        try (PreparedStatement statement = conn.prepareStatement("WITH LINK(ID, PARENT_ID, LEVEL) AS (\n"
+                        + "    SELECT ID, PARENT_ID, 0 FROM SOFT WHERE ID IN ("+ getLineOfQs(IDs.size())+")\n"
                         + "    UNION ALL\n"
                         + "    SELECT SOFT.ID, SOFT.PARENT_ID, LEVEL + 1\n"
                         + "    FROM LINK INNER JOIN SOFT ON LINK.PARENT_ID = SOFT.ID AND LINK.LEVEL < "+(Bened.getBlockchain().getHeight()<Constants.change_evendek22? Constants.affil_struct : Constants.affil_struct*100)+"\n" //// было 88
@@ -1378,45 +1439,164 @@ private void trimDerivedTables() throws SQLException {
                         + "   link.id,\n"
                         + "   link.parent_id,\n"
                         + "   link.level\n"
-                        + "from link"); ResultSet rs = statement.executeQuery()) {
-                    while (rs.next()) {
-                        HeapStore item = new HeapStore(rs.getLong(1), rs.getLong(2), rs.getLong(3));
-                        heaps.add(item);
+                        + "from link");){
+            int ind=0;
+            for(Long ID : IDs) {    
+                statement.setLong(++ind, ID);
+            }            
+            try(ResultSet rs = statement.executeQuery();){
+                while (rs.next()) {
+                    HeapStore item = new HeapStore(rs.getLong(1), rs.getLong(2), rs.getLong(3));
+                    if (item.getLevel() < 1) {
+                        continue;
+                    }
+                    heaps.add(item);
+                }
+            }
+        }catch(Exception e){
+            System.out.println(" _upd new r :"+e);
+        }
+        if(!heaps.isEmpty()){
+            int heapind=0;
+            
+                for(Long account: IDs){
+                    heapind=0;
+                    for(HeapStore item : heaps) {
+                        if(item.getBasic()!=account)continue;
+                        heapind++;
+                    }
+                    if(heapind<1)continue;
+                    try(PreparedStatement pstmt = conn.prepareStatement("update soft set amount=amount+? where id in ("+ getLineOfQs(heapind)+")" )) {
+                    int ind=0;
+                    pstmt.setLong(++ind, DIFFs.get(account));
+                    for(HeapStore item : heaps) {
+                        if(item.getBasic()!=account)continue;
+                        pstmt.setLong(++ind, item.getBasic() );
+                    }
+                    heapind = pstmt.executeUpdate();
+                }catch(Exception e){
+                   System.out.println("ind="+heapind +" er:"+e); 
+                }
+//                        System.out.println("ind="+ind);
+            }
+
+            if (STAMPs != null) {
+                try(PreparedStatement updater = conn.prepareStatement("update soft set balance=balance+?, last=? where id=?")){
+                    for (Long account : IDs) {
+                        updater.setLong(1, DIFFs.get(account));
+                        updater.setLong(2, STAMPs.get(account));
+                        updater.setLong(3, account);
+                        updater.addBatch();
+                    }
+                    try {
+                        int[] result = updater.executeBatch(); //(4)
+                        conn.commit();
+                    } catch (BatchUpdateException ex) {
+                        Logger.logErrorMessage("SoftMG _updater on if batch onif000:"+ex);
+                        conn.rollback();
+                    }
+                }    
+            } else {
+                try(PreparedStatement updater = conn.prepareStatement("update soft set balance=balance+? where id=?")){
+                    for (Long account : IDs) {
+                        updater.setLong(1, DIFFs.get(account));
+                        updater.setLong(2, account);
+                        updater.addBatch();
+                    }
+                    try {
+                        int[] result = updater.executeBatch(); //(4)
+                        conn.commit();
+                    } catch (BatchUpdateException ex) {
+                        Logger.logErrorMessage("SoftMG _updater on if batch onif001:"+ex);
+                        conn.rollback();
                     }
                 }
             }
+        }
+    }
 
-            Conc conc = null;
-            for (HeapStore item : heaps) {
-                if (item.getLevel() < 1) {
-                    continue;
+  
+    
+    
+    private void update_old(long ID, long diff, Integer stamp) throws Exception {
+        List<HeapStore> heaps = new ArrayList<>();
+
+        try {
+//            try (PreparedStatement values = conn.prepareStatement("set @value1 = ?")) {
+//                values.setLong(1, ID);
+//                values.executeUpdate();
+                try (PreparedStatement statement = conn.prepareStatement("WITH LINK(ID, PARENT_ID, LEVEL) AS (\n"
+                        + "    SELECT ID, PARENT_ID, 0 FROM SOFT WHERE ID = ?\n"
+                        + "    UNION ALL\n"
+                        + "    SELECT SOFT.ID, SOFT.PARENT_ID, LEVEL + 1\n"
+                        + "    FROM LINK INNER JOIN SOFT ON LINK.PARENT_ID = SOFT.ID AND LINK.LEVEL < "+(Bened.getBlockchain().getHeight()<Constants.change_evendek22? Constants.affil_struct : Constants.affil_struct*100)+"\n" //// было 88
+                        + " )\n"
+                        + " select \n"
+                        + "   link.id,\n"
+                        + "   link.parent_id,\n"
+                        + "   link.level\n"
+                        + "from link");){
+                        statement.setLong(1, ID);
+                    try(ResultSet rs = statement.executeQuery();){
+                    while (rs.next()) {
+                        HeapStore item = new HeapStore(rs.getLong(1), rs.getLong(2), rs.getLong(3));
+                        if (item.getLevel() < 1) {
+                                continue;
+                            }
+                        heaps.add(item);
+                    }
+                    }
                 }
-                if (conc == null) {
-                    conc = new Conc();
-                }
-                if (!conc.add(item.getBasic())) {
-                    updateFix(conn, conc, diff);
-                    conc = null;
-                }
+            //}
+            //"update soft set amount=amount+? where id in (";
+            if(!heaps.isEmpty()){
+             try(PreparedStatement pstmt = conn.prepareStatement("update soft set amount=amount+? where id in ("+ getLineOfQs(heaps.size())+")" )) {
+                        int ind=0;
+                        pstmt.setLong(++ind, diff);
+                        for(HeapStore item : heaps) {
+                            pstmt.setLong(++ind, item.getBasic() );
+                        }
+                        ind = pstmt.executeUpdate();
+//                        System.out.println("ind="+ind);
+                    }
             }
-            if (conc != null) {
-                updateFix(conn, conc, diff);
-                conc = null;
-            }
+//            Conc conc = null;
+//            for (HeapStore item : heaps) {
+//                if (item.getLevel() < 1) {
+//                    continue;
+//                }
+//                if (conc == null) {
+//                    conc = new Conc();
+//                }
+//                if (!conc.add(item.getBasic())) {
+//                    try (PreparedStatement updater = conn.prepareStatement(conc.query())) {
+//                        updater.setLong(1, diff);
+//                        updater.executeUpdate();
+//                    }
+//                    conc = null;
+//                }
+//            }
+//            if (conc != null) {
+//               try (PreparedStatement updater = conn.prepareStatement(conc.query())) {
+//                        updater.setLong(1, diff);
+//                        updater.executeUpdate();
+//                    }
+//                conc = null;
+//            }
 
             if (stamp != null) {
-                PreparedStatement updater = conn.prepareStatement("update soft set balance=balance+?, last=? where id=?");
-                updater.setLong(1, diff);
-                updater.setLong(2, stamp);
-                updater.setLong(3, ID);
-                updater.executeUpdate();
-                updater.close();
+                try(PreparedStatement updater = conn.prepareStatement("update soft set balance=balance+?, last=? where id=?")){
+                    updater.setLong(1, diff);
+                    updater.setLong(2, stamp);
+                    updater.setLong(3, ID);
+                    updater.executeUpdate();
+                }
             } else {
-                PreparedStatement updater = conn.prepareStatement("update soft set balance=balance+? where id=?");
-                updater.setLong(1, diff);
-                updater.setLong(2, ID);
-                updater.executeUpdate();
-                updater.close();
+                try(PreparedStatement updater = conn.prepareStatement("update soft set balance=balance+? where id=?")){
+                    updater.setLong(1, diff);
+                    updater.setLong(2, ID);
+                    updater.executeUpdate();
+                }
             }
 
         } catch (SQLException ex) {
@@ -1492,36 +1672,44 @@ private void trimDerivedTables() throws SQLException {
     }
 
     private static final Object LOCK_OBJECT = new Object();
-   private void checkSoftMGBlockIsValid(SMGBlock softBlock) throws SQLException {
+   private void checkSoftMGBlockIsValid(SMGBlock softBlock)  {
         init();
         long ID = 0l;
         int stamp = 0;
         int maxHeight = 0;
         long creatorID = 0l;
         boolean hasBlock = false;
-        PreparedStatement statement = conn.prepareStatement("select id,stamp,creator_id from block where height=? limit 1");
+    try(PreparedStatement statement = conn.prepareStatement("select id,stamp,creator_id from block where height=? limit 1");){
         statement.setLong(1, softBlock.getHeight());
-        ResultSet rs = statement.executeQuery();
+        try(ResultSet rs = statement.executeQuery();){
         while (rs.next()) {
             hasBlock = true;
             ID = rs.getLong(1);
             stamp = rs.getInt(2);
             creatorID = rs.getLong(3);
         }
-        rs.close();
-        statement.close();
+        }//rs.close();
+    }   catch (SQLException ex) {
+               Logger.logErrorMessage(SoftMG.class.getName()+"+softmg tt0+", ex);
+        }//statement.close();
         if (!hasBlock) {
-            statement = conn.prepareStatement("select max(height) from block limit 1");
-            rs = statement.executeQuery();
+            try(PreparedStatement statement = conn.prepareStatement("select max(height) from block");
+            ResultSet rs = statement.executeQuery();){
             while (rs.next()) {
                 maxHeight = rs.getInt(1);
             }
-            rs.close();
-            statement.close();
+            } catch (SQLException ex) {
+                   Logger.logErrorMessage(SoftMG.class.getName()+"+softmg tt1+", ex);
+            }//rs.close();
+            //statement.close();
             if (maxHeight > 0) {
                 
                 if ((maxHeight + 1) != softBlock.getHeight()) {
                     commit();
+                    System.out.println("try repair base bls:"+maxHeight+ " softbl:"+ softBlock.getHeight());
+                    popLastrepairBlock(maxHeight);
+                    commit();
+                    
                     System.out.println("=========== LOOOSE START (INTERNAL DETECTOR) =============");
                     return;
                 }
@@ -1533,6 +1721,9 @@ private void trimDerivedTables() throws SQLException {
         }
        commit();
         System.out.println("=========== LOOOSE START =============");
+//        } catch (SQLException ex) {
+//           Logger.logErrorMessage(SoftMG.class.getName()+"++", ex);
+//        }
     }
 
     private boolean checkSoftMGBlockIsAccepted(SMGBlock softBlock) throws SQLException {
@@ -1608,7 +1799,7 @@ private void trimDerivedTables() throws SQLException {
             Set<Long> senders = new HashSet<>();
             HashMap<Long, SoftMGs> metricsMap = new HashMap<>();
             boolean holdEnabled = softBlock.getHeight() >= Constants.HOLD_ENABLE_HEIGHT;
-            HashMap<Long, Long> diffs = new HashMap<>();
+            TreeMap<Long, Long> diffs = new TreeMap<>();
             HashMap<Long, Integer> stamps = new HashMap<>();
            
 
@@ -1621,9 +1812,8 @@ private void trimDerivedTables() throws SQLException {
             }
             SMGComputator calculator = new SMGComputator(getGenesisEmission());
             for (SMGBlock.Transaction tx : allTransactionsReverseSort) {
-                //switch rull not suported in do 11 java! and need breacks!!!
                 switch (tx.getType()) {
-                    case ORDINARY : {
+                    case ORDINARY -> {
                         if (!blockExists) {
                             if (!transactionsOrdinary.containsKey(tx.getSender())) {
                                 transactionsOrdinary.put(tx.getSender(), tx);
@@ -1633,14 +1823,12 @@ private void trimDerivedTables() throws SQLException {
                             }
                         }
                     }
-                    break;
-                    case softMG : {
+                    case softMG -> {
                         if (tx.getSoftMGBlockID() == null && softBlock.getHeight() > 0) {
                             throw new HGException("SoftMGblock with wrong internal structure!");
                         }
                         transactionsSoftMG.add(tx);
                     }
-                    break;
                 }
             }
             if (!blockExists) {
@@ -1745,7 +1933,7 @@ private void trimDerivedTables() throws SQLException {
                         addDiff(tx.getSender(), 0l - tx.getAmount() - tx.getFee(), tx.getStamp(), diffs, stamps);
                     
                 } else {
-                    if (!blocksForCheck.contains(tx.getSoftMGBlockID())) {
+                    if (tx.getSoftMGBlockID()!=null && !blocksForCheck.contains(tx.getSoftMGBlockID())) {
                         blocksForCheck.add(tx.getSoftMGBlockID());
                     }
 
@@ -1759,44 +1947,60 @@ private void trimDerivedTables() throws SQLException {
 
                 }
             }
-            
+                ArrayList<Long> accounts = new ArrayList<>();
                 for (Long account : diffs.keySet()) {
                     if (holdEnabled && account != Genesis.CREATOR_ID) {
                         boolean isOnHold = metricsMap.get(account) != null && metricsMap.get(account).isOnHoldAtHeight(softBlock.getHeight());
                         boolean shouldTransferHold = (!isOnHold || senders.contains(account)) && metricsMap.get(account) != null && metricsMap.get(account).getHold() > 0;
-                        if (shouldTransferHold) {
+                        if (shouldTransferHold) {//1
                             addDiff(account, metricsMap.get(account).getHold(), null, diffs, stamps);
                             updateHold(account, -metricsMap.get(account).getHold());
                             insertHoldTransfer(account, metricsMap.get(account).getHold(), softBlock.getHeight());
                         }
-                        if (isOnHold && !senders.contains(account)) {
+                        if (isOnHold && !senders.contains(account)) { //1
                             updateHold(account, diffs.get(account));
-                        } else {
-                            update(account, diffs.get(account), stamps.get(account));
+                        } else {//1
+                            accounts.add(account);
+                            //update(account, diffs.get(account), stamps.get(account));
                         }
-                    } else {
-                        update(account, diffs.get(account), stamps.get(account));
+                    } else { //1
+                        accounts.add(account);
+                        //update(account, diffs.get(account), stamps.get(account));
                     }
                 }
-            
-            for (Long ID : blocksForCheck) {
-                if (ID == null) {
-                    continue;
+                if(!accounts.isEmpty()){
+                    _update(accounts, diffs, stamps);
                 }
-                 checkBlockIsSuccess(ID);
+                
+                
+//            for (Long ID : blocksForCheck) {
+//                if (ID == null) {
+//                    continue;
+//                }
+                
+                blocksForCheck.add(softBlock.getID());
+                checkBlockIsSuccess(blocksForCheck);
                
-            }
-            checkBlockIsSuccess(softBlock.getID());
+            //}
+            //checkBlockIsSuccess(softBlock.getID());
            
             if (softBlock.getHeight() >= Constants.HOLD_ENABLE_HEIGHT - Constants.HOLD_RANGE) {
                 setLastForgedBlockHeight(softBlock.getGeneratorID(), softBlock.getHeight());
             }
-            int limit = 512 - retvalue.getPayouts().size();
-            List<SMGBlock.Payout> finishPayouts = getUnpayedSoftMGTransactions(softBlock.getHeight(), limit) ;
-            retvalue.getPayouts().addAll(finishPayouts);
+            int limit = Constants.MAX_NAGRADNIH*10 - retvalue.getPayouts().size();
+            if(limit<0){
+                System.out.println("neverniy ostatok pustyh nagradnyh mest ="+limit);
+                throw new HGException("softMG f77#3 neverniy ostatok pustyh nagradnyh mest ="+limit);
+            }
+            if(limit>2){
+                limit=limit-1;
+                List<SMGBlock.Payout> finishPayouts = getUnpayedSoftMGTransactions(softBlock.getHeight(), limit) ;
+                retvalue.getPayouts().addAll(finishPayouts);
+            }
         } catch (Exception ex) {
             Logger.logErrorMessage(ex.getMessage(), ex); // More details on exception's source
             if (ex.getMessage().contains("Genesis transaction wrong") || ex.getMessage().contains("\"FORCE\"")) {
+                System.out.println("!!checkinternal -- "+ex.getMessage());
             }
             throw new HGException(ex.getMessage());
         }
@@ -1807,7 +2011,7 @@ private void trimDerivedTables() throws SQLException {
     private void ressurectDatabaseIfNeeded(int height) throws SQLException {
         boolean allRight = true;
 
-   try (PreparedStatement statement = conn.prepareStatement("select id,stamp,height from block where height=? limit 1")) {
+   try (PreparedStatement statement = conn.prepareStatement("select id,stamp,height from block where height=? ")) {
             statement.setInt(1, height - 1);
             try (ResultSet rs = statement.executeQuery()) {
                 while (rs.next()) {
@@ -1854,6 +2058,8 @@ private void trimDerivedTables() throws SQLException {
                         insertBlock(softBlockIncognito.getID(), softBlockIncognito.getHeight(), 0, softBlockIncognito.getStamp(), softBlockIncognito.getGeneratorID(), true);
                         commit();
                     } catch (SQLException ex) {
+                        rollback();
+                        commit();
                     }
                     return new ArrayList<SMGBlock.Payout>();
                 }
@@ -1861,7 +2067,7 @@ private void trimDerivedTables() throws SQLException {
                     checkSoftMGBlockIsValid(softBlock);
                     CheckInternal checkInternalRetval = checkInternal(softBlock);
 
-                        trimDerivedTables();
+                    trimDerivedTables();
                     commit();
 
  
@@ -1874,9 +2080,6 @@ private void trimDerivedTables() throws SQLException {
                     }
                     commit();
                     throw ex;
-                } catch (SQLException ex) {
-                    rollback();
-                    throw new HGException(ex.getMessage());
                 }
             }
         } finally {
@@ -1900,8 +2103,6 @@ private void trimDerivedTables() throws SQLException {
 
     
     public SoftMGs getMetrics(long accountID) {
-        
-
         synchronized (LOCK_OBJECT) {
             init();
             SoftMGs metrics = new SoftMGs();
@@ -1923,19 +2124,70 @@ private void trimDerivedTables() throws SQLException {
                         } 
                     }
                 }
-
-                    metrics.setGenesisEmission(getGenesisEmission());
-
-                    metrics.calculatePyoutSet();
-
+                metrics.setGenesisEmission(getGenesisEmission());
+                metrics.calculatePyoutSet();
             } catch (SQLException ex) {
-            } finally {
-                commit();
+                Logger.logErrorMessage("softMg, getMetrics err:"+ex);
             }
+            //finally {
+            //    commit();
+            //}
             return metrics;
         }
     }
 
+    public HashMap<Long, SoftMGs>  getMetricsPacketsOfId(HashMap<Long, String> mgens ) {
+        HashMap<Long, SoftMGs> mapmerts =new HashMap<>();
+        if(mgens.isEmpty())return mapmerts;
+        synchronized (LOCK_OBJECT) {
+            init();
+            Set<Long> generators = new HashSet<>();
+            for (Map.Entry<Long, String> _gm : mgens.entrySet()) {
+                generators.add(_gm.getKey());
+            }
+            try {
+               try (PreparedStatement statement = conn.prepareStatement("select amount, balance, last, hold, last_forged_block_height, id from soft where id IN ("+ getLineOfQs(generators.size())+")" )) {
+                    int ind=0;
+                    for (Iterator<Long> iterator = generators.iterator(); iterator.hasNext();) {
+                        statement.setLong(++ind, iterator.next() );
+                    }
+                    try (ResultSet rs = statement.executeQuery()) {
+                        long _genim = getGenesisEmission();
+                        while (rs.next()) {
+                            SoftMGs metrics = new SoftMGs();
+                            metrics.setAmount(rs.getLong(1));
+                            metrics.setBalance(rs.getLong(2));
+                            metrics.setBeforeStamp(rs.getInt(3));
+                            long time = System.currentTimeMillis() / 1000 ;
+                            long diff = metrics.getBeforeStamp();
+                            diff = diff + Constants.EPOCH_BEGINNING/1000; 
+                            metrics.setAfterStamp((int)( (time - diff) + metrics.getBeforeStamp()) );
+                            metrics.setHold(rs.getLong(4));
+                            metrics.setLastForgedBlockHeight(rs.getInt(5));
+                            metrics.setAccountID(rs.getLong(6));
+                            metrics.setGenesisEmission(_genim);
+                            mapmerts.put(rs.getLong(6), metrics);
+                        } 
+                    }
+                }
+            } catch (SQLException ex) {
+                Logger.logErrorMessage("SoftMG getmetricsPackets err:"+ex);
+            }
+            return mapmerts;
+        }
+    }
+   
+    
+    static String getLineOfQs(int num) {
+    // Joiner and Iterables from the Guava library
+    String n = "?";
+        for (int i = 0; i < num-1; i++) {
+            n=n+",?";
+        }
+    return n;
+    }
+    ////////////
+    
     public boolean isZeroblockFixed() {
         if (!zeroblockFixed) {
             init();
@@ -1959,7 +2211,10 @@ private void trimDerivedTables() throws SQLException {
         try {
             commit();
             Statement stmt = conn.createStatement();
-            stmt.execute("SHUTDOWN COMPACT");
+            stmt.execute("SHUTDOWN");
+            //stmt.execute("SHUTDOWN COMPACT");
+            //stmt.execute("SHUTDOWN DEFRAG");
+            conn.close();
             Logger.logShutdownMessage("Database softMG shutdown completed");
         } catch (SQLException e) {
             Logger.logShutdownMessage(e.toString(), e);
@@ -1973,14 +2228,398 @@ private void trimDerivedTables() throws SQLException {
     }
 
     
-    public long getFixedFee(long amount) {
-        long fee;
-
-       fee = (long) (amount * 0.01 <= 150000 ? 150000 : (amount * 0.01 >=100000000 ? 100000000 : amount * 0.01) ); 
-       if (Constants.FEE_MAX_10 > BlockchainImpl.getInstance().getHeight()) {
-           return fee;
-       }
-   
-        return fee;
+    public long getFixedFee(Transaction _trx) {
+        long amount = _trx.getAmountNQT();
+          int subtype= _trx.getType().getSubtype();
+        if(_trx.getType()==TransactionType.Hashing.HASHTINT_ASSIGNMENT){
+          // byte[] hashmesagedata= ((Appendix.AbstractHashMessage)_trx.getAppendages(appendix -> (appendix instanceof Appendix.AbstractHashMessage), false).get(0)).HashMesageData();
+           long _amountNQT = (((HashTintAssignment)_trx.getAttachment()).getMySize()-4) *20000L;//Long.parseLong( String.valueOf( amount) );
+           long _feeNQT = (long) (_amountNQT * 20)/100 ; // 20%
+           amount =  _amountNQT;
+         }
+        return getFixedFee(amount, _trx.getType());
     }
+    
+    public long getFixedFee(long amount, TransactionType tType) {
+        long fee = (long) (amount * 0.01 <= 150000 ? 150000 : (amount * 0.01 >=100000000 ? 100000000 : amount * 0.01) );             
+        // fixed 150000 or 100 000000
+
+        if(tType==TransactionType.Hashing.HASHTINT_ASSIGNMENT){   // hash fee
+            fee = (long) (amount * 0.2);     
+        }
+        return fee<1?150000:fee;
+    }
+    
+    // m 00 getlastFB
+    public int getlastblockAccountId(long accountId) {
+        int lastforgedblock = 0;             
+        try (PreparedStatement statement = conn.prepareStatement("select last_forged_block_height from soft where id=? limit 1")) {
+                    statement.setLong(1, accountId);
+                    try (ResultSet rs = statement.executeQuery()) {
+                        while (rs.next()) {
+                            lastforgedblock=rs.getInt(1);
+                        } 
+                    }
+                } catch (SQLException ex) {
+            Logger.logErrorMessage("softMG crash getLastBlockAccountId err:"+ex);
+        }
+        return lastforgedblock;
+    }
+    
+    static int prepairblcount=0;
+    public void popLastrepairBlock(int softMH) {
+        final Block lastBlock = BlockchainImpl.getInstance().getLastBlock();
+        final int currentHeight = BlockchainImpl.getInstance().getHeight();
+        networkBooster.clear();
+        init();
+        if(softMH!=currentHeight && prepairblcount<10){
+            prepairblcount++;
+            int rb= softMH>currentHeight?currentHeight:softMH;
+            List<? extends Block> ogg = Bened.getBlockchainProcessor().popOffTo(rb);
+            popLastrepairBlock(rb);
+           return;
+        }
+        prepairblcount=1;
+        boolean holdEnabled = currentHeight >= Constants.HOLD_ENABLE_HEIGHT;
+        boolean shouldSetLastForgedBlockHeight = currentHeight >= Constants.HOLD_ENABLE_HEIGHT - Constants.HOLD_RANGE;
+        synchronized (LOCK_OBJECT) {
+            final List<Long> accountsToDelete = new ArrayList<>();
+            final TreeMap<Long, Long> diffs = new TreeMap<>();
+            final Set<Long> senders = new HashSet<>();
+            List<Long> revertedsoftMGTransactions = new ArrayList<>();
+            try {
+                            
+                if (lastBlock.getTransactions() != null && !lastBlock.getTransactions().isEmpty()) {
+                    for (Transaction t : lastBlock.getTransactions()) {
+                        senders.add(t.getSenderId());
+                        final boolean hasRecipient = t.getRecipientId() != 0L;
+                        final boolean issoftMG = hasRecipient && t.getSenderId() == Genesis.CREATOR_ID;
+                        
+                        if (issoftMG) {
+                            revertedsoftMGTransactions.add(t.getId());
+                            continue;
+                        }
+                        final long senderDiff = t.getAmountNQT() + t.getFeeNQT();
+                        final long recipientDiff = hasRecipient ? 0L - t.getAmountNQT() : 0L;
+                        addDiff(senderDiff, t.getSenderId(), diffs);
+                        if (hasRecipient) {
+                            addDiff(recipientDiff, t.getRecipientId(), diffs);
+                        }
+                    }
+                }
+                if (lastBlock.getTotalFeeNQT() > 0L) {
+                    addDiff(0L - lastBlock.getTotalFeeNQT(), lastBlock.getGeneratorId(), diffs);
+                }
+
+                List<SMGBlock.Payout> forces = new ArrayList<>();
+               
+                try(PreparedStatement request = conn.prepareStatement("select to_id,amount,height,last from force where height=?");){
+                request.setLong(1, currentHeight);
+                try(ResultSet rs = request.executeQuery();){
+                while (rs.next()) {
+                    SMGBlock.Payout force = new SMGBlock.Payout();
+                    force.setToID(rs.getLong(1));
+                    force.setAmount(rs.getLong(2));
+                    force.setHeight(rs.getInt(3));
+                    force.setLast(rs.getInt(4));
+                    forces.add(force);
+                }
+                }
+                }
+                if (shouldSetLastForgedBlockHeight) {
+                    int lastForgedBlockHeight = 0;
+
+                    try(PreparedStatement request = conn.prepareStatement("select max(height) from block where creator_id=? and height<? ");){
+                    request.setLong(1, lastBlock.getGeneratorId());
+                    request.setInt(2, currentHeight);
+                    try(ResultSet rs = request.executeQuery();){
+                    while (rs.next()) {
+                        lastForgedBlockHeight = rs.getInt(1);
+                    }
+                    }
+                    } catch (SQLException ex) {
+                           Logger.logErrorMessage(SoftMG.class.getName()+"+softmg poplastrepair0 +", ex);
+                    }
+
+                    try(PreparedStatement request = conn.prepareStatement("update soft set last_forged_block_height=? where id=?");){
+                    request.setInt(1, lastForgedBlockHeight);
+                    request.setLong(2, lastBlock.getGeneratorId());
+                    request.executeUpdate();
+                    }
+                }
+
+                Map<Long, Long> holdTransfers = new HashMap<>();
+                if (holdEnabled) {
+                      
+                    try(PreparedStatement request = conn.prepareStatement("select id,amount from hold_transfer where height=?");){
+                    request.setInt(1, currentHeight);
+                    try(ResultSet rs = request.executeQuery();){
+                    while (rs.next()) {
+                        holdTransfers.put(rs.getLong(1), rs.getLong(2));
+                    }
+                    }
+                    }
+
+                    // FIRST DELETE TRANSFERS
+                    try(PreparedStatement request = conn.prepareStatement("delete from hold_transfer where height=?");){
+                    request.setInt(1, currentHeight);
+                    request.executeUpdate();
+                    }
+
+                    // AND THEN PUT THEM ONTO BALANCE
+                     try(PreparedStatement pstmt = conn.prepareStatement("update soft set hold=? where id=?") ){
+                        for (Long account : holdTransfers.keySet()) {
+                            if (account == null) {
+                                continue;
+                            }
+                            addDiff(-holdTransfers.get(account), account, diffs);
+                            pstmt.setLong(1, holdTransfers.get(account));
+                            pstmt.setLong(2, account);
+                            pstmt.addBatch();    
+                        }
+                        try {
+                            int[] result = pstmt.executeBatch(); //(4)
+                            conn.commit();
+                        } catch (BatchUpdateException ex) {
+                            Logger.logErrorMessage("SoftMG AnP poplastblk batch erdo000:"+ex);
+                            conn.rollback();
+                        }
+                    }
+                }
+
+                Set<Integer> blockHeights = new HashSet<>();
+
+                // REVERT 'LAST' PARAMETERS AND DELETE FORCES
+                int count = 0;
+                if (!forces.isEmpty()) {
+                    try(PreparedStatement pstmt = conn.prepareStatement("update soft set last=? where id=?")){
+                        for (SMGBlock.Payout force : forces) {
+                            pstmt.setLong(1, force.getLast());
+                            pstmt.setLong(2, force.getToID());
+                            pstmt.addBatch();
+                            count++;
+                            addDiff(0L - force.getAmount(), force.getToID(), diffs);
+                            addDiff(force.getAmount(), Genesis.CREATOR_ID, diffs);
+                        }
+                        try {
+                            int[] result = pstmt.executeBatch(); //(4)
+                            conn.commit();
+                        } catch (BatchUpdateException ex) {
+                            Logger.logErrorMessage("SoftMG poplastblk batch er0001:"+ex);
+                            conn.rollback();
+                        }
+                        try (PreparedStatement trimmer = conn.prepareStatement("delete from force where height>=?")) {
+                            trimmer.setInt(1, currentHeight);
+                            count = trimmer.executeUpdate();
+                        }       
+                    }      
+//                    for (SMGBlock.Payout force : forces) {
+//                        request = conn.prepareStatement("update soft set last=? where id=?");
+//                        request.setLong(1, force.getLast());
+//                        request.setLong(2, force.getToID());
+//                        request.executeUpdate();
+//                        request.close();
+//                        count++;
+//                        addDiff(0L - force.getAmount(), force.getToID(), diffs);
+//                        addDiff(force.getAmount(), Genesis.CREATOR_ID, diffs);
+//                    }
+//                    try (PreparedStatement trimmer = conn.prepareStatement("delete from force where height>=?")) {
+//                        trimmer.setInt(1, currentHeight);
+//                        count = trimmer.executeUpdate();
+//                    }
+                }
+
+                // RE-OPEN SATISFIED FORCES IN PREVIOUS BLOCKS
+                if (!revertedsoftMGTransactions.isEmpty()) {
+                    try(PreparedStatement pstmt = conn.prepareStatement("select height from force where stxid IN ("+ getLineOfQs(revertedsoftMGTransactions.size())+")" )) {
+                        int ind=0;
+                        for (Long stxid : revertedsoftMGTransactions) {
+                            pstmt.setLong(++ind, stxid );
+                        }
+                        try(ResultSet rs = pstmt.executeQuery();){
+                        while (rs.next()) {
+                            Integer height = rs.getInt(1);
+                            if ( height > 0) {
+                                blockHeights.add(height);
+                            } else {
+                            }
+                        }
+                        }
+                    }
+                    try(PreparedStatement pstmt =  conn.prepareStatement("update force set stxid=? where stxid=?")){
+                        for (Long stxid : revertedsoftMGTransactions) {
+                            pstmt.setNull(1, Types.BIGINT);
+                            pstmt.setLong(2, stxid);
+                            pstmt.addBatch();
+                        }
+                        try {
+                            int[] result = pstmt.executeBatch(); //(4)
+                            conn.commit();
+                        } catch (BatchUpdateException ex) {
+                            Logger.logErrorMessage("SoftMG poplastblk batch er0002:"+ex);
+                            conn.rollback();
+                        }
+                             
+                    }                     
+//                    for (Long stxid : revertedsoftMGTransactions) {
+//                                             
+//                        request = conn.prepareStatement("select height from force where stxid=?");
+//                        request.setLong(1, stxid);
+//                        rs = request.executeQuery();
+//                        while (rs.next()) {
+//                            Integer height = rs.getInt(1);
+//                            if ( height > 0) {
+//                                blockHeights.add(height);
+//                            } else {
+//                            }
+//                        }
+//                        rs.close();
+//                        request.close();
+//                        request = conn.prepareStatement("update force set stxid=? where stxid=? limit 1");
+//                        request.setNull(1, Types.BIGINT);
+//                        request.setLong(2, stxid);
+//                        request.executeUpdate();
+//                        request.close();
+//                    }
+                }
+
+                // SET PREVIOUS softmgBLOCKS AS UNACCEPTED
+                if (!blockHeights.isEmpty()) {
+                    try(PreparedStatement pstmt =  conn.prepareStatement("update block set accepted=false where height=? and accepted=true")){
+                        for (Integer notAcceptedHeight : blockHeights) {
+                            pstmt.setInt(1, notAcceptedHeight);
+                            pstmt.addBatch();
+                        }
+                        try {
+                            int[] result = pstmt.executeBatch(); //(4)
+                            conn.commit();
+                        } catch (BatchUpdateException ex) {
+                            Logger.logErrorMessage("SoftMG poplastblk batch er0003:"+ex);
+                            conn.rollback();
+                        }
+                             
+                    }  
+//                    for (Integer notAcceptedHeight : blockHeights) {                    
+//                        request = conn.prepareStatement("update block set accepted=false where height=? and accepted=true");
+//                        request.setInt(1, notAcceptedHeight);
+//                        request.executeUpdate();
+//                        request.close();
+//                    }
+                }
+
+                // DELETE FUTURE BLOCKS - EXPECTED ONLY 1 BLOCK TO BE DELETED (THE CURRENT ONE)
+                count = 0;                                    
+                try(PreparedStatement request = conn.prepareStatement("delete from block where height>?");){
+                request.setInt(1, currentHeight - 1);
+                count = request.executeUpdate();
+                }
+                if (count != 1) {
+                    if (count < 1) {
+                        log(false, "popLastBlock() e001 - No blocks deleted (must be 1) at " + currentHeight);
+                    }
+                    if (count > 1) {
+                        log(false, "popLastBlock() e002 - Too many blocks deleted: " + count + " (must be 1) at " + currentHeight);
+                        //--del onli 1
+                        count = 0;                                    
+                       try(PreparedStatement request = conn.prepareStatement("delete from block where height>?");){
+                        request.setInt(1, currentHeight);
+                        count = request.executeUpdate();
+                       }
+                        //
+                    }
+                }
+                String msg = currentHeight + " <- this block is popped\n\tDiffs: [" + diffs.size() + "]";
+
+                // APPLY BALANCE DIFFS
+                if (!diffs.isEmpty()) {
+                    if (holdEnabled) {
+                        //
+                        ArrayList<Long> accounts = new ArrayList<>();
+                        try(PreparedStatement pstmt = conn.prepareStatement("select balance,last_forged_block_height,hold,id from soft where id IN ("+ getLineOfQs(diffs.keySet().size())+")" )) {
+                            int ind=0;
+                            for (Long accountId : diffs.keySet()) {
+                                pstmt.setLong(++ind, accountId);
+                            }
+                            try(ResultSet rst_ = pstmt.executeQuery();){
+                            int height = 0;
+                            long balance = 0l;
+                            long hold = 0l;
+                            Long accountId =0l;
+                            while (rst_.next()) {
+                                balance = rst_.getLong(1);
+                                height = rst_.getInt(2);
+                                hold = rst_.getLong(3);
+                                accountId =  rst_.getLong(4);
+                                
+                                long balanceBeforeBlock = balance + diffs.get(accountId);
+                                boolean isEnterHoldFromLowerBalance = hold == 0L && diffs.get(accountId) < 0 && balanceBeforeBlock < Constants.HOLD_BALANCE_MIN;
+                                boolean isOnHold = height >= currentHeight - Constants.HOLD_RANGE
+                                    && balance >= Constants.HOLD_BALANCE_MIN
+                                    && balance <= Constants.HOLD_BALANCE_MAX;
+                                if (isOnHold
+                                    && (!senders.contains(accountId))
+                                    && (!isEnterHoldFromLowerBalance)) {
+                                    updateHold(accountId, diffs.get(accountId));
+                                } else {
+                                    accounts.add(accountId);
+//                                    update(accountId, diffs.get(accountId), null);
+                                }
+                            }
+                            _update(accounts, diffs, null);
+                            }catch(Exception e){
+                                System.out.println("hhy c e:"+e);
+                            }
+                        //rs.close();
+                        }
+                    } else {
+                        ArrayList<Long> accounts = new ArrayList<>();
+                        for (Long accountId : diffs.keySet()) {
+                            msg = msg + ", " + accountId + " " + diffs.get(accountId);
+                            //update(accountId, diffs.get(accountId), null);
+                            accounts.add(accountId);
+                        }
+                        _update(accounts, diffs, null);
+                    }
+                }
+
+                // FIND ACCOUNTS TO DELETE                 
+                try(PreparedStatement request = conn.prepareStatement("select soft_id from activation where height=?");){
+                request.setInt(1, currentHeight);
+                try(ResultSet rs = request.executeQuery();){
+                while (rs.next()) {
+                    accountsToDelete.add(rs.getLong(1));
+                }
+                }
+                }
+
+                // DELETE ACTIVATED IN THIS BLOCK ACCOUNTS
+                count = 0;
+                msg = "\tDeleted accounts: [" + accountsToDelete.size() + "]";
+                if (!accountsToDelete.isEmpty()) {
+                    try(PreparedStatement pstmt =  conn.prepareStatement("delete from soft where id=?")){
+                        for(Long id : accountsToDelete) {
+                            msg = msg + ", " + id;
+                            pstmt.setLong(1, id);
+                            pstmt.addBatch();
+                        }
+                        try {
+                            int[] result = pstmt.executeBatch(); //(4)
+                            conn.commit();
+                        } catch (BatchUpdateException ex) {
+                            Logger.logErrorMessage("SoftMG poplastblk batch er0004:"+ex);
+                            conn.rollback();
+                        }           
+                    } 
+                }
+
+                commit();
+            } catch (Exception e) {
+                // TODO
+                rollback();
+                log(false, "CRITICAL - FAILED TO POP LAST BLOCK BECAUSE OF \"" + e.getMessage() + "\"");
+                e.printStackTrace();
+            }
+        }
+    }
+
 }

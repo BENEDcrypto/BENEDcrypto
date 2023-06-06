@@ -126,7 +126,8 @@ public class AccountLedger {
         public void trim(int height) {
             if (trimKeep <= 0)
                 return;
-            try (Connection con = db.getConnection(); PreparedStatement pstmt = con.prepareStatement("DELETE FROM account_ledger WHERE height <= ? LIMIT " + Constants.BATCH_COMMIT_SIZE)) {
+            try (Connection con = db.getConnection(); 
+                    PreparedStatement pstmt = con.prepareStatement("DELETE FROM account_ledger WHERE height <= ? LIMIT " + Constants.BATCH_COMMIT_SIZE)) {
                 pstmt.setInt(1, Math.max(blockchain.getHeight() - trimKeep, 0));
                 int trimmed;
                 do {
@@ -184,15 +185,21 @@ public class AccountLedger {
     }
 
     static boolean mustLogEntry(long accountId, boolean isUnconfirmed) {
-
+        //
+        // Must be tracking this account
+        //
         if (!ledgerEnabled || (!trackAllAccounts && !trackAccounts.contains(accountId))) {
             return false;
         }
-
+        // confirmed changes only occur while processing block, and unconfirmed changes are
+        // only logged while processing block
         if (!blockchainProcessor.isProcessingBlock()) {
             return false;
         }
-
+        //
+        // Log unconfirmed changes only when processing a block and logUnconfirmed does not equal 0
+        // Log confirmed changes unless logUnconfirmed equals 2
+        //
         if (isUnconfirmed && logUnconfirmed == 0) {
             return false;
         }
@@ -202,7 +209,10 @@ public class AccountLedger {
         if (trimKeep > 0 && blockchain.getHeight() <= Constants.LAST_KNOWN_BLOCK - trimKeep) {
             return false;
         }
-
+        //
+        // Don't log account changes if we are scanning the blockchain and the current height
+        // is less than the minimum account_ledger trim height
+        //
         if (blockchainProcessor.isScanning() && trimKeep > 0 &&
                 blockchain.getHeight() <= blockchainProcessor.getInitialScanHeight() - trimKeep) {
             return false;
@@ -216,11 +226,15 @@ public class AccountLedger {
      * @param   ledgerEntry                 Ledger entry
      */
     static void logEntry(LedgerEntry ledgerEntry) {
- 
+        //
+        // Must be in a database transaction
+        //
         if (!Db.db.isInTransaction()) {
             throw new IllegalStateException("Not in transaction");
         }
-
+        //
+        // Combine multiple ledger entries
+        //
         int index = pendingEntries.indexOf(ledgerEntry);
         if (index >= 0) {
             LedgerEntry existingEntry = pendingEntries.remove(index);
@@ -240,7 +254,9 @@ public class AccountLedger {
         pendingEntries.add(ledgerEntry);
     }
 
-
+    /**
+     * Commit pending ledger entries
+     */
     static void commitEntries() {
         for (LedgerEntry ledgerEntry : pendingEntries) {
             accountLedgerTable.insert(ledgerEntry);
@@ -249,7 +265,9 @@ public class AccountLedger {
         pendingEntries.clear();
     }
 
-  
+    /**
+     * Clear pending ledger entries
+     */
     static void clearEntries() {
         pendingEntries.clear();
     }
@@ -299,7 +317,8 @@ public class AccountLedger {
             return Collections.emptyList();
         }
         List<LedgerEntry> entryList = new ArrayList<>();
-
+        //
+        // Build the SELECT statement to search the entries
         StringBuilder sb = new StringBuilder(128);
         sb.append("SELECT * FROM account_ledger USE INDEX (ACCOUNT_LEDGER_ID_IDX) ") ;
         if (accountId != 0 || event != null || holding != null) {
@@ -326,7 +345,9 @@ public class AccountLedger {
         }
         sb.append("ORDER BY account_id,db_id DESC ");
         sb.append(DbUtils.limitsClause(firstIndex, lastIndex));
-
+        //
+        // Get the ledger entries
+        //
         blockchain.readLock();
         try (Connection con = Db.db.getConnection();
              PreparedStatement pstmt = con.prepareStatement(sb.toString())) {
@@ -373,15 +394,17 @@ public class AccountLedger {
             TRANSACTION_FEE(50, true),
         // TYPE_PAYMENT
             ORDINARY_PAYMENT(3, true),
-            HASH_PAYMENT(11, true),
-            HASH_TRANSFER(12, true),
         // TYPE_MESSAGING
             ACCOUNT_INFO(4, true),
             ALIAS_ASSIGNMENT(5, true),
             ALIAS_BUY(6, true),
             ALIAS_DELETE(7, true),
             ALIAS_SELL(8, true),
-            ARBITRARY_MESSAGE(9, true);
+            ARBITRARY_MESSAGE(9, true),
+        
+        // TYPE_HtIvent
+            HASHTINT_ASSIGNMENT(20, true),
+            HASHTINT_TRANSFER(21, true);    
 
 
         /** Event code mapping */

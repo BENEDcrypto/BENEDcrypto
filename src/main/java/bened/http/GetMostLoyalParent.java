@@ -3,10 +3,7 @@ package bened.http;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONStreamAware;
 import bened.Account;
-import bened.Bened;
 import bened.BNDException;
-import bened.Transaction;
-import bened.db.DbIterator;
 import bened.util.Convert;
 import bened.util.BenedTree;
 
@@ -17,7 +14,7 @@ public class GetMostLoyalParent extends BenedTree.APIHierarchyRequestHandler {
     static final GetMostLoyalParent instance = new GetMostLoyalParent();
 
     private GetMostLoyalParent() {
-        super(new APITag[] {APITag.SOFTMG}, "accountChild");
+        super(new APITag[] {APITag.MGM}, "accountChild");
     }
 
     @Override

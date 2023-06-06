@@ -59,8 +59,7 @@ public final class ApizTop100accounts extends HttpServlet {
     private static final String footer =
                     "</body>\n" +
                     "</html>\n";
-    String httrx;
-
+    
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         process(req, resp);
@@ -71,8 +70,30 @@ public final class ApizTop100accounts extends HttpServlet {
         process(req, resp);
     }
 
+    String httrx;
     int index = 0;
+    private static int _height = -1; 
+    private static HashMap<Long, Long> top100acc = new HashMap<>();
     private void process(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+       if(Bened.getBlockchainProcessor().isDownloading()){
+         top100acc.clear();
+       }else{
+        int _ght = Bened.getBlockchain().getHeight();
+        if (_height != _ght) {
+            _height = _ght;
+            top100acc.clear();
+            try (Connection con = Db.db.getConnection(); PreparedStatement pstmt = con.prepareStatement("SELECT id,balance FROM account WHERE latest IS TRUE ORDER BY balance DESC LIMIT 100  ");
+                ResultSet rs = pstmt.executeQuery();) {
+                    while (rs.next()) {
+                        top100acc.put(rs.getLong(1), rs.getLong(2));
+                    }
+            } catch (SQLException ex) {
+                Logger.getLogger(ApizTop100accounts.class.getName()).log(Level.SEVERE, null, ex);
+            }
+
+        }
+       } 
+        
         
         
        if(req.getRequestURI().contains("json")){
@@ -85,38 +106,29 @@ public final class ApizTop100accounts extends HttpServlet {
         JSONStreamAware response = JSON.emptyJSON;
         long startTime = System.currentTimeMillis();
         JSONObject json = new JSONObject();
-        try (Connection con = Db.db.getConnection();
-            PreparedStatement pstmt = con.prepareStatement("SELECT * FROM account WHERE latest=? ORDER BY balance DESC LIMIT 100  ")) {
-            pstmt.setBoolean(1, true);
-            HashMap<Long, Long> top100acc = new HashMap<>();
-            try (ResultSet rs = pstmt.executeQuery()) {
-                //Account account = null;
-               // int _heig =Bened.getBlockchain().getHeight();
-                while(rs.next()) {
-                   // account = Account.getAccount(rs.getLong("id"));
-                   // top100acc.put(Convert.toHexString( Account.getPublicKey(rs.getLong("id"))) , account.getEffectiveBalanceBND());
-                    //top100acc.put(Convert.toHexString( Account.getPublicKey(rs.getLong("id"))) , account.getGuaranteedBalanceNQT(1441, _heig));
-                    top100acc.put(rs.getLong("id") , rs.getLong("balance"));
-                }
-            }
-            index = 1;
-            top100acc.entrySet().stream()
+        
+        index = 1;
+        if(top100acc.isEmpty()){
+           JSONObject jsus = new JSONObject();
+                jsus.put("balance", "blockchain is downloading... please wite...");
+                jsus.put("effectivebalance", "--");
+                jsus.put("publickey", "--" );
+                jsus.put("address",  "--");
+                json.put(index++, jsus); 
+        }else{
+        top100acc.entrySet().stream()
             .sorted(Map.Entry.<Long, Long>comparingByValue().reversed()) 
             .forEach((t) -> {
                 JSONObject jsus = new JSONObject();
                 jsus.put("balance", new DecimalFormat("#0.000000").format(Double.valueOf(t.getValue())/1000000));
-                jsus.put("effectivebalance", Account.getAccount(t.getKey()).getEffectiveBalanceBND());
+                jsus.put("effectivebalance", Account.getAccount(t.getKey()).getEffectiveBalanceBND(Bened.getBlockchain().getHeight()));
                 jsus.put("publickey", Convert.toHexString(  Account.getPublicKey(t.getKey())) );
                 jsus.put("address",  Crypto.rsEncode(t.getKey()) );
                 json.put(index++, jsus);
              });
+        }
+        response = JSON.prepare(json);
         
-        
-            response = JSON.prepare(json);
- 
-        } catch (SQLException ex) {
-            Logger.getLogger(ApizTop100accounts.class.getName()).log(Level.SEVERE, null, ex);
-        } finally {
             if (response != null) {
                 if (response instanceof JSONObject) {
                     ((JSONObject) response).put("requestProcessingTime", System.currentTimeMillis() - startTime);
@@ -125,7 +137,7 @@ public final class ApizTop100accounts extends HttpServlet {
                     JSON.writeJSONString(response, writer);
                 }
             }
-        }
+        
            
        }else{
         resp.setHeader("Cache-Control", "no-cache, no-store, must-revalidate, private");
@@ -133,22 +145,9 @@ public final class ApizTop100accounts extends HttpServlet {
         resp.setDateHeader("Expires", 0);
         String reqgetparam = req.getParameter("param");
        
-        try (Connection con = Db.db.getConnection();
-            PreparedStatement pstmt = con.prepareStatement("SELECT * FROM account WHERE latest=? ORDER BY balance DESC LIMIT 100  ")) {
-            pstmt.setBoolean(1, true);
-            HashMap<Long, Long> top100acc = new HashMap<>();
-            try (ResultSet rs = pstmt.executeQuery()) {
-                //Account account = null;
-               // int _heig =Bened.getBlockchain().getHeight();
-                while(rs.next()) {
-                   // account = Account.getAccount(rs.getLong("id"));
-                   // top100acc.put(Convert.toHexString( Account.getPublicKey(rs.getLong("id"))) , account.getEffectiveBalanceBND());
-                    //top100acc.put(Convert.toHexString( Account.getPublicKey(rs.getLong("id"))) , account.getGuaranteedBalanceNQT(1441, _heig));
-                    top100acc.put(rs.getLong("id") , rs.getLong("balance"));
-                }
-            }
+        
             httrx = "<p style=\"margin-bottom: 0px;\">Top 100 accounts </p>";
-            httrx = "<table class=\"table table-striped\" id=\"Top 100 accounts\" style=\"margin-bottom: 0px; display: table;\">";
+            httrx =httrx + "<table class=\"table table-striped\" id=\"Top 100 accounts\" style=\"margin-bottom: 0px; display: table;\">";
             httrx =httrx +" <tbody><tr><td  style=\"font-weight:bold\">Bened balance </td>"
                     + "<td style=\"width:60%;text-transform:none;word-break:break-all\">Bened Public key</td>"
                     + "<td style=\"width:20%;text-transform:none;word-break:break-all;font-weight:bold\">Bened adress</td></tr>";
@@ -163,9 +162,6 @@ public final class ApizTop100accounts extends HttpServlet {
              });
              httrx = httrx +"</tbody></table>";
             
-        } catch (SQLException e) {
-            throw new RuntimeException(e.toString(), e);
-        }
         
         
         try (PrintStream out = new PrintStream(resp.getOutputStream())) {

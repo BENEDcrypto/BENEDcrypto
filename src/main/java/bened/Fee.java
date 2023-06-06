@@ -59,6 +59,7 @@ public interface Fee {
             this.unitSize = unitSize;
         }
 
+        // the first size unit is free if constantFee is 0
         @Override
         public final long getFee(TransactionImpl transaction, Appendix appendage) {
             int size = getSize(transaction, appendage) - 1;

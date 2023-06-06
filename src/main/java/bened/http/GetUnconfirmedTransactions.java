@@ -45,22 +45,20 @@ public final class GetUnconfirmedTransactions extends APIServlet.APIRequestHandl
 
         JSONArray transactions = new JSONArray();
         if (accountIds.isEmpty()) {
-            try (DbIterator<? extends Transaction> transactionsIterator = Bened.getTransactionProcessor().getAllUnconfirmedTransactions(firstIndex, lastIndex)) {
+            DbIterator<? extends Transaction> transactionsIterator = Bened.getTransactionProcessor().getAllUnconfirmedTransactions(firstIndex, lastIndex);
             while (transactionsIterator.hasNext()) {
                 Transaction transaction = transactionsIterator.next();
                     transactions.add(JSONData.unconfirmedTransaction(transaction));
-                }
             }
         } else {
-            try (FilteringIterator<? extends Transaction> transactionsIterator = new FilteringIterator<> (
+            FilteringIterator<? extends Transaction> transactionsIterator = new FilteringIterator<> (
                     Bened.getTransactionProcessor().getAllUnconfirmedTransactions(0, -1),
                     transaction -> accountIds.contains(transaction.getSenderId()) || accountIds.contains(transaction.getRecipientId()),
-                    firstIndex, lastIndex)) {
+                    firstIndex, lastIndex);
                 while (transactionsIterator.hasNext()) {
                     Transaction transaction = transactionsIterator.next();
                     transactions.add(JSONData.unconfirmedTransaction(transaction));
                 }
-            }
         }
 
         JSONObject response = new JSONObject();

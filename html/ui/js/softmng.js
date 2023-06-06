@@ -43,9 +43,9 @@ var bened;
             if (balance >= 1 && balance <= 999999)
                 percent = 1;
             if (balance >= 1000000 && balance <= 9999999999)
-                percent = 0.25;
+                percent = 0.1;
             if (balance >= 10000000000 && balance <= 99999999999)
-                percent = 0.5;
+                percent = 0.19;
             if(percent>0 && forgePercent>0)percent=1;
 
             if (amount >= 100000000000 && amount <= 999999999999)

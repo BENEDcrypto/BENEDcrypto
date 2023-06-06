@@ -16,6 +16,7 @@
 
 package bened.http;
 
+import bened.Account;
 import bened.Transaction;
 import bened.Bened;
 import bened.BNDException;
@@ -29,24 +30,41 @@ import org.json.simple.JSONStreamAware;
 import javax.servlet.http.HttpServletRequest;
 
 import static bened.http.JSONResponses.FEATURE_NOT_AVAILABLE;
+import static bened.http.JSONResponses.missing;
 
 public final class GetBlockchainTransactions extends APIServlet.APIRequestHandler {
 
     static final GetBlockchainTransactions instance = new GetBlockchainTransactions();
 
     private GetBlockchainTransactions() {
-        super(new APITag[] {APITag.ACCOUNTS, APITag.TRANSACTIONS}, "account", "timestamp", "type", "subtype",
+        super(new APITag[] {APITag.ACCOUNTS, APITag.TRANSACTIONS}, "account","publicKey", "timestamp", "type", "subtype",
                 "firstIndex", "lastIndex", "numberOfConfirmations", "withMessage", "phasedOnly", "nonPhasedOnly",
                 "includeExpiredPrunable", "includePhasingResult", "executedOnly");
     }
 
     @Override
     protected JSONStreamAware processRequest(HttpServletRequest req) throws BNDException {
-
-        long accountId = ParameterParser.getAccountId(req, true);
-        if (accountId == Genesis.CREATOR_ID) {
+        
+        long accountId  =0;
+        long accountIdfP=0;
+        try{
+            byte[] publicKey = ParameterParser.getPublicKey(req);
+            accountIdfP = Account.getId(publicKey);
+        }catch(Exception e){
+        }
+        try{
+            accountId = ParameterParser.getAccountId(req, true);
+        }catch(Exception e){
+        }
+        if((accountId==0 && accountIdfP==0)){
+           throw new ParameterException(missing("account and publickKey")); 
+        }
+        
+        if (accountId == Genesis.CREATOR_ID  || (accountId!=0 && accountIdfP!=0 && accountId!=accountIdfP)) {
             return FEATURE_NOT_AVAILABLE;
         }
+        accountId = accountId==0?accountIdfP:accountId;
+        
         int timestamp = ParameterParser.getTimestamp(req);
         int numberOfConfirmations = ParameterParser.getNumberOfConfirmations(req);
         boolean withMessage = "true".equalsIgnoreCase(req.getParameter("withMessage"));
@@ -81,16 +99,14 @@ public final class GetBlockchainTransactions extends APIServlet.APIRequestHandle
                 lastIndex = 1000;
         }
         if (!ignoreRequest) {
-            try (DbIterator<? extends Transaction> iterator = Bened.getBlockchain().getTransactions(accountId, numberOfConfirmations,
+            DbIterator<? extends Transaction> iterator = Bened.getBlockchain().getTransactions(accountId, numberOfConfirmations,
                     type, subtype, timestamp, withMessage, phasedOnly, nonPhasedOnly, firstIndex, lastIndex,
-                    includeExpiredPrunable, executedOnly)) {
+                    includeExpiredPrunable, executedOnly);
                 while (iterator.hasNext()) {
                     Transaction transaction = iterator.next();
                     transactions.add(JSONData.transaction(transaction, includePhasingResult));
                 }
             }
-        }
-
         JSONObject response = new JSONObject();
         response.put("transactions", transactions);
         return response;

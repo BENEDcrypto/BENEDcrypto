@@ -45,12 +45,11 @@ public final class GetUnconfirmedTransactionIds extends APIServlet.APIRequestHan
 
         JSONArray transactionIds = new JSONArray();
         if (accountIds.isEmpty()) {
-        try (DbIterator<? extends Transaction> transactionsIterator = Bened.getTransactionProcessor().getAllUnconfirmedTransactions(firstIndex, lastIndex)) {
+        DbIterator<? extends Transaction> transactionsIterator = Bened.getTransactionProcessor().getAllUnconfirmedTransactions(firstIndex, lastIndex);
             while (transactionsIterator.hasNext()) {
                 Transaction transaction = transactionsIterator.next();
                     transactionIds.add(transaction.getStringId());
                 }
-            }
         } else {
             try (FilteringIterator<? extends Transaction> transactionsIterator = new FilteringIterator<> (
                     Bened.getTransactionProcessor().getAllUnconfirmedTransactions(0, -1),

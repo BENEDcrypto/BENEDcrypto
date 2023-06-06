@@ -15,7 +15,6 @@
  ***************************************************************************** */
 package bened;
 
-import bened.db.DbIterator;
 import bened.util.Convert;
 import bened.util.Logger;
 
@@ -24,8 +23,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
-import java.math.BigInteger;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -181,9 +178,9 @@ public final class DebugTrace {
         long amount = transaction.getAmountNQT();
         long fee = transaction.getFeeNQT();
         if (isRecipient) {
-            fee = 0;
+            fee = 0; // fee doesn't affect recipient account
         } else {
-           
+            // for sender the amounts are subtracted
             amount = -amount;
             fee = -fee;
         }
@@ -215,7 +212,7 @@ public final class DebugTrace {
         long totalBackFees = 0;
 
         Map<String, String> map = getValues(accountId, false);
-        map.put("effective balance", String.valueOf(Account.getAccount(accountId).getEffectiveBalanceBND()));
+        map.put("effective balance", String.valueOf(Account.getAccount(accountId).getEffectiveBalanceBND(Bened.getBlockchain().getHeight())));
         map.put("generation fee", String.valueOf(fee - totalBackFees));
         map.put("block", block.getStringId());
         map.put("event", "block");

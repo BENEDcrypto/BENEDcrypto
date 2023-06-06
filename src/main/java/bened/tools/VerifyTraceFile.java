@@ -189,7 +189,7 @@ public final class VerifyTraceFile {
             for (Map.Entry<String, Map<String, Long>> mapEntry : totals.entrySet()) {
                 String accountId = mapEntry.getKey();
                 Map<String, Long> accountValues = mapEntry.getValue();
-               for (String balanceHeader : balanceHeaders) {
+                for (String balanceHeader : balanceHeaders) {
                     System.out.println(balanceHeader + ": " + nullToZero(accountValues.get(balanceHeader)));
                 }
                 System.out.println("totals:");

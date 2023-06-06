@@ -44,7 +44,6 @@ import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.security.AccessControlException;
 import java.util.*;
 
 public final class Bened {
@@ -56,8 +55,9 @@ public final class Bened {
     }
 
     public static final String MINIMAL_COMPATIBLE_VERSION = "1.2.0.1"; 
-    public static final String VERSION = "1.3.0.5";
+    public static final String VERSION = "2.1.0.1";
     public static final String APPLICATION = "BND";
+    public static final String SUBVERSION = "NF 18 08 05 23";
 
     private static volatile Time time = new Time.EpochTime();
 
@@ -139,7 +139,8 @@ public final class Bened {
                 }
             } else {
                 try (InputStream is = ClassLoader.getSystemResourceAsStream(propertiesFile)) {
-                  
+                    // When running bened.exe from a Windows installation we always have bened.properties in the classpath but this is not the nxt properties file
+                    // Therefore we first load it from the classpath and then look for the real bened.properties in the user folder.
                     if (is != null) {
                         System.out.printf("Loading %s from classpath\n", propertiesFile);
                         properties.load(is);
@@ -196,7 +197,7 @@ public final class Bened {
                 return;
             }
             inputArguments.forEach(System.out::println);
-        } catch (AccessControlException e) {
+        } catch (Exception e) {
             System.out.println("Cannot read input arguments " + e.getMessage());
         }
     }
@@ -207,9 +208,9 @@ public final class Bened {
 
     public static int getIntProperty(String name, int defaultValue) {
         try {
-            int result = Integer.parseInt(properties.getProperty(name));
-            Logger.logMessage(name + " = \"" + result + "\"");
-            return result;
+            int intprops = Integer.parseInt(properties.getProperty(name));
+            Logger.logMessage(name + " = \"" + intprops + "\"");
+            return intprops;
         } catch (NumberFormatException e) {
             Logger.logMessage(name + " not defined or not numeric, using default value " + defaultValue);
             return defaultValue;
@@ -251,14 +252,14 @@ public final class Bened {
         if (value == null || value.length() == 0) {
             return Collections.emptyList();
         }
-        List<String> result = new ArrayList<>();
+        List<String> stringsprops = new ArrayList<>();
         for (String s : value.split(";")) {
             s = s.trim();
             if (s.length() > 0) {
-                result.add(s);
+                stringsprops.add(s);
             }
         }
-        return result;
+        return stringsprops;
     }
 
     public static boolean getBooleanProperty(String name) {
@@ -343,11 +344,12 @@ public final class Bened {
         AddOns.shutdown();
         API.shutdown();
         Users.shutdown();
+        BlockchainProcessorImpl.getInstance().setGetMoreBlocks(false);
         ThreadPool.shutdown();
         BlockchainProcessorImpl.getInstance().shutdown();
         Peers.shutdown();
-        Db.shutdown();
         Bened.softMG().shutdown();
+        Db.shutdown();
         Logger.logShutdownMessage("Bened server " + VERSION + " stopped.");
         Logger.shutdown();
         runtimeMode.shutdown();
@@ -374,6 +376,7 @@ public final class Bened {
                 Account.init();
                 AccountLedger.init();
                 Alias.init();
+                HashTint.init();
                 PrunableMessage.init();
                 Peers.init();
                 APIProxy.init();
@@ -382,7 +385,7 @@ public final class Bened {
                 Users.init();
                 DebugTrace.init();
                 softMG_.init();
-                int timeMultiplier = (Constants.isTestnet && Constants.isOffline) ? Math.max(Bened.getIntProperty("bened.timeMultiplier"), 1) : 1;
+                int timeMultiplier = (Constants.isTestnet && Constants.isOffline) ? Math.max(Bened.getIntProperty("bened.timeMultiplier",1), 1) : 1;
                 ThreadPool.start(timeMultiplier);
                 if (timeMultiplier > 1) {
                     setTime(new Time.FasterTime(Math.max(getEpochTime(), Bened.getBlockchain().getLastBlock().getTimestamp()), timeMultiplier));
@@ -396,6 +399,7 @@ public final class Bened {
                 long currentTime = System.currentTimeMillis();
                 Logger.logMessage("Initialization took " + (currentTime - startTime) / 1000 + " seconds");
                 Logger.logMessage("BENED server " + VERSION + " started successfully.");
+                Logger.logMessage("BENED server " + SUBVERSION + " started successfully. # 2021-2023");
                 Logger.logMessage("Copyright © 2013-2016 The Nxt Core Developers.");
                 Logger.logMessage("Copyright © 2016-2017 Jelurida IP B.V.");
                 Logger.logMessage("Distributed under the Jelurida Public License version 1.0 for the N.x.t Public Blockchain Platform, with ABBNDUTELY NO WARRANTY.");

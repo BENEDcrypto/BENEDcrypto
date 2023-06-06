@@ -1,0 +1,10 @@
+#!/bin/sh
+if [ -x jre/bin/java ]; then
+    JAVA=../jre/bin/java
+else
+    JAVA=../jre/bin/java
+fi
+echo "BENED is starting..."
+#${JAVA}
+java -Xms1g -Xmx3g -cp BenedMG-1.jar:conf bened.Bened >>./logsout 2>&1 &
+

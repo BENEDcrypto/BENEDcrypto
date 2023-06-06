@@ -16,12 +16,10 @@
 
 package bened.http;
 
-import bened.Bened;
 import bened.util.JSON;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.io.Writer;
-import java.text.DecimalFormat;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;

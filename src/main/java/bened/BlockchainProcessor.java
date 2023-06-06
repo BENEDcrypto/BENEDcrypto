@@ -16,6 +16,7 @@
 
 package bened;
 
+import static bened.Constants.sleemlog;
 import bened.db.DerivedDbTable;
 import bened.peer.Peer;
 import bened.util.Observable;
@@ -82,7 +83,10 @@ public interface BlockchainProcessor extends Observable<Block,BlockchainProcesso
 
         @Override
         public String getMessage() {
-            return block == null ? super.getMessage() : super.getMessage() + ", block " + block.getStringId() + " " + block.getJSONObject().toJSONString();
+            Blockchain bh = Bened.getBlockchain();
+            return block == null ? super.getMessage() : super.getMessage() + ", block " + block.getStringId() + " " 
+                    + (sleemlog?"[timestamp:"+block.getTimestamp()+" trxsizw:"+block.getTransactions().size()
+                    +" height:"+(bh.getHeight()+1)+"]" :block.getJSONObject().toJSONString());
         }
 
     }

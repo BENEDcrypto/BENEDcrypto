@@ -28,7 +28,7 @@ import java.sql.SQLException;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 
-final class BlockchainImpl implements Blockchain {
+public final class BlockchainImpl implements Blockchain {
 
     private static final BlockchainImpl instance = new BlockchainImpl();
 
@@ -116,29 +116,25 @@ final class BlockchainImpl implements Blockchain {
 
     @Override
     public DbIterator<BlockImpl> getAllBlocks() {
-        Connection con = null;
-        try {
-            con = Db.db.getConnection();
+        try{
+            Connection con = Db.db.getConnection();
             PreparedStatement pstmt = con.prepareStatement("SELECT * FROM block ORDER BY db_id ASC");
             return getBlocks(con, pstmt);
         } catch (SQLException e) {
-            DbUtils.close(con);
             throw new RuntimeException(e.toString(), e);
         }
     }
 
     @Override
     public DbIterator<BlockImpl> getBlocks(int from, int to) {
-        Connection con = null;
         try {
-            con = Db.db.getConnection();
+            Connection con = Db.db.getConnection();
             PreparedStatement pstmt = con.prepareStatement("SELECT * FROM block WHERE height <= ? AND height >= ? ORDER BY height DESC");
             int blockchainHeight = getHeight();
             pstmt.setInt(1, blockchainHeight - from);
             pstmt.setInt(2, blockchainHeight - to);
             return getBlocks(con, pstmt);
         } catch (SQLException e) {
-            DbUtils.close(con);
             throw new RuntimeException(e.toString(), e);
         }
     }
@@ -150,9 +146,8 @@ final class BlockchainImpl implements Blockchain {
 
     @Override
     public DbIterator<BlockImpl> getBlocks(long accountId, int timestamp, int from, int to) {
-        Connection con = null;
         try {
-            con = Db.db.getConnection();
+            Connection con = Db.db.getConnection();
             PreparedStatement pstmt = con.prepareStatement("SELECT * FROM block WHERE generator_id = ? "
                     + (timestamp > 0 ? " AND timestamp >= ? " : " ") + "ORDER BY height DESC"
                     + DbUtils.limitsClause(from, to));
@@ -164,7 +159,6 @@ final class BlockchainImpl implements Blockchain {
             DbUtils.setLimits(++i, pstmt, from, to);
             return getBlocks(con, pstmt);
         } catch (SQLException e) {
-            DbUtils.close(con);
             throw new RuntimeException(e.toString(), e);
         }
     }
@@ -360,7 +354,8 @@ final class BlockchainImpl implements Blockchain {
 
     @Override
     public int getTransactionCount() {
-        try (Connection con = Db.db.getConnection(); PreparedStatement pstmt = con.prepareStatement("SELECT COUNT(*) FROM transaction");
+        try (Connection con = Db.db.getConnection();
+                PreparedStatement pstmt = con.prepareStatement("SELECT COUNT(*) FROM transaction");
                 ResultSet rs = pstmt.executeQuery()) {
             rs.next();
             return rs.getInt(1);
@@ -371,13 +366,11 @@ final class BlockchainImpl implements Blockchain {
 
     @Override
     public DbIterator<TransactionImpl> getAllTransactions() {
-        Connection con = null;
         try {
-            con = Db.db.getConnection();
+            Connection con = Db.db.getConnection(); //autoclose dbiterator
             PreparedStatement pstmt = con.prepareStatement("SELECT * FROM transaction ORDER BY db_id ASC");
             return getTransactions(con, pstmt);
         } catch (SQLException e) {
-            DbUtils.close(con);
             throw new RuntimeException(e.toString(), e);
         }
     }
@@ -397,8 +390,7 @@ final class BlockchainImpl implements Blockchain {
             throw new IllegalArgumentException("Number of confirmations required " + numberOfConfirmations
                     + " exceeds current blockchain height " + getHeight());
         }
-        Connection con = null;
-        try {
+        
             StringBuilder buf = new StringBuilder();
             buf.append("SELECT * from ((SELECT transaction.* FROM transaction USE INDEX (trx_recipient_blockstamp_idx) ");
             buf.append("WHERE recipient_id = ? ");
@@ -445,10 +437,11 @@ final class BlockchainImpl implements Blockchain {
 
             buf.append("ORDER BY sender_id, block_timestamp DESC LIMIT ?)) ORDER BY block_timestamp DESC, transaction_index DESC");
             buf.append(DbUtils.limitsClause(from, to));
-            con = Db.db.getConnection();
-            PreparedStatement pstmt;
+        try{    
+            Connection con = Db.db.getConnection();//this autoclose dbiterator
+            PreparedStatement pstmt = con.prepareStatement(buf.toString()); 
             int i = 0;
-            pstmt = con.prepareStatement(buf.toString());
+            
             pstmt.setLong(++i, accountId);
             if (blockTimestamp > 0) {
                 pstmt.setInt(++i, blockTimestamp);
@@ -489,7 +482,6 @@ final class BlockchainImpl implements Blockchain {
             DbUtils.setLimits(++i, pstmt, from, to);
             return getTransactions(con, pstmt);
         } catch (SQLException e) {
-            DbUtils.close(con);
             throw new RuntimeException(e.toString(), e);
         }
     }
@@ -505,8 +497,7 @@ final class BlockchainImpl implements Blockchain {
             throw new IllegalArgumentException("Number of confirmations required " + numberOfConfirmations
                     + " exceeds current blockchain height " + getHeight());
         }
-        Connection con = null;
-        try {
+       
             StringBuilder buf = new StringBuilder();
             buf.append("SELECT transaction.* FROM transaction ");
             if (executedOnly && !nonPhasedOnly) {
@@ -569,10 +560,10 @@ final class BlockchainImpl implements Blockchain {
 
             buf.append("ORDER BY block_timestamp DESC, transaction_index DESC");
             buf.append(DbUtils.limitsClause(from, to));
-            con = Db.db.getConnection();
-            PreparedStatement pstmt;
+        try{
+            Connection con = Db.db.getConnection(); //autoclose dbitewrator
+            PreparedStatement pstmt = con.prepareStatement(buf.toString());
             int i = 0;
-            pstmt = con.prepareStatement(buf.toString());
             pstmt.setLong(++i, accountId);
             pstmt.setLong(++i, accountId);
             if (blockTimestamp > 0) {
@@ -612,16 +603,14 @@ final class BlockchainImpl implements Blockchain {
             DbUtils.setLimits(++i, pstmt, from, to);
             return getTransactions(con, pstmt);
         } catch (SQLException e) {
-            DbUtils.close(con);
             throw new RuntimeException(e.toString(), e);
         }
     }
 
     @Override
     public DbIterator<TransactionImpl> getReferencingTransactions(long transactionId, int from, int to) {
-        Connection con = null;
-        try {
-            con = Db.db.getConnection();
+        try{
+            Connection con = Db.db.getConnection(); //autoclose dbiterator
             PreparedStatement pstmt = con.prepareStatement("SELECT transaction.* FROM transaction, referenced_transaction "
                     + "WHERE referenced_transaction.referenced_transaction_id = ? "
                     + "AND referenced_transaction.transaction_id = transaction.id "
@@ -632,7 +621,6 @@ final class BlockchainImpl implements Blockchain {
             DbUtils.setLimits(++i, pstmt, from, to);
             return getTransactions(con, pstmt);
         } catch (SQLException e) {
-            DbUtils.close(con);
             throw new RuntimeException(e.toString(), e);
         }
     }
@@ -664,37 +652,23 @@ final class BlockchainImpl implements Blockchain {
     }
     
     
-    
+     //// ma na bl sfg
     @Override
-    public int GetLastForgBlk(long accountId, int deepH){
-        Connection con = null;
-        PreparedStatement pstmt = null;
-        ResultSet rs = null;
-        try {
-            con = Db.db.getConnection();
-            pstmt = con.prepareStatement("SELECT height FROM block WHERE height <= ? AND height >= ? AND  generator_id = ? ORDER BY height DESC");
-            int blockchainHeight = getHeight();
-            pstmt.setInt(1, blockchainHeight);
-            pstmt.setInt(2, (blockchainHeight -deepH)<0?0:(blockchainHeight -deepH));
-            pstmt.setLong(3, accountId);
-            rs = pstmt.executeQuery();
-            int lastblh=0;
-            
-            if(rs.next()) lastblh = rs.getInt("height");
-            
-            int miforg =0;
-            if(blockchainHeight<deepH){
-                miforg = lastblh;
-            }else{
-                miforg = deepH-(blockchainHeight-lastblh);
-            }
-           
-            return miforg<1?0:miforg;
-        } catch (SQLException e) {
-            DbUtils.close(rs, pstmt, con);
-            throw new RuntimeException(e.toString(), e);
-        }finally{
-            DbUtils.close(rs, pstmt, con);
+    public int GetLastForgBlk(long accountId, int deepH, int lsHeight){
+        int blockchainHeight = Bened.getBlockchain().getHeight();
+        int _deeph = blockchainHeight<deepH?0:(blockchainHeight -deepH);
+        int lastblh =-1;
+        if(lsHeight>0){
+            lastblh=lsHeight;
+        }else{
+            lastblh = Bened.softMG().getlastblockAccountId(accountId);
         }
+        int miforg =0;
+        if(blockchainHeight<deepH){
+            miforg = lastblh;
+        }else{
+            miforg = deepH-(blockchainHeight-lastblh);
+        }
+        return miforg<1?0:miforg;
     }
 }

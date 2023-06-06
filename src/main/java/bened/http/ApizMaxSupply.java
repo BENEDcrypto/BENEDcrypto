@@ -58,7 +58,6 @@ public final class ApizMaxSupply extends HttpServlet {
         process(req, resp);
     }
     
-    
     private void process(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         
        if(req.getRequestURI().contains("json")){

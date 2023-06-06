@@ -95,9 +95,9 @@ public final class Peers {
     static final int readTimeout;
     static final int blacklistingPeriod;
     static final boolean getMorePeers;
-    static final int MAX_REQUEST_SIZE = 1024 * 1024;
-    static final int MAX_RESPONSE_SIZE = 1024 * 1024;
-    public static final int MAX_MESSAGE_SIZE = 20 * 1024 * 1024;
+    static final int MAX_REQUEST_SIZE = (1024 * 1024)*2;
+    static final int MAX_RESPONSE_SIZE = ((Constants.MAX_TRANSACTION_PAYLOAD_LENGTH * 1000) +(Constants.MAX_HASH_TRX_SIZE*2)) *10 ;
+    public static final int MAX_MESSAGE_SIZE = MAX_RESPONSE_SIZE + 1024;//20 * 1024 * 1024;
     public static final int MIN_COMPRESS_SIZE = 256;
     static final boolean useWebSockets;
     static final int webSocketIdleTimeout;
@@ -428,12 +428,15 @@ public final class Peers {
                 ctxHandler.addServlet(peerServletHolder, "/*");
 
                 if (Bened.getBooleanProperty("bened.enablePeerServerDoSFilter")) {
-                    FilterHolder dosFilterHolder = ctxHandler.addFilter(DoSFilter.class, "/*",
-                            EnumSet.of(DispatcherType.REQUEST));
+                    FilterHolder dosFilterHolder = ctxHandler.addFilter(DoSFilter.class, "/*", EnumSet.of(DispatcherType.REQUEST));
                     dosFilterHolder.setInitParameter("maxRequestsPerSec", Bened.getStringProperty("bened.peerServerDoSFilter.maxRequestsPerSec"));
                     dosFilterHolder.setInitParameter("delayMs", Bened.getStringProperty("bened.peerServerDoSFilter.delayMs"));
                     dosFilterHolder.setInitParameter("maxRequestMs", Bened.getStringProperty("bened.peerServerDoSFilter.maxRequestMs"));
+                    
                     dosFilterHolder.setInitParameter("trackSessions", "false");
+                    dosFilterHolder.setInitParameter("insertHeaders", "true");
+                    dosFilterHolder.setInitParameter("enabled", "true");
+                    
                     dosFilterHolder.setAsyncSupported(true);
                 }
 
@@ -499,7 +502,6 @@ public final class Peers {
 
         @Override
         public void run() {
-
             try {
                 try {
 
@@ -537,7 +539,7 @@ public final class Peers {
                                     Logger.logDebugMessage("Too many outbound connections, deactivating peer " + peer.getHost());
                                     peer.deactivate();
                                 }
-                                return null;
+//                                return null;
                             })));
                             for (Future<?> future : futures) {
                                 future.get();
@@ -546,9 +548,9 @@ public final class Peers {
                     }
 
                     peers.values().forEach(peer -> {
-                        if (peer.getState() == Peer.State.CONNECTED
-                                && now - peer.getLastUpdated() > 3600
-                                && now - peer.getLastConnectAttempt() > 600) {
+                        if (peer.getState() != Peer.State.CONNECTED 
+                                &&(( now - peer.getLastUpdated() > 3600 && now - peer.getLastConnectAttempt() > 600)
+                                || Bened.getBlockchain().getHeight()<Constants.LAST_KNOWN_BLOCK ) ) {
                             peersService.submit(peer::connect);
                         }
                         if (peer.getLastInboundRequest() != 0 &&
@@ -777,7 +779,7 @@ public final class Peers {
             ThreadPool.scheduleThread("PeerConnecting", Peers.peerConnectingThread, 20);
             ThreadPool.scheduleThread("PeerUnBlacklisting", Peers.peerUnBlacklistingThread, 60);
             if (Peers.getMorePeers) {
-                ThreadPool.scheduleThread("GetMorePeers", Peers.getMorePeersThread, 20);
+                ThreadPool.scheduleThread("GetMorePeers", Peers.getMorePeersThread, 30);
             }
         }
     }
@@ -1230,7 +1232,8 @@ public final class Peers {
     private static void checkBlockchainState() {
         
         Block lastBlock = Bened.getBlockchain().getLastBlock();
-         Peer.BlockchainState state = Constants.isLightClient ? Peer.BlockchainState.LIGHT_CLIENT :                                  
+        
+        Peer.BlockchainState state = Constants.isLightClient ? Peer.BlockchainState.LIGHT_CLIENT :                                     /// bilo 600 
                 (Bened.getBlockchainProcessor().isDownloading() || Bened.getBlockchain().getLastBlockTimestamp() < Bened.getEpochTime() - 2000000) ? Peer.BlockchainState.DOWNLOADING :
                         (lastBlock.getBaseTarget() / Constants.getINITIAL_BASE_TARGET(lastBlock.getHeight()) > 9865392 && !Constants.isTestnet) ? Peer.BlockchainState.FORK :
                         Peer.BlockchainState.UP_TO_DATE;                                                   

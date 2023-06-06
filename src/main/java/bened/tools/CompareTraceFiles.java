@@ -26,9 +26,11 @@ public final class CompareTraceFiles {
         String defaultFile = args.length > 1 ? args[1] : "bened-trace-default.csv";
         try (BufferedReader defaultReader = new BufferedReader(new FileReader(defaultFile));
                 BufferedReader testReader = new BufferedReader(new FileReader(testFile))) {
+            System.out.println(defaultReader.readLine());
             testReader.readLine();
             String testLine = testReader.readLine();
             if (testLine == null) {
+                System.out.println("Empty trace file, nothing to compare");
                 return;
             }
             int height = parseHeight(testLine);
@@ -39,6 +41,7 @@ public final class CompareTraceFiles {
                 }
             }
             if (defaultLine == null) {
+                System.out.println("End of default trace file, can't compare further");
                 return;
             }
             int endHeight = height;
@@ -46,16 +49,19 @@ public final class CompareTraceFiles {
             while ((testLine = testReader.readLine()) != null) {
                 defaultLine = defaultReader.readLine();
                 if (defaultLine == null) {
-                   return;
+                    System.out.println("End of default trace file, can't compare further");
+                    return;
                 }
                 endHeight = parseHeight(testLine);
                 assertEquals(defaultLine, testLine);
             }
             if ((defaultLine = defaultReader.readLine()) != null) {
                 if (parseHeight(defaultLine) <= endHeight) {
+                    System.out.println("default height: " + parseHeight(defaultLine) + " end height: " + endHeight);
                 }
             }
-         } catch (IOException e) {
+            System.out.println("Comparison with default trace file done from height " + height + " to " + endHeight);
+        } catch (IOException e) {
             throw new RuntimeException(e.toString(), e);
         }
     }

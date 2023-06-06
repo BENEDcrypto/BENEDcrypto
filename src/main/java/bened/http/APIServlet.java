@@ -272,6 +272,7 @@ public final class APIServlet extends HttpServlet {
             Logger.logErrorMessage("Error processing request", e);
             response = ERROR_INCORRECT_REQUEST;
         } finally {
+            // The response will be null if we created an asynchronous context
             if (response != null) {
                 if (response instanceof JSONObject) {
                     ((JSONObject) response).put("requestProcessingTime", System.currentTimeMillis() - startTime);

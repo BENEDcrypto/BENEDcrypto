@@ -83,6 +83,7 @@ public final class Logger {
      * logging-default.properties.
      */
     static {
+        trimRepit="";
         String oldManager = System.getProperty("java.util.logging.manager");
         System.setProperty("java.util.logging.manager", "bened.util.BenedLogManager");
         if (!(LogManager.getLogManager() instanceof BenedLogManager)) {
@@ -351,7 +352,12 @@ public final class Logger {
      * @param message Message
      * @param exc Exception
      */
+    private static String trimRepit ="";
     private static void doLog(Level level, String message, Throwable exc) {
+        if(trimRepit.equals(message)){
+            return;
+        }
+        trimRepit= message;
         String logMessage = message;
         Throwable e = exc;
         //
@@ -378,6 +384,7 @@ public final class Logger {
         // Log the event
         //
         
+     
 
         switch (level) {
             case DEBUG:

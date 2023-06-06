@@ -43,6 +43,7 @@ public class AddPeer extends APIRequestHandler {
         if (peerAddress == null) {
             return MISSING_PEER;
         }
+        if(peerAddress.contains("://"))peerAddress= peerAddress.substring(peerAddress.indexOf("://")+3, peerAddress.length());
         JSONObject response = new JSONObject();
         Peer peer = Peers.findOrCreatePeer(peerAddress, true);
         if (peer != null) {

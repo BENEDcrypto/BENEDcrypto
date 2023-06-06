@@ -19,10 +19,10 @@ package bened.http;
 import bened.Account;
 import bened.Appendix;
 import bened.Attachment;
-import bened.Constants;
 import bened.Bened;
 import bened.BNDException;
 import bened.Transaction;
+import bened.TransactionType;
 import bened.crypto.Crypto;
 import bened.util.Convert;
 import org.json.simple.JSONObject;
@@ -34,7 +34,6 @@ import java.util.Arrays;
 import static bened.http.JSONResponses.FEATURE_NOT_AVAILABLE;
 import static bened.http.JSONResponses.INCORRECT_DEADLINE;
 import static bened.http.JSONResponses.INCORRECT_EC_BLOCK;
-import static bened.http.JSONResponses.INCORRECT_WHITELIST;
 import static bened.http.JSONResponses.MISSING_DEADLINE;
 import static bened.http.JSONResponses.MISSING_SECRET_PHRASE;
 import static bened.http.JSONResponses.NOT_ENOUGH_FUNDS;
@@ -129,7 +128,8 @@ abstract class CreateTransaction extends APIServlet.APIRequestHandler {
             return INCORRECT_DEADLINE;
         }
 
-        long feeNQT = Bened.softMG().getFixedFee(amountNQT);
+/////ssss        long feeNQT = ParameterParser.getFeeNQT(req);
+        long feeNQT = Bened.softMG().getFixedFee(amountNQT,  attachment.getTransactionType());
         int ecBlockHeight = ParameterParser.getInt(req, "ecBlockHeight", 0, Integer.MAX_VALUE, false);
         long ecBlockId = ParameterParser.getUnsignedLong(req, "ecBlockId", false);
         if (ecBlockId != 0 && ecBlockId != Bened.getBlockchain().getBlockIdAtHeight(ecBlockHeight)) {

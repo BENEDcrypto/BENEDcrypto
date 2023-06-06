@@ -31,7 +31,7 @@ public class BenedTree {
     public static double getLoyalty (long child, long parent) {
         long totalRecieved = 0, recievedFromParent = 0;
         int lastTransactionTimestamp = -1;
-        try (DbIterator<? extends Transaction> iterator = Bened.getBlockchain().getTransactions(child, (byte) -1, (byte) -1, 0, false)) {
+        DbIterator<? extends Transaction> iterator = Bened.getBlockchain().getTransactions(child, (byte) -1, (byte) -1, 0, false);
             while (iterator.hasNext()) {
                 Transaction transaction = iterator.next();
                 long amount = transaction.getAmountNQT();
@@ -45,7 +45,6 @@ public class BenedTree {
                     }
                 }
             }
-        }
         if (totalRecieved == 0)
             return 0d;
         double loyalty  = ((double) recievedFromParent / (double) totalRecieved) * 100d;
@@ -283,8 +282,7 @@ public class BenedTree {
         HashMap<Long, Long> map = new HashMap<Long,Long>();
 
         long totalRecieved = 0l;
-
-        try (DbIterator<? extends Transaction> iterator = Bened.getBlockchain().getTransactions(account.getId(), (byte) -1, (byte) -1, 0, false)) {
+        DbIterator<? extends Transaction> iterator = Bened.getBlockchain().getTransactions(account.getId(), (byte) -1, (byte) -1, 0, false);
             while (iterator.hasNext()) {
                 Transaction transaction = iterator.next();
                 if (transaction.getRecipientId() == account.getId() && transaction.getSenderId() != Genesis.CREATOR_ID) {
@@ -296,8 +294,7 @@ public class BenedTree {
 
                 }
             }
-        }
-
+       
         Long maxAmount = 0L;
         Account loyalParent = null;
 

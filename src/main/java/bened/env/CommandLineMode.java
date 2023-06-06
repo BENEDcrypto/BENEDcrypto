@@ -31,7 +31,8 @@ public class CommandLineMode implements RuntimeMode {
     public void launchDesktopApplication() {}
 
     @Override
-    public void shutdown() {}
+    public void shutdown() {
+    }
 
     @Override
     public void alert(String message) {}

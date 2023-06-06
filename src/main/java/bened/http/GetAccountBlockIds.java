@@ -43,13 +43,11 @@ public final class GetAccountBlockIds extends APIServlet.APIRequestHandler {
         int lastIndex = ParameterParser.getLastIndex(req);
 
         JSONArray blockIds = new JSONArray();
-        try (DbIterator<? extends Block> iterator = Bened.getBlockchain().getBlocks(accountId, timestamp, firstIndex, lastIndex)) {
+        DbIterator<? extends Block> iterator = Bened.getBlockchain().getBlocks(accountId, timestamp, firstIndex, lastIndex);
             while (iterator.hasNext()) {
                 Block block = iterator.next();
                 blockIds.add(block.getStringId());
             }
-        }
-
         JSONObject response = new JSONObject();
         response.put("blockIds", blockIds);
 

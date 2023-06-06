@@ -1,21 +1,20 @@
 package bened.http;
 
-
+import org.json.simple.JSONObject;
+import org.json.simple.JSONStreamAware;
 import bened.Genesis;
 import bened.Bened;
 import bened.BNDException;
 import bened.Constants;
 import bened.util.Convert;
 import bened.util.BenedTree;
+import bened.util.Logger;
+
+import javax.servlet.http.HttpServletRequest;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import javax.servlet.http.HttpServletRequest;
-import org.json.simple.JSONObject;
-import org.json.simple.JSONStreamAware;
-
-
 
 public class IsChildOf extends BenedTree.APIHierarchyRequestHandler {
 
@@ -50,22 +49,19 @@ public class IsChildOf extends BenedTree.APIHierarchyRequestHandler {
             return err;
         }
 
-        PreparedStatement statement = null;
-        ResultSet rs = null;
-
-
-        try {
+        
             long solvedParent = child;
-            try {
-                statement = conn.prepareStatement("select parent_id from soft where id=?");
+            try (PreparedStatement statement = conn.prepareStatement("select parent_id from soft where id=?");){
                 statement.setLong(1, child);
-                try {
-                    rs = statement.executeQuery();
+                try(ResultSet rs = statement.executeQuery();){
                     while (rs.next()) {
                         solvedParent = rs.getLong(1);
                     }
-                    rs.close();
-                    statement.close();
+                }//rs.close();
+            } catch (SQLException ex) {
+                Logger.logErrorMessage(IsChildOf.class.getName(), ex);
+                throw new BNDException.NotValidException (ex.getMessage(), ex.getCause());
+            }//    statement.close();
                     
                     if (solvedParent == child) {
                         response.put("errorDescription", "Account " + Convert.rsAccount(child) + " is not part of any hierarchy");
@@ -74,11 +70,12 @@ public class IsChildOf extends BenedTree.APIHierarchyRequestHandler {
                     }
 
                     int i = 0;
+                    boolean haveParent = false;
                     while (solvedParent != parent && solvedParent != Genesis.CREATOR_ID) {
-                        statement = conn.prepareStatement("select parent_id from soft where id=?");
+                        try(PreparedStatement statement = conn.prepareStatement("select parent_id from soft where id=?");){
                         statement.setLong(1, solvedParent);
-                        rs = statement.executeQuery();
-                        boolean haveParent = false;
+                        try(ResultSet rs = statement.executeQuery();){
+                        haveParent = false;
                         while (rs.next()) {
                             solvedParent = rs.getLong(1);
                             haveParent = true;
@@ -87,8 +84,11 @@ public class IsChildOf extends BenedTree.APIHierarchyRequestHandler {
                             solvedParent = Genesis.CREATOR_ID;
                             break;
                         }
-                        rs.close();
-                        statement.close();
+                        }//rs.close();
+                        } catch (SQLException ex) {
+                            Logger.logDebugMessage(IsChildOf.class.getName(), ex);
+                            throw new BNDException.NotValidException (ex.getMessage(), ex.getCause());
+                        }//statement.close();
                         
                         if (!haveParent) {
                             response.put("errorDescription", "Error solving top-level parent account - it is impossible situation, please report this");
@@ -110,14 +110,8 @@ public class IsChildOf extends BenedTree.APIHierarchyRequestHandler {
                     response.put("errorDescription", "Unknown error");
                     response.put("errorCode", "9505");
                     return response;
-                } finally {
-                   if(rs!=null) rs.close();
-                }
-            } finally {
-                if(statement!=null)statement.close();
-            }
-        } catch (SQLException e) {
-            throw new BNDException.NotValidException (e.getMessage(), e.getCause());
-        }
+                
+            
+       
     }
 }
